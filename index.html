@@ -3,74 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Enterprise v6.6 | Fix Cloud Edition</title>
-    <style>
-        /* CSS TOTAL */
-        :root {
-            --bg-main: #0079bf; --bg-list: #ebecf0; --text-main: #172b4d;
-            --card-bg: #ffffff; --accent: #5aac44; --error: #eb5a46;
-            --warning: #f2d600; --success: #61bd4f;
-        }
-        .dark-theme {
-            --bg-main: #1d2125; --bg-list: #101204; --text-main: #b6c2cf; --card-bg: #22272b;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-main); margin: 0; transition: 0.3s; overflow: hidden; color: var(--text-main); }
-
-        /* Auth & Loading */
-        .auth-overlay { position: fixed; inset: 0; background: var(--bg-main); display: flex; align-items: center; justify-content: center; z-index: 5000; }
-        .auth-card { background: white; padding: 40px; border-radius: 8px; width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); color: #333; }
-        .auth-card input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        .btn-primary { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 4px; flex: 1; cursor: pointer; font-weight: bold; width: 100%; }
-        .btn-outline { background: white; border: 1.5px solid var(--accent); color: var(--accent); padding: 12px; border-radius: 4px; flex: 1; cursor: pointer; }
-        
-        /* Dashboard Layout */
-        header { background: rgba(0,0,0,0.2); padding: 10px 20px; color: white; }
-        .header-main { display: flex; justify-content: space-between; align-items: center; }
-        .board { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 82vh; align-items: flex-start; }
-        .list { background: var(--bg-list); width: 300px; min-width: 300px; border-radius: 8px; padding: 12px; max-height: 90%; display: flex; flex-direction: column; }
-        .cards-container { flex-grow: 1; min-height: 50px; overflow-y: auto; }
-
-        /* Cards & Priority */
-        .card { background: var(--card-bg); color: var(--text-main); padding: 12px; margin-bottom: 10px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: grab; border-left: 6px solid transparent; }
-        .card.high { border-left-color: var(--error); }
-        .card.medium { border-left-color: var(--warning); }
-        .card.low { border-left-color: var(--success); }
-        
-        /* Modal & Scroll Fix */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; padding: 20px; }
-        .modal-content { background: #f4f5f7; margin: auto; width: 100%; max-width: 650px; max-height: 90vh; border-radius: 8px; position: relative; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.4); color: #333; }
-        .modal-body-scroll { padding: 30px; max-height: calc(90vh - 40px); overflow-y: auto; }
-        .progress-bar { background: #dfe1e6; height: 8px; border-radius: 4px; margin: 10px 0; overflow: hidden; }
-        #progress-fill { background: var(--accent); height: 100%; width: 0%; transition: 0.3s; }
-        
-        /* Utils */
-        .v-tag { font-size: 0.6rem; background: var(--accent); padding: 2px 6px; border-radius: 4px; }
-        .avatar { width: 24px; height: 24px; border-radius: 50%; color: white; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: bold; border: 2px solid var(--card-bg); margin-left: -8px; }
-        .avatar-selectable { opacity: 0.3; cursor: pointer; transition: 0.2s; margin: 2px; }
-        .avatar-selectable.selected { opacity: 1; transform: scale(1.1); }
-    </style>
+    <title>Pro-Task Cloud v6.7 | Hybrid System</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
+<body class="light-theme">
 
     <div id="auth-container" class="auth-overlay">
         <div class="auth-card">
             <h2>Pro-Task Enterprise</h2>
-            <p>Inicia sesión o regístrate</p>
-            <input type="email" id="login-email" placeholder="Email corporativo">
+            <input type="email" id="login-email" placeholder="Email">
             <input type="password" id="login-pass" placeholder="Contraseña">
             <div style="display: flex; gap: 10px; margin-top: 15px;">
                 <button id="btn-login" class="btn-primary">Entrar</button>
-                <button id="btn-signup" class="btn-outline">Registro</button>
+                <button id="btn-signup" style="background:none; border: 1.5px solid var(--accent); color:var(--accent); cursor:pointer; flex:1; border-radius:4px;">Registro</button>
             </div>
-            <p id="auth-error" style="color: var(--error); font-size: 0.8rem; margin-top: 10px;"></p>
-        </div>
-    </div>
-
-    <div id="loading-screen" class="auth-overlay" style="display: none; background: rgba(255,255,255,0.9);">
-        <div class="auth-card" style="box-shadow: none; background: transparent;">
-            <div style="border: 4px solid #f3f3f3; border-top: 4px solid var(--bg-main); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
-            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-            <h3>Sincronizando con la nube...</h3>
+            <p id="auth-error" style="color:red; font-size:0.8rem; margin-top:10px;"></p>
         </div>
     </div>
 
@@ -79,12 +26,14 @@
             <div class="header-main">
                 <div>
                     <span id="user-display">Usuario</span>
-                    <button id="btn-logout" style="background:none; border: 1px solid white; color:white; cursor:pointer; margin-left:10px; padding: 2px 5px; border-radius:3px;">Cerrar Sesión</button>
+                    <button id="btn-logout" style="background:none; color:white; border:1px solid white; cursor:pointer; margin-left:10px; border-radius:3px;">Salir</button>
                 </div>
-                <h1>Tablero Maestro <span class="v-tag">v6.6 CLOUD</span></h1>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="email" id="share-email" placeholder="Correo para compartir..." style="padding: 5px; border-radius:3px; border:none;">
+                    <button onclick="window.shareBoard()" class="btn-share">Compartir Tablero</button>
+                </div>
                 <div>
-                    <button id="btn-theme" style="background:none; border: 1px solid white; color:white; cursor:pointer; padding: 5px 10px; border-radius:3px;">🌓 Tema</button>
-                    <button onclick="window.exportToCSV()" style="background:white; color:var(--bg-main); border:none; padding: 5px 10px; border-radius:3px; font-weight:bold; cursor:pointer; margin-left:5px;">Excel</button>
+                    <button id="btn-theme" style="background:none; color:white; border:1px solid white; cursor:pointer; padding:5px; border-radius:3px;">🌓 Tema</button>
                 </div>
             </div>
         </header>
@@ -94,163 +43,121 @@
                 <div class="list-header"><h3>Pendientes</h3></div>
                 <div class="cards-container" id="todo"></div>
                 <div class="add-card-container">
-                    <input type="text" placeholder="Nueva tarea..." class="card-input" style="width: 100%; box-sizing: border-box; padding: 8px;">
-                    <button onclick="window.handleAddNewCard(this)" class="btn-primary" style="margin-top: 5px;">+ Añadir</button>
+                    <input type="text" placeholder="Nueva tarea..." class="card-input" style="width:100%; box-sizing:border-box; padding:8px;">
+                    <button onclick="window.handleAddNewCard(this)" class="btn-primary" style="margin-top:5px;">+ Añadir</button>
                 </div>
             </div>
             <div class="list" data-id="in-progress" ondrop="window.drop(event)" ondragover="window.allowDrop(event)">
                 <div class="list-header"><h3>En Proceso</h3></div>
                 <div class="cards-container" id="in-progress"></div>
-                <div class="add-card-container">
-                    <input type="text" placeholder="Haciendo..." class="card-input" style="width: 100%; box-sizing: border-box; padding: 8px;">
-                    <button onclick="window.handleAddNewCard(this)" class="btn-primary" style="margin-top: 5px;">+ Añadir</button>
-                </div>
             </div>
             <div class="list" data-id="done" ondrop="window.drop(event)" ondragover="window.allowDrop(event)">
                 <div class="list-header"><h3>Finalizado</h3></div>
                 <div class="cards-container" id="done"></div>
-                <div class="add-card-container">
-                    <input type="text" placeholder="Terminado..." class="card-input" style="width: 100%; box-sizing: border-box; padding: 8px;">
-                    <button onclick="window.handleAddNewCard(this)" class="btn-primary" style="margin-top: 5px;">+ Añadir</button>
-                </div>
             </div>
         </main>
     </div>
 
     <div id="card-modal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="window.closeModal()" style="position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 24px;">&times;</span>
+            <span class="close-modal" onclick="window.closeModal()">&times;</span>
             <div class="modal-body-scroll">
-                <input type="text" id="modal-title" style="width: 95%; font-size: 1.5rem; font-weight: bold; border: none; background: transparent; margin-bottom: 20px;">
+                <input type="text" id="modal-title" style="width:100%; font-size:1.5rem; font-weight:bold; border:none; background:transparent;">
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                    <div>
-                        <h4>Prioridad</h4>
-                        <select id="modal-priority" onchange="window.updatePriority()" style="width: 100%; padding: 8px;">
-                            <option value="low">Baja (Verde)</option>
-                            <option value="medium">Media (Amarillo)</option>
-                            <option value="high">Alta (Rojo)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <h4>Miembros</h4>
-                        <div id="modal-members" style="display: flex; flex-wrap: wrap;"></div>
-                    </div>
-                </div>
+                <h4>Prioridad</h4>
+                <select id="modal-priority" onchange="window.updatePriority()" style="width:100%; padding:8px;">
+                    <option value="low">Baja (Verde)</option>
+                    <option value="medium">Media (Amarillo)</option>
+                    <option value="high">Alta (Rojo)</option>
+                </select>
 
                 <h4>Descripción</h4>
-                <textarea id="modal-desc" style="width: 100%; height: 80px; padding: 10px; box-sizing: border-box; margin-bottom: 20px; resize: none;"></textarea>
+                <textarea id="modal-desc" style="width:100%; height:80px;"></textarea>
 
-                <h4>Sub-tareas <span id="check-percent">0%</span></h4>
-                <div class="progress-bar"><div id="progress-fill"></div></div>
+                <h4>Sub-tareas</h4>
                 <div id="modal-checklist"></div>
-                <div style="display: flex; gap: 5px; margin-top: 10px;">
-                    <input type="text" id="new-check-input" style="flex: 1; padding: 5px;">
-                    <button onclick="window.addChecklistItem()" class="btn-primary" style="width: auto; padding: 5px 15px;">+</button>
+                <div style="display:flex; gap:5px; margin-top:10px;">
+                    <input type="text" id="new-check-input" style="flex:1;">
+                    <button onclick="window.addChecklistItem()" class="btn-primary" style="width:auto; padding:5px 15px;">+</button>
                 </div>
 
-                <button onclick="window.archiveCardFromModal()" class="btn-danger" style="margin-top: 30px;">Eliminar Tarea</button>
+                <button onclick="window.archiveCardFromModal()" class="btn-danger" style="margin-top:30px;">Eliminar Tarea</button>
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-        import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+        import { auth, db } from './js/firebase-engine.js';
+        import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+        import { doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-        // TUS CREDENCIALES
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
-            authDomain: "trello-d2532.firebaseapp.com",
-            projectId: "trello-d2532",
-            storageBucket: "trello-d2532.firebasestorage.app",
-            messagingSenderId: "630892154656",
-            appId: "1:630892154656:web:1d0dfce355216a1d879145"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        const MEMBERS = [
-            { id: 'u1', name: 'Juan', initial: 'JP', color: '#e91e63' },
-            { id: 'u2', name: 'Maria', initial: 'ML', color: '#9c27b0' },
-            { id: 'u3', name: 'Carlos', initial: 'CR', color: '#2196f3' },
-            { id: 'u4', name: 'Ana', initial: 'AV', color: '#4caf50' }
-        ];
-
-        let boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' } };
+        let boardData = { todo: [], 'in-progress': [], done: [], history: [], collaborators: [] };
         let currentUser = null;
         let currentEditingId = null;
         let isLoaded = false;
+        let currentBoardOwnerId = null; // Para saber qué carpeta estamos leyendo
 
-        // AUTH
+        // --- AUTH ---
         document.getElementById('btn-login').onclick = () => {
-            const e = document.getElementById('login-email').value;
-            const p = document.getElementById('login-pass').value;
-            signInWithEmailAndPassword(auth, e, p).catch(err => alert("Error: " + err.message));
+            signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
         };
-
         document.getElementById('btn-signup').onclick = () => {
-            const e = document.getElementById('login-email').value;
-            const p = document.getElementById('login-pass').value;
-            createUserWithEmailAndPassword(auth, e, p).catch(err => alert("Error: " + err.message));
+            createUserWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
         };
-
         document.getElementById('btn-logout').onclick = () => signOut(auth);
 
         onAuthStateChanged(auth, user => {
             if (user) {
                 currentUser = user;
-                document.getElementById('user-display').innerText = user.email;
-                document.getElementById('loading-screen').style.display = 'flex';
+                currentBoardOwnerId = user.uid; // Por defecto, el tablero propio
                 sync();
             } else {
                 document.getElementById('auth-container').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
-                isLoaded = false;
             }
         });
 
-        // CLOUD SYNC (MEJORADO)
+        // --- COMPARTIR ---
+        window.shareBoard = async () => {
+            const email = document.getElementById('share-email').value.trim().toLowerCase();
+            if(!email) return alert("Escribe un email");
+            if(!boardData.collaborators) boardData.collaborators = [];
+            boardData.collaborators.push(email);
+            await save();
+            alert("Tablero compartido con " + email);
+        };
+
+        // --- SINCRONIZACIÓN (MEMORIA REAL) ---
         function sync() {
-            const userRef = doc(db, "user_boards", currentUser.uid);
+            const userRef = doc(db, "user_boards", currentBoardOwnerId);
             onSnapshot(userRef, (snap) => {
                 if (snap.exists()) {
                     boardData = snap.data();
                 } else {
-                    // SI NO EXISTE, LO CREAMOS SIN BLOQUEAR
-                    boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' } };
-                    setDoc(userRef, boardData);
+                    boardData = { todo: [], 'in-progress': [], done: [], collaborators: [currentUser.email] };
+                    save();
                 }
                 isLoaded = true;
-                renderBoard();
-                document.body.className = (boardData.settings?.theme || 'light') + '-theme';
-                document.getElementById('loading-screen').style.display = 'none';
+                render();
+                document.getElementById('auth-container').style.display = 'none';
                 document.getElementById('app-container').style.display = 'block';
-            }, (error) => {
-                console.error("Error Firestore:", error);
-                alert("Error de conexión con la nube. Revisa las reglas de Firestore.");
             });
         }
 
         async function save() {
             if (!isLoaded || !currentUser) return;
-            await setDoc(doc(db, "user_boards", currentUser.uid), boardData);
+            await setDoc(doc(db, "user_boards", currentBoardOwnerId), boardData);
         }
 
-        // KANBAN LOGIC
+        // --- FUNCIONES DEL TABLERO ---
         window.handleAddNewCard = (btn) => {
             const input = btn.parentElement.querySelector('.card-input');
             const colId = btn.closest('.list').dataset.id;
             if (!input.value.trim()) return;
-            const card = { id: 'c'+Date.now(), title: input.value, desc: '', members: [], checklist: [], priority: 'low' };
-            boardData[colId].push(card);
-            input.value = ''; renderBoard(); save();
+            boardData[colId].push({ id: 'c'+Date.now(), title: input.value, priority: 'low', members: [], checklist: [] });
+            input.value = ''; render(); save();
         };
 
-        window.allowDrop = (e) => e.preventDefault();
         window.drop = (e) => {
             e.preventDefault();
             const id = e.dataTransfer.getData("text");
@@ -260,10 +167,12 @@
                 const idx = boardData[c].findIndex(x => x.id === id);
                 if(idx !== -1) card = boardData[c].splice(idx,1)[0];
             });
-            if(card) { boardData[targetCol].push(card); renderBoard(); save(); }
+            if(card) { boardData[targetCol].push(card); render(); save(); }
         };
 
-        function renderBoard() {
+        window.allowDrop = (e) => e.preventDefault();
+
+        function render() {
             ['todo','in-progress','done'].forEach(col => {
                 const cont = document.getElementById(col); cont.innerHTML = '';
                 boardData[col].forEach(c => {
@@ -271,70 +180,36 @@
                     el.className = `card ${c.priority}`; el.draggable = true;
                     el.onclick = () => openModal(c.id);
                     el.ondragstart = (e) => e.dataTransfer.setData("text", c.id);
-                    const avatars = (c.members || []).map(mId => {
-                        const m = MEMBERS.find(u => u.id === mId);
-                        return `<div class="avatar" style="background:${m.color}">${m.initial}</div>`;
-                    }).join('');
-                    el.innerHTML = `<strong>${c.title}</strong><div style="display:flex; justify-content:flex-end; margin-top:5px;">${avatars}</div>`;
+                    el.innerHTML = `<strong>${c.title}</strong>`;
                     cont.appendChild(el);
                 });
             });
         }
 
-        // MODAL LOGIC
+        // --- MODAL ---
         function openModal(id) {
             currentEditingId = id; const card = findCard(id);
             document.getElementById('modal-title').value = card.title;
             document.getElementById('modal-desc').value = card.desc || '';
             document.getElementById('modal-priority').value = card.priority || 'low';
-            renderMembers(card); renderChecklist(card);
+            renderChecklist(card);
             document.getElementById('card-modal').style.display = 'block';
         }
-
         function findCard(id) { return [...boardData.todo, ...boardData['in-progress'], ...boardData.done].find(c => c.id === id); }
-
+        window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
+        window.updatePriority = () => { findCard(currentEditingId).priority = document.getElementById('modal-priority').value; render(); save(); };
+        
+        function renderChecklist(card) {
+            document.getElementById('modal-checklist').innerHTML = (card.checklist || []).map((item, i) => `<div><input type="checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleCheck(${i})"> ${item.text}</div>`).join('');
+        }
+        window.toggleCheck = (i) => { const card = findCard(currentEditingId); card.checklist[i].done = !card.checklist[i].done; renderChecklist(card); save(); };
         window.addChecklistItem = () => {
-            const input = document.getElementById('new-check-input');
             const card = findCard(currentEditingId);
             if(!card.checklist) card.checklist = [];
-            card.checklist.push({ text: input.value, done: false });
-            input.value = ''; renderChecklist(card); save();
+            card.checklist.push({ text: document.getElementById('new-check-input').value, done: false });
+            document.getElementById('new-check-input').value = ''; renderChecklist(card); save();
         };
-
-        function renderChecklist(card) {
-            const cont = document.getElementById('modal-checklist');
-            cont.innerHTML = (card.checklist || []).map((item, i) => `<div><input type="checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleCheck(${i})"> ${item.text}</div>`).join('');
-            const done = (card.checklist || []).filter(x => x.done).length;
-            const pc = card.checklist?.length ? Math.round((done/card.checklist.length)*100) : 0;
-            document.getElementById('progress-fill').style.width = pc+'%';
-            document.getElementById('check-percent').innerText = pc+'%';
-        }
-
-        window.toggleCheck = (i) => { const card = findCard(currentEditingId); card.checklist[i].done = !card.checklist[i].done; renderChecklist(card); save(); };
-        window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
-        window.updatePriority = () => { findCard(currentEditingId).priority = document.getElementById('modal-priority').value; renderBoard(); save(); };
-        window.archiveCardFromModal = () => { if(confirm("¿Eliminar?")) { ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId)); closeModal(); renderBoard(); save(); } };
-        
-        function renderMembers(card) {
-            document.getElementById('modal-members').innerHTML = MEMBERS.map(m => `<div class="avatar avatar-selectable ${card.members?.includes(m.id) ? 'selected' : ''}" style="background:${m.color}" onclick="window.toggleMember('${m.id}')">${m.initial}</div>`).join('');
-        }
-        window.toggleMember = (mId) => {
-            const card = findCard(currentEditingId);
-            if(!card.members) card.members = [];
-            const idx = card.members.indexOf(mId);
-            idx === -1 ? card.members.push(mId) : card.members.splice(idx,1);
-            renderMembers(card); renderBoard(); save();
-        };
-
-        document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; renderBoard(); save(); };
-        document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; save(); };
-        document.getElementById('btn-theme').onclick = () => { boardData.settings.theme = boardData.settings.theme === 'light' ? 'dark' : 'light'; save(); };
-
-        window.exportToCSV = () => {
-            let csv = "Columna,Tarea,Prioridad\n";
-            ['todo','in-progress','done'].forEach(col => boardData[col].forEach(c => csv += `${col},${c.title},${c.priority}\n`));
-            const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'board.csv'; a.click();
-        };
+        window.archiveCardFromModal = () => { if(confirm("¿Eliminar?")) { ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId)); closeModal(); render(); save(); } };
     </script>
 </body>
 </html>
