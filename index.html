@@ -2,403 +2,95 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Pro-Task Enterprise v10.0 | Sistema Blindado</title>
-    <style>
-        /* =========================================
-           ESTILOS (CSS)
-           ========================================= */
-        :root {
-            --bg-main: #0079bf; --bg-list: #ebecf0; --text-main: #172b4d;
-            --card-bg: #ffffff; --accent: #5aac44; --error: #eb5a46; --sidebar: #f4f5f7;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-main); margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text-main); }
-
-        /* Sidebar */
-        .sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid rgba(0,0,0,0.1); display: flex; flex-direction: column; z-index: 10; }
-        .sidebar-header { padding: 20px; font-weight: bold; border-bottom: 1px solid #ddd; background: rgba(0,0,0,0.02); }
-        .folder-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
-        .folder-item { padding: 12px; margin-bottom: 5px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; border: 1px solid transparent; }
-        .folder-item:hover { background: #e0e0e0; }
-        .folder-item.active { background: #0079bf; color: white; font-weight: bold; }
-
-        /* Area Principal */
-        .content-area { flex-grow: 1; display: flex; flex-direction: column; position: relative; background: white; }
-        header { background: var(--bg-main); padding: 0 20px; height: 60px; display: flex; justify-content: space-between; align-items: center; color: white; }
-        
-        /* Estado de Guardado */
-        #save-status { font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 4px; display: flex; align-items: center; gap: 5px; }
-
-        /* Kanban */
-        .board-canvas { display: flex; padding: 20px; gap: 20px; overflow-x: auto; height: 100%; align-items: flex-start; background: #fff; }
-        .list { background: var(--bg-list); width: 300px; min-width: 300px; border-radius: 8px; padding: 12px; max-height: 90%; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .cards-container { flex-grow: 1; overflow-y: auto; min-height: 50px; }
-        .card { background: white; padding: 10px; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); cursor: grab; border-left: 5px solid #ccc; }
-        .card.high { border-left-color: var(--error); }
-        .card.medium { border-left-color: #f2d600; }
-        .card.low { border-left-color: var(--success); }
-
-        /* Modal */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; padding: 20px; }
-        .modal-content { background: #f4f5f7; margin: auto; width: 100%; max-width: 650px; max-height: 90vh; border-radius: 10px; overflow: hidden; position: relative; color: #333; }
-        .modal-body { padding: 30px; max-height: calc(90vh - 40px); overflow-y: auto; }
-        
-        /* Auth Overlay */
-        .auth-overlay { position: fixed; inset: 0; background: var(--bg-main); display: flex; align-items: center; justify-content: center; z-index: 5000; }
-        .auth-card { background: white; padding: 40px; border-radius: 8px; width: 350px; text-align: center; }
-        .auth-card input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
-        
-        .btn-primary { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
-        .btn-secondary { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro-Task Enterprise v11 | Modular System</title>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
 
-    <div id="auth-container" class="auth-overlay">
-        <div class="auth-card">
-            <h2 style="color:var(--bg-main)">Pro-Task v10</h2>
-            <p>Sistema de Carpetas Seguras</p>
-            <input type="email" id="login-email" placeholder="Correo electrónico">
+    <div id="auth-container" class="overlay">
+        <div class="card auth-card">
+            <h2>Pro-Task Enterprise</h2>
+            <p>Gestión de Proyectos Segura</p>
+            <input type="email" id="login-email" placeholder="Correo corporativo">
             <input type="password" id="login-pass" placeholder="Contraseña">
-            <button id="btn-login" class="btn-primary" style="margin-top:10px;">Entrar</button>
-            <button id="btn-signup" style="background:transparent; border:none; color:#0079bf; cursor:pointer; margin-top:15px; text-decoration:underline;">Crear cuenta nueva</button>
-            <p id="auth-msg" style="color:red; font-size:0.8rem; margin-top:10px;"></p>
-        </div>
-    </div>
-
-    <div id="loading-screen" class="auth-overlay" style="display: none; background: rgba(255,255,255,0.95); z-index: 6000;">
-        <div class="auth-card" style="box-shadow:none; background:transparent;">
-            <h3 style="color:#333">Conectando con base de datos...</h3>
-            <p>Verificando carpetas de usuario...</p>
-        </div>
-    </div>
-
-    <div id="app-container" class="main-wrapper" style="display: none;">
-        <aside class="sidebar">
-            <div class="sidebar-header">MIS PROYECTOS</div>
-            <div id="user-folders" class="folder-list"></div>
-            <div style="padding:20px;">
-                <button onclick="window.createFolder()" class="btn-primary">+ Nuevo Proyecto</button>
+            
+            <div class="btn-group">
+                <button id="btn-login" class="btn-primary">Iniciar Sesión</button>
+                <button id="btn-signup" class="btn-secondary">Registrarse</button>
             </div>
+            <p id="auth-error" class="error-msg"></p>
+        </div>
+    </div>
+
+    <div id="loading-screen" class="overlay" style="display: none;">
+        <div class="loader-content">
+            <div class="spinner"></div>
+            <h3 id="loading-text">Conectando...</h3>
+        </div>
+    </div>
+
+    <div id="app-container" class="app-layout" style="display: none;">
+        
+        <aside class="sidebar">
+            <div class="sidebar-header">MIS CARPETAS</div>
+            <div id="my-folders-list" class="folder-list">
+                </div>
+
+            <div class="sidebar-header">COMPARTIDOS</div>
+            <div id="shared-folders-list" class="folder-list"></div>
+
+            <button id="btn-new-folder" class="btn-new">+ Nueva Carpeta</button>
         </aside>
 
-        <div class="content-area">
+        <main class="content">
             <header>
-                <div style="display:flex; align-items:center; gap:15px;">
-                    <h3 id="board-title" style="margin:0;">Selecciona un proyecto</h3>
-                    <div id="save-status" style="opacity:0;">✅ Guardado</div>
-                </div>
-                <div>
-                    <span id="user-email" style="font-size:0.8rem; margin-right:10px;"></span>
-                    <button id="btn-logout" class="btn-secondary">Salir</button>
+                <h2 id="board-title">Selecciona una carpeta</h2>
+                <div class="header-controls">
+                    <input type="email" id="invite-email" placeholder="Invitar usuario...">
+                    <button id="btn-share" class="btn-small">Compartir</button>
+                    <span id="user-display">Usuario</span>
+                    <button id="btn-logout" class="btn-logout">Salir</button>
                 </div>
             </header>
 
-            <main class="board-canvas" id="kanban-board"></main>
-        </div>
+            <div id="kanban-board" class="kanban-area">
+                <div class="empty-state">
+                    Selecciona o crea una carpeta en el menú izquierdo para comenzar.
+                </div>
+            </div>
+        </main>
     </div>
 
-    <div id="card-modal" class="modal">
+    <div id="task-modal" class="modal">
         <div class="modal-content">
-            <span onclick="document.getElementById('card-modal').style.display='none'" style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:24px;">&times;</span>
+            <span class="close-modal">&times;</span>
             <div class="modal-body">
-                <input type="text" id="modal-title" style="width:100%; font-size:1.5rem; font-weight:bold; border:none; outline:none; margin-bottom:20px;">
+                <input type="text" id="modal-title" placeholder="Título de la tarea">
                 
-                <h4>Prioridad</h4>
-                <select id="modal-priority" onchange="window.updateCardData()" style="width:100%; padding:8px; margin-bottom:20px;">
-                    <option value="low">Baja</option>
-                    <option value="medium">Media</option>
-                    <option value="high">Alta</option>
-                </select>
+                <div class="row">
+                    <select id="modal-priority">
+                        <option value="low">Prioridad Baja</option>
+                        <option value="medium">Prioridad Media</option>
+                        <option value="high">Prioridad Alta</option>
+                    </select>
+                </div>
 
-                <h4>Descripción</h4>
-                <textarea id="modal-desc" style="width:100%; height:100px; margin-bottom:20px;"></textarea>
+                <textarea id="modal-desc" placeholder="Descripción detallada..."></textarea>
 
-                <button onclick="window.deleteCard()" style="background:var(--error); color:white; border:none; padding:10px; width:100%; border-radius:4px; cursor:pointer;">Eliminar Tarea</button>
+                <h4>Checklist</h4>
+                <div id="checklist-container"></div>
+                <div class="row">
+                    <input type="text" id="new-check-text" placeholder="Nueva sub-tarea...">
+                    <button id="btn-add-check" class="btn-small">Añadir</button>
+                </div>
+
+                <button id="btn-delete-card" class="btn-danger">Eliminar Tarea</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, updateDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+    <script type="module" src="js/app.js"></script>
 
-        // CONFIGURACIÓN (REEMPLAZA SI ES NECESARIO, PERO ESTA ES LA TUYA)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
-            authDomain: "trello-d2532.firebaseapp.com",
-            projectId: "trello-d2532",
-            storageBucket: "trello-d2532.firebasestorage.app",
-            messagingSenderId: "630892154656",
-            appId: "1:630892154656:web:1d0dfce355216a1d879145"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        let currentUser = null;
-        let currentBoardId = localStorage.getItem('lastBoardId');
-        let boardData = null;
-        let unsubscribe = null;
-        let saveTimeout = null;
-
-        // --- 1. AUTENTICACIÓN ---
-        document.getElementById('btn-login').onclick = () => {
-            const e = document.getElementById('login-email').value;
-            const p = document.getElementById('login-pass').value;
-            signInWithEmailAndPassword(auth, e, p).catch(err => alert("Error: " + err.message));
-        };
-
-        document.getElementById('btn-signup').onclick = () => {
-            const e = document.getElementById('login-email').value;
-            const p = document.getElementById('login-pass').value;
-            createUserWithEmailAndPassword(auth, e, p).catch(err => alert("Error: " + err.message));
-        };
-
-        document.getElementById('btn-logout').onclick = () => {
-            localStorage.clear();
-            signOut(auth);
-        };
-
-        onAuthStateChanged(auth, async user => {
-            if (user) {
-                currentUser = user;
-                document.getElementById('auth-container').style.display = 'none';
-                document.getElementById('loading-screen').style.display = 'flex';
-                document.getElementById('user-email').innerText = user.email;
-
-                // PASO CRÍTICO: Asegurar que el documento del usuario existe
-                await ensureUserDoc(user);
-                
-                // Iniciar App
-                initApp();
-            } else {
-                document.getElementById('auth-container').style.display = 'flex';
-                document.getElementById('app-container').style.display = 'none';
-            }
-        });
-
-        // Crea la "Carpeta Madre" del usuario si no existe
-        async function ensureUserDoc(user) {
-            const userRef = doc(db, "users", user.uid);
-            const snap = await getDoc(userRef);
-            if (!snap.exists()) {
-                await setDoc(userRef, { email: user.email, createdAt: new Date() });
-            }
-        }
-
-        // --- 2. GESTIÓN DE CARPETAS ---
-        function initApp() {
-            document.getElementById('loading-screen').style.display = 'none';
-            document.getElementById('app-container').style.display = 'flex';
-
-            // Escuchar cambios en la sub-colección 'boards' del usuario
-            const boardsRef = collection(db, "users", currentUser.uid, "boards");
-            const q = query(boardsRef, orderBy("createdAt", "desc"));
-            
-            onSnapshot(q, (snap) => {
-                const list = document.getElementById('user-folders');
-                list.innerHTML = '';
-                
-                if (snap.empty) {
-                    list.innerHTML = '<div style="padding:10px; color:#888; font-size:0.8rem;">No tienes proyectos. Crea uno nuevo.</div>';
-                }
-
-                snap.forEach(d => {
-                    const data = d.data();
-                    const el = document.createElement('div');
-                    el.className = `folder-item ${d.id === currentBoardId ? 'active' : ''}`;
-                    el.innerHTML = `📁 ${data.name}`;
-                    el.onclick = () => loadBoard(d.id);
-                    list.appendChild(el);
-                });
-
-                // Si teníamos un tablero abierto, cargarlo
-                if (currentBoardId) {
-                    // Verificar si aun existe
-                    const exists = snap.docs.find(d => d.id === currentBoardId);
-                    if(exists) loadBoard(currentBoardId);
-                    else {
-                        document.getElementById('kanban-board').innerHTML = '';
-                        document.getElementById('board-title').innerText = "Selecciona un proyecto";
-                    }
-                }
-            });
-        }
-
-        window.createFolder = async () => {
-            const name = prompt("Nombre del proyecto:");
-            if (!name) return;
-            
-            const newBoard = {
-                name: name,
-                createdAt: Date.now(),
-                data: { todo: [], processing: [], done: [] }
-            };
-
-            try {
-                const docRef = await addDoc(collection(db, "users", currentUser.uid, "boards"), newBoard);
-                loadBoard(docRef.id);
-            } catch (e) {
-                alert("Error creando carpeta: " + e.message);
-            }
-        };
-
-        // --- 3. LÓGICA DE TABLERO Y GUARDADO ---
-        function loadBoard(id) {
-            if (unsubscribe) unsubscribe();
-            currentBoardId = id;
-            localStorage.setItem('lastBoardId', id);
-
-            const docRef = doc(db, "users", currentUser.uid, "boards", id);
-            
-            unsubscribe = onSnapshot(docRef, (snap) => {
-                if (!snap.exists()) return;
-                boardData = snap.data();
-                document.getElementById('board-title').innerText = boardData.name;
-                renderKanban();
-            });
-        }
-
-        function renderKanban() {
-            const container = document.getElementById('kanban-board');
-            container.innerHTML = '';
-
-            const cols = [
-                { id: 'todo', title: 'Pendientes' },
-                { id: 'processing', title: 'En Proceso' },
-                { id: 'done', title: 'Finalizado' }
-            ];
-
-            cols.forEach(col => {
-                const colDiv = document.createElement('div');
-                colDiv.className = 'list';
-                colDiv.innerHTML = `<h3>${col.title}</h3><div class="cards-container" id="col-${col.id}"></div>`;
-                
-                const cardCont = colDiv.querySelector('.cards-container');
-                (boardData.data[col.id] || []).forEach(card => {
-                    const c = document.createElement('div');
-                    c.className = `card ${card.priority || 'low'}`;
-                    c.innerText = card.title;
-                    c.draggable = true;
-                    c.onclick = () => openModal(card.id);
-                    // Eventos Drag simple
-                    c.ondragstart = (e) => e.dataTransfer.setData("text", JSON.stringify({id: card.id, src: col.id}));
-                    cardCont.appendChild(c);
-                });
-
-                // Botón añadir
-                const addDiv = document.createElement('div');
-                addDiv.innerHTML = `<input type="text" placeholder="+ Tarea" style="width:100%; padding:5px; margin-top:5px;">`;
-                const input = addDiv.querySelector('input');
-                input.onkeydown = (e) => {
-                    if (e.key === 'Enter' && input.value.trim()) {
-                        addTask(col.id, input.value);
-                        input.value = '';
-                    }
-                };
-                colDiv.appendChild(addDiv);
-
-                // Drop Zone
-                colDiv.ondragover = e => e.preventDefault();
-                colDiv.ondrop = (e) => handleDrop(e, col.id);
-
-                container.appendChild(colDiv);
-            });
-        }
-
-        // --- 4. OPERACIONES DE DATOS (CRUD) ---
-        async function saveData() {
-            if (!currentBoardId || !boardData) return;
-            
-            // UI Feedback
-            const statusEl = document.getElementById('save-status');
-            statusEl.innerText = "💾 Guardando...";
-            statusEl.style.opacity = 1;
-
-            try {
-                await updateDoc(doc(db, "users", currentUser.uid, "boards", currentBoardId), {
-                    data: boardData.data
-                });
-                statusEl.innerText = "✅ Guardado";
-                setTimeout(() => statusEl.style.opacity = 0, 2000);
-            } catch (e) {
-                statusEl.innerText = "❌ Error al guardar";
-                alert("Error de conexión: " + e.message);
-            }
-        }
-
-        function addTask(colId, title) {
-            const newCard = {
-                id: 'c' + Date.now(),
-                title: title,
-                priority: 'low',
-                desc: ''
-            };
-            if (!boardData.data[colId]) boardData.data[colId] = [];
-            boardData.data[colId].push(newCard);
-            saveData(); // Save triggering listener -> redraws UI automatically
-        }
-
-        function handleDrop(e, targetCol) {
-            e.preventDefault();
-            const data = JSON.parse(e.dataTransfer.getData("text"));
-            if (data.src === targetCol) return;
-
-            // Mover datos
-            const srcList = boardData.data[data.src];
-            const cardIndex = srcList.findIndex(c => c.id === data.id);
-            if (cardIndex > -1) {
-                const card = srcList.splice(cardIndex, 1)[0];
-                if (!boardData.data[targetCol]) boardData.data[targetCol] = [];
-                boardData.data[targetCol].push(card);
-                saveData();
-            }
-        }
-
-        // --- 5. MODAL ---
-        let editingId = null;
-        function openModal(id) {
-            editingId = id;
-            const card = findCard(id);
-            document.getElementById('modal-title').value = card.title;
-            document.getElementById('modal-desc').value = card.desc || '';
-            document.getElementById('modal-priority').value = card.priority || 'low';
-            document.getElementById('card-modal').style.display = 'block';
-        }
-
-        window.updateCardData = () => {
-            const card = findCard(editingId);
-            card.title = document.getElementById('modal-title').value;
-            card.desc = document.getElementById('modal-desc').value;
-            card.priority = document.getElementById('modal-priority').value;
-            saveData();
-        };
-
-        window.deleteCard = () => {
-            if (confirm("¿Borrar tarea?")) {
-                ['todo', 'processing', 'done'].forEach(col => {
-                    boardData.data[col] = boardData.data[col].filter(c => c.id !== editingId);
-                });
-                document.getElementById('card-modal').style.display = 'none';
-                saveData();
-            }
-        };
-
-        function findCard(id) {
-            let found = null;
-            Object.values(boardData.data).forEach(list => {
-                const c = list.find(x => x.id === id);
-                if (c) found = c;
-            });
-            return found;
-        }
-
-        // Auto-save en inputs del modal
-        document.getElementById('modal-title').onblur = window.updateCardData;
-        document.getElementById('modal-desc').onblur = window.updateCardData;
-
-    </script>
 </body>
 </html>
