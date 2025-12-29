@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Enterprise v5.8 | Sistema de Colaboración</title>
+    <title>Pro-Task Cloud v6.0 | Personal User Storage</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="light-theme">
@@ -11,8 +11,8 @@
     <div id="auth-container" class="auth-overlay">
         <div class="auth-card">
             <h2>Pro-Task Enterprise</h2>
-            <p>Acceso Corporativo</p>
-            <input type="email" id="login-email" placeholder="Correo Corporativo">
+            <p>Tu espacio de trabajo privado</p>
+            <input type="email" id="login-email" placeholder="Correo corporativo">
             <input type="password" id="login-pass" placeholder="Contraseña">
             <div class="auth-buttons">
                 <button id="btn-login" class="btn-primary">Entrar</button>
@@ -22,12 +22,8 @@
         </div>
     </div>
 
-    <div id="no-access-container" class="auth-overlay" style="display: none; background: #fdfdfd;">
-        <div class="auth-card">
-            <h2 style="color: var(--error);">Acceso Denegado</h2>
-            <p>No tienes permiso para ver este tablero. Solicita acceso al administrador.</p>
-            <button onclick="window.handleLogout()" class="btn-danger">Cerrar Sesión</button>
-        </div>
+    <div id="loading-screen" class="auth-overlay" style="display: none; background: rgba(255,255,255,0.9);">
+        <div class="auth-card"><h3>Sincronizando con la nube...</h3></div>
     </div>
 
     <div id="app-container" style="display: none;">
@@ -37,10 +33,10 @@
                     <span id="user-display">Usuario</span>
                     <button id="btn-logout" class="btn-logout-mini">Salir</button>
                 </div>
-                <h1>Tablero Cloud <span class="v-tag">v5.8 Shared</span></h1>
+                <h1>Pro-Task Cloud <span class="v-tag">v6.0</span></h1>
                 <div class="header-actions">
                     <div class="share-box">
-                        <input type="email" id="share-email" placeholder="Invitar por correo...">
+                        <input type="email" id="share-email" placeholder="Email para compartir...">
                         <button onclick="window.addCollaborator()" class="btn-share">Compartir</button>
                     </div>
                     <button id="btn-theme" class="btn-icon">🌓</button>
@@ -64,7 +60,7 @@
                 <div class="list-header"><h3>En Proceso</h3></div>
                 <div class="cards-container" id="in-progress"></div>
                 <div class="add-card-container">
-                    <input type="text" placeholder="En proceso..." class="card-input">
+                    <input type="text" placeholder="Haciendo..." class="card-input">
                     <button onclick="window.handleAddNewCard(this)" class="btn-add-task">+ Añadir</button>
                 </div>
             </div>
@@ -72,7 +68,7 @@
                 <div class="list-header"><h3>Finalizado</h3></div>
                 <div class="cards-container" id="done"></div>
                 <div class="add-card-container">
-                    <input type="text" placeholder="Completada..." class="card-input">
+                    <input type="text" placeholder="Hecho..." class="card-input">
                     <button onclick="window.handleAddNewCard(this)" class="btn-add-task">+ Añadir</button>
                 </div>
             </div>
@@ -93,9 +89,9 @@
                     <div class="modal-section">
                         <h4>Prioridad</h4>
                         <select id="modal-priority" class="priority-select" onchange="window.updatePriority()">
-                            <option value="low">Baja</option>
-                            <option value="medium">Media</option>
-                            <option value="high">Alta</option>
+                            <option value="low">Baja (Verde)</option>
+                            <option value="medium">Media (Amarillo)</option>
+                            <option value="high">Alta (Rojo)</option>
                         </select>
                     </div>
                     <div class="modal-section">
@@ -105,14 +101,14 @@
                 </div>
                 <textarea id="modal-desc" placeholder="Descripción..."></textarea>
                 <div class="modal-section">
-                    <h4>Sub-tareas <span id="check-percent">0%</span></h4>
+                    <h4>Checklist <span id="check-percent">0%</span></h4>
                     <div class="progress-bar"><div id="progress-fill"></div></div>
                     <div id="modal-checklist"></div>
                     <div class="add-check-item">
                         <input type="text" id="new-check-input"><button onclick="window.addChecklistItem()">+</button>
                     </div>
                 </div>
-                <button onclick="window.archiveCardFromModal()" class="btn-danger">Eliminar Tarea</button>
+                <button onclick="window.archiveCardFromModal()" class="btn-danger">Eliminar Definitivamente</button>
             </div>
         </div>
     </div>
