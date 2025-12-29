@@ -2,83 +2,76 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Pro-Task Cloud v8.5 | Professional Edition</title>
+    <title>Pro-Task Cloud v9.0 | User Folders System</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="light-theme">
+<body>
 
     <div id="auth-container" class="auth-overlay">
         <div class="auth-card">
-            <h2>Pro-Task Enterprise</h2>
-            <input type="email" id="login-email" placeholder="Email">
-            <input type="password" id="login-pass" placeholder="Password">
-            <button id="btn-login" class="btn-primary" style="margin-top:10px;">Entrar</button>
-            <button id="btn-signup" style="background:none; border:none; color:var(--bg-main); cursor:pointer; margin-top:20px; text-decoration:underline;">Crear Cuenta</button>
-            <p id="auth-error" style="color:var(--error); font-size:0.8rem; margin-top:15px;"></p>
+            <h2 style="color:var(--bg-main)">Pro-Task Enterprise</h2>
+            <p>Inicia sesión para abrir tus carpetas</p>
+            <input type="email" id="login-email" placeholder="Email corporativo" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
+            <input type="password" id="login-pass" placeholder="Contraseña" style="width:100%; padding:10px; margin-bottom:15px; box-sizing:border-box;">
+            <button id="btn-login" class="btn-primary">Entrar al Sistema</button>
+            <button id="btn-signup" style="background:none; border:none; color:var(--bg-main); cursor:pointer; margin-top:15px; text-decoration:underline;">Crear mi espacio de trabajo</button>
         </div>
     </div>
 
     <div id="loading-screen" class="auth-overlay" style="display: none; background: rgba(255,255,255,0.95); z-index: 6000;">
-        <div class="auth-card" style="box-shadow:none; background:transparent;">
-            <h3>Sincronizando memoria segura...</h3>
-        </div>
+        <div class="auth-card" style="box-shadow:none; background:transparent;"><h3>Abriendo carpetas seguras...</h3></div>
     </div>
 
-    <div id="app-container" class="main-wrapper" style="display: none;">
+    <div id="app-container" style="display: none; width: 100%;">
         <aside class="sidebar">
-            <div class="sidebar-header">📂 MIS PROYECTOS</div>
-            <div id="my-boards" class="board-list"></div>
-            <div class="sidebar-header" style="border-top:1px solid #ddd">🤝 COMPARTIDOS</div>
-            <div id="shared-boards" class="board-list"></div>
-            <div style="padding:20px;"><button onclick="window.createNewBoard()" class="btn-primary">+ Nueva Carpeta</button></div>
+            <div class="sidebar-header">Mis Carpetas / Proyectos</div>
+            <div id="user-folders" class="folder-list"></div>
+            
+            <div class="sidebar-header" style="border-top:1px solid #ddd">Proyectos Compartidos</div>
+            <div id="shared-folders" class="folder-list"></div>
+            
+            <div style="padding:20px;">
+                <button onclick="window.createNewFolder()" class="btn-primary" style="background:var(--bg-main)">+ Nuevo Proyecto</button>
+            </div>
         </aside>
 
-        <div class="content-area">
+        <div class="main-content">
             <header>
-                <h2 id="current-board-name" style="margin:0;">Selecciona un Tablero</h2>
-                <div style="display:flex; gap:12px; align-items:center;">
-                    <input type="email" id="share-email" placeholder="Invitar por email..." style="border-radius:4px; padding:8px; border:none;">
-                    <button onclick="window.shareBoard()" style="background:var(--accent); color:white; border:none; padding:8px 15px; border-radius:4px; cursor:pointer; font-weight:bold;">Compartir</button>
-                    <button id="btn-logout" style="background:none; color:white; border:1px solid white; cursor:pointer; padding:6px 10px; border-radius:4px;">Cerrar Sesión</button>
+                <h2 id="current-folder-name">Selecciona un Proyecto</h2>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="email" id="share-email" placeholder="Invitar por email..." style="border:none; padding:6px; border-radius:4px; width:180px;">
+                    <button onclick="window.shareCurrentFolder()" style="background:var(--accent); color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold;">Compartir</button>
+                    <button id="btn-logout" style="background:none; color:white; border:1px solid white; cursor:pointer; padding:4px 8px; border-radius:4px;">Cerrar Sesión</button>
                 </div>
             </header>
-            <main class="board-canvas" id="kanban-board"></main>
+            <main class="board-area" id="kanban-board"></main>
         </div>
     </div>
 
     <div id="card-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="window.closeModal()">&times;</span>
-            <div class="modal-body-scroll">
-                <input type="text" id="modal-title" style="width:100%; font-size:1.8rem; font-weight:bold; border:none; background:transparent; outline:none; margin-bottom:20px;">
+            <div class="modal-scroll">
+                <input type="text" id="modal-title" style="width:100%; font-size:1.8rem; font-weight:bold; border:none; background:transparent; outline:none;">
                 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
-                    <div>
-                        <h4>Prioridad</h4>
-                        <select id="modal-priority" onchange="window.updatePriority()" style="width:100%; padding:10px; border-radius:6px;">
-                            <option value="low">Baja (Verde)</option>
-                            <option value="medium">Media (Amarillo)</option>
-                            <option value="high">Alta (Rojo)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <h4>Responsables</h4>
-                        <div id="modal-members" style="display:flex; gap:5px;"></div>
-                    </div>
-                </div>
+                <h4 style="margin-top:20px;">Prioridad</h4>
+                <select id="modal-priority" onchange="window.updatePriority()" style="width:100%; padding:10px; border-radius:5px;">
+                    <option value="low">Baja</option>
+                    <option value="medium">Media</option>
+                    <option value="high">Alta</option>
+                </select>
 
-                <h4>Descripción</h4>
-                <textarea id="modal-desc" style="width:100%; height:100px; padding:12px; border-radius:6px; border:1px solid #ddd;"></textarea>
+                <h4 style="margin-top:20px;">Descripción</h4>
+                <textarea id="modal-desc" style="width:100%; height:100px; padding:10px; border-radius:5px; border:1px solid #ddd;"></textarea>
 
-                <h4>Checklist <span id="check-percent" style="float:right;">0%</span></h4>
-                <div class="progress-bar"><div id="progress-fill"></div></div>
+                <h4 style="margin-top:20px;">Checklist</h4>
                 <div id="modal-checklist"></div>
                 <div style="display:flex; gap:8px; margin-top:10px;">
-                    <input type="text" id="new-check-input" placeholder="Añadir paso..." style="flex:1; padding:8px;">
-                    <button onclick="window.addChecklistItem()" class="btn-primary" style="width:auto; padding:0 20px;">+</button>
+                    <input type="text" id="new-check-input" style="flex:1; padding:8px;">
+                    <button onclick="window.addChecklistItem()" class="btn-primary" style="width:auto; padding:0 15px;">+</button>
                 </div>
 
-                <button onclick="window.archiveCard()" style="background:var(--error); color:white; border:none; padding:12px; border-radius:6px; width:100%; cursor:pointer; font-weight:bold; margin-top:25px;">Eliminar Permanentemente</button>
+                <button onclick="window.deleteCard()" class="btn-danger" style="margin-top:30px; background:var(--error); color:white; border:none; padding:10px; border-radius:5px; width:100%; cursor:pointer; font-weight:bold;">Eliminar Tarea</button>
             </div>
         </div>
     </div>
@@ -86,117 +79,137 @@
     <script type="module">
         import { auth, db } from './js/firebase-engine.js';
         import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-        import { collection, query, where, onSnapshot, doc, setDoc, addDoc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, doc, setDoc, addDoc, updateDoc, collectionGroup } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-        let currentBoardId = localStorage.getItem('lastActiveBoard') || null;
-        let boardData = null;
         let currentUser = null;
-        let unsubscribeBoard = null;
-        let isDataReady = false; // EL CANDADO DE SEGURIDAD
+        let activeFolderId = localStorage.getItem('lastFolderId') || null;
+        let folderData = null;
+        let unsubscribe = null;
+        let isSyncReady = false;
 
-        // --- AUTH ---
-        document.getElementById('btn-login').onclick = () => signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value).catch(e => alert(e.message));
+        // --- AUTENTICACIÓN ---
+        document.getElementById('btn-login').onclick = () => signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value).catch(e => alert("Acceso denegado"));
         document.getElementById('btn-signup').onclick = () => createUserWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value).catch(e => alert(e.message));
         document.getElementById('btn-logout').onclick = () => { localStorage.clear(); signOut(auth); };
 
-        onAuthStateChanged(auth, async user => {
+        onAuthStateChanged(auth, user => {
             if (user) {
                 currentUser = user;
                 document.getElementById('auth-container').style.display = 'none';
                 document.getElementById('app-container').style.display = 'flex';
-                
-                // Asegurar ficha de usuario en DB
-                const userRef = doc(db, "users", user.uid);
-                const snap = await getDoc(userRef);
-                if(!snap.exists()) await setDoc(userRef, { email: user.email, lastBoard: null });
-
-                loadBoardList(); 
-                if(currentBoardId) selectBoard(currentBoardId);
+                loadUserSpace(); // Carga las carpetas del usuario
+                if(activeFolderId) openFolder(activeFolderId);
             } else {
                 document.getElementById('auth-container').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
             }
         });
 
-        // --- MANEJO DE TABLEROS ("CARPETAS") ---
-        function loadBoardList() {
-            onSnapshot(query(collection(db, "boards"), where("owner", "==", currentUser.uid)), snap => renderNav(snap, 'my-boards'));
-            onSnapshot(query(collection(db, "boards"), where("collaborators", "array-contains", currentUser.email.toLowerCase())), snap => renderNav(snap, 'shared-boards'));
-        }
+        // --- GESTIÓN DE CARPETAS (USERS -> ID -> BOARDS) ---
+        function loadUserSpace() {
+            // Buscamos en la sub-colección privada del usuario
+            const foldersRef = collection(db, "users", currentUser.uid, "boards");
+            onSnapshot(foldersRef, snap => {
+                const cont = document.getElementById('user-folders');
+                cont.innerHTML = '';
+                snap.forEach(d => {
+                    const item = document.createElement('div');
+                    item.className = `folder-item ${d.id === activeFolderId ? 'active' : ''}`;
+                    item.innerHTML = `📁 <span>${d.data().name}</span>`;
+                    item.onclick = () => openFolder(d.id);
+                    cont.appendChild(item);
+                });
+            });
 
-        function renderNav(snap, id) {
-            const cont = document.getElementById(id); cont.innerHTML = '';
-            snap.forEach(d => {
-                const div = document.createElement('div');
-                div.className = `board-item ${d.id === currentBoardId ? 'active' : ''}`;
-                div.innerText = "📁 " + d.data().name;
-                div.onclick = () => selectBoard(d.id);
-                cont.appendChild(div);
+            // Buscamos tableros compartidos (usando una colección global para esto)
+            const sharedQuery = query(collectionGroup(db, "boards"), where("collaborators", "array-contains", currentUser.email.toLowerCase()));
+            onSnapshot(sharedQuery, snap => {
+                const cont = document.getElementById('shared-folders');
+                cont.innerHTML = '';
+                snap.forEach(d => {
+                    const item = document.createElement('div');
+                    item.className = `folder-item ${d.id === activeFolderId ? 'active' : ''}`;
+                    item.innerHTML = `🤝 <span>${d.data().name}</span>`;
+                    item.onclick = () => openFolder(d.id, d.ref.parent.parent.id); // Guardamos el ID del dueño
+                    cont.appendChild(item);
+                });
             });
         }
 
-        window.createNewBoard = async () => {
-            const name = prompt("Nombre del proyecto:");
+        window.createNewFolder = async () => {
+            const name = prompt("Nombre del nuevo proyecto:");
             if(!name) return;
-            const docRef = await addDoc(collection(db, "boards"), {
-                name, owner: currentUser.uid, collaborators: [], data: { todo: [], 'in-progress': [], done: [] }
-            });
-            selectBoard(docRef.id);
+            const newProject = {
+                name: name,
+                created: Date.now(),
+                collaborators: [],
+                data: { todo: [], 'in-progress': [], done: [] }
+            };
+            // Guardamos físicamente dentro de la "carpeta" del usuario
+            const docRef = await addDoc(collection(db, "users", currentUser.uid, "boards"), newProject);
+            openFolder(docRef.id);
         };
 
-        function selectBoard(id) {
-            if(unsubscribeBoard) unsubscribeBoard();
-            isDataReady = false; 
-            currentBoardId = id;
-            localStorage.setItem('lastActiveBoard', id);
+        function openFolder(boardId, ownerId = currentUser.uid) {
+            if(unsubscribe) unsubscribe();
+            isSyncReady = false;
+            activeFolderId = boardId;
+            localStorage.setItem('lastFolderId', boardId);
             document.getElementById('loading-screen').style.display = 'flex';
 
-            unsubscribeBoard = onSnapshot(doc(db, "boards", id), snap => {
+            // Apuntamos al documento exacto en la carpeta del dueño
+            unsubscribe = onSnapshot(doc(db, "users", ownerId, "boards", boardId), snap => {
                 if(!snap.exists()) {
                     document.getElementById('loading-screen').style.display = 'none';
                     return;
                 }
-                boardData = snap.data();
-                isDataReady = true; // ABRE EL CANDADO
-                document.getElementById('current-board-name').innerText = boardData.name;
+                folderData = snap.data();
+                isSyncReady = true;
+                document.getElementById('current-folder-name').innerText = folderData.name;
                 renderKanban();
                 document.getElementById('loading-screen').style.display = 'none';
             });
         }
 
-        // --- KANBAN ---
+        // --- LÓGICA DE TABLERO ---
         function renderKanban() {
-            const canvas = document.getElementById('kanban-board'); canvas.innerHTML = '';
+            const canvas = document.getElementById('kanban-board');
+            canvas.innerHTML = '';
             ['todo', 'in-progress', 'done'].forEach(col => {
-                const div = document.createElement('div'); div.className = 'list';
-                div.innerHTML = `<h3>${col.toUpperCase()}</h3><div class="cards-container"></div>`;
-                const cardsCont = div.querySelector('.cards-container');
-                (boardData.data[col] || []).forEach(c => {
-                    const el = document.createElement('div');
-                    el.className = `card ${c.priority || 'low'}`;
-                    el.innerText = c.title;
-                    el.onclick = () => openModal(c.id);
-                    cardsCont.appendChild(el);
+                const list = document.createElement('div');
+                list.className = 'list';
+                list.innerHTML = `<h3>${col.toUpperCase()}</h3><div class="cards-container"></div>`;
+                const container = list.querySelector('.cards-container');
+                
+                (folderData.data[col] || []).forEach(card => {
+                    const cEl = document.createElement('div');
+                    cEl.className = `card ${card.priority || 'low'}`;
+                    cEl.innerText = card.title;
+                    cEl.onclick = () => openModal(card.id);
+                    container.appendChild(cEl);
                 });
-                const add = document.createElement('div');
-                add.innerHTML = `<input type="text" style="width:100%; padding:8px; box-sizing:border-box;"><button onclick="window.addCard('${col}', this)" class="btn-primary" style="margin-top:8px;">+</button>`;
-                div.appendChild(add);
-                canvas.appendChild(div);
+
+                const addBtn = document.createElement('div');
+                addBtn.innerHTML = `<input type="text" placeholder="Tarea..." style="width:100%; padding:5px;"><button onclick="window.addTask('${col}', this)" class="btn-primary" style="margin-top:5px;">+</button>`;
+                list.appendChild(addBtn);
+                canvas.appendChild(list);
             });
         }
 
-        async function safeSave() {
-            if(!isDataReady || !currentBoardId) return;
-            await updateDoc(doc(db, "boards", currentBoardId), { data: boardData.data, collaborators: boardData.collaborators });
+        async function safeUpdate() {
+            if(!isSyncReady) return;
+            // Actualiza el documento en la carpeta correspondiente
+            const ownerId = folderData.owner || currentUser.uid;
+            await updateDoc(doc(db, "users", ownerId, "boards", activeFolderId), { data: folderData.data, collaborators: folderData.collaborators || [] });
         }
 
-        window.addCard = (col, btn) => {
+        window.addTask = (col, btn) => {
             const input = btn.previousElementSibling; if(!input.value) return;
-            boardData.data[col].push({ id: 'c'+Date.now(), title: input.value, priority: 'low', checklist: [], desc: '' });
-            input.value = ''; renderKanban(); safeSave();
+            folderData.data[col].push({ id: 'c'+Date.now(), title: input.value, priority: 'low', checklist: [], desc: '' });
+            input.value = ''; renderKanban(); safeUpdate();
         };
 
-        // --- MODAL ---
+        // --- MODAL Y FUNCIONES ---
         let currentEditingId = null;
         function openModal(id) {
             currentEditingId = id; const card = findCard(id);
@@ -206,31 +219,32 @@
             renderChecklist(card);
             document.getElementById('card-modal').style.display = 'block';
         }
-        function findCard(id) { return [...boardData.data.todo, ...boardData.data['in-progress'], ...boardData.data.done].find(c => c.id === id); }
+        function findCard(id) { return [...folderData.data.todo, ...folderData.data['in-progress'], ...folderData.data.done].find(c => c.id === id); }
         window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
 
-        window.updatePriority = () => { findCard(currentEditingId).priority = document.getElementById('modal-priority').value; renderKanban(); safeSave(); };
-        
+        window.updatePriority = () => { findCard(currentEditingId).priority = document.getElementById('modal-priority').value; renderKanban(); safeUpdate(); };
         window.addChecklistItem = () => {
             const card = findCard(currentEditingId); card.checklist = card.checklist || [];
             card.checklist.push({ text: document.getElementById('new-check-input').value, done: false });
-            document.getElementById('new-check-input').value = ''; renderChecklist(card); safeSave();
+            document.getElementById('new-check-input').value = ''; renderChecklist(card); safeUpdate();
         };
-
         function renderChecklist(card) {
             const cont = document.getElementById('modal-checklist');
-            cont.innerHTML = (card.checklist || []).map((it, i) => `<div style="padding:8px 0; border-bottom:1px solid #eee;"><input type="checkbox" ${it.done ? 'checked' : ''} onchange="window.toggleCheck(${i})"> <span style="${it.done ? 'text-decoration:line-through; opacity:0.5' : ''}">${it.text}</span></div>`).join('');
-            const done = (card.checklist || []).filter(x => x.done).length;
-            const pc = card.checklist?.length ? Math.round((done/card.checklist.length)*100) : 0;
-            document.getElementById('progress-fill').style.width = pc+'%';
-            document.getElementById('check-percent').innerText = pc+'%';
+            cont.innerHTML = (card.checklist || []).map((it, i) => `<div><input type="checkbox" ${it.done ? 'checked' : ''} onchange="window.toggleCheck(${i})"> ${it.text}</div>`).join('');
         }
+        window.toggleCheck = (i) => { const card = findCard(currentEditingId); card.checklist[i].done = !card.checklist[i].done; renderChecklist(card); safeUpdate(); };
+        window.deleteCard = () => { if(!confirm("Borrar?")) return; ['todo','in-progress','done'].forEach(c => folderData.data[c] = folderData.data[c].filter(x => x.id !== currentEditingId)); window.closeModal(); renderKanban(); safeUpdate(); };
 
-        window.toggleCheck = (i) => { const card = findCard(currentEditingId); card.checklist[i].done = !card.checklist[i].done; renderChecklist(card); safeSave(); };
-        window.archiveCard = () => { if(!confirm("Eliminar?")) return; ['todo','in-progress','done'].forEach(c => boardData.data[c] = boardData.data[c].filter(x => x.id !== currentEditingId)); window.closeModal(); renderKanban(); safeSave(); };
-        
-        document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; renderKanban(); safeSave(); };
-        document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; safeSave(); };
+        window.shareCurrentFolder = () => {
+            const email = document.getElementById('share-email').value.toLowerCase().trim();
+            if(!email) return;
+            if(!folderData.collaborators) folderData.collaborators = [];
+            folderData.collaborators.push(email);
+            alert("Invitado enviado a " + email); safeUpdate();
+        };
+
+        document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; renderKanban(); safeUpdate(); };
+        document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; safeUpdate(); };
     </script>
 </body>
 </html>
