@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Enterprise | V15 FINAL (Standard)</title>
+    <title>Pro-Task v16 | Colaborativo</title>
     <style>
-        /* --- ESTILOS (CSS) --- */
-        :root { --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --text: #172b4d; --card: #fff; --error: #eb5a46; --success: #61bd4f; }
+        :root { --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --text: #172b4d; --success: #61bd4f; --danger: #eb5a46; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); }
         
         /* Layout */
         .app-container { display: flex; width: 100%; height: 100%; }
         .sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid #ddd; display: flex; flex-direction: column; }
-        .sidebar h3 { padding: 20px; margin: 0; font-size: 0.8rem; color: #666; border-bottom: 1px solid #ddd; text-transform: uppercase; }
-        .board-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .board-item { padding: 10px; margin-bottom: 5px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
-        .board-item:hover { background: #ddd; }
-        .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: bold; border-left: 3px solid var(--primary); }
-        
-        .main { flex: 1; display: flex; flex-direction: column; background: white; }
+        .sidebar-section { padding: 15px 15px 5px; font-size: 0.75rem; font-weight: bold; color: #5e6c84; text-transform: uppercase; letter-spacing: 0.5px; }
+        .board-list { overflow-y: auto; flex: 1; padding: 0 10px; }
+        .board-item { padding: 8px 10px; margin-bottom: 4px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #172b4d; }
+        .board-item:hover { background: rgba(9,30,66,0.08); }
+        .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: 600; }
+        .badge { background: var(--danger); color: white; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; margin-left: auto; }
+
+        .main { flex: 1; display: flex; flex-direction: column; background: white; position: relative; }
         header { background: var(--primary); padding: 0 20px; height: 50px; display: flex; align-items: center; justify-content: space-between; color: white; }
         
         /* Kanban */
@@ -26,145 +26,136 @@
         .list { background: #ebecf0; width: 280px; min-width: 280px; border-radius: 8px; padding: 10px; max-height: 90%; display: flex; flex-direction: column; }
         .cards { flex: 1; overflow-y: auto; min-height: 20px; }
         .card { background: white; padding: 10px; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 1px 2px #00000030; cursor: pointer; border-left: 4px solid #ccc; font-size: 0.9rem; position: relative; }
-        .card:hover { background: #f8f8f8; }
         .card.low { border-left-color: var(--success); }
         .card.medium { border-left-color: #f2d600; }
-        .card.high { border-left-color: var(--error); }
+        .card.high { border-left-color: var(--danger); }
         
-        /* Auth & Modal */
-        .overlay { position: fixed; inset: 0; background: var(--primary); display: flex; justify-content: center; align-items: center; z-index: 999; }
-        .box { background: white; padding: 30px; border-radius: 8px; width: 320px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        input, select, textarea { width: 100%; padding: 10px; margin: 5px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
-        button { padding: 10px; width: 100%; background: var(--primary); color: white; border: none; cursor: pointer; margin-top: 10px; border-radius: 4px; font-weight: bold; }
-        button.secondary { background: transparent; color: white; border: 1px solid white; }
-        button.danger { background: var(--error); }
+        /* Modales y Overlays */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+        .box { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .modal-lg { width: 500px; max-height: 90vh; overflow-y: auto; }
         
-        /* Modal Detalle */
-        #modal-overlay { background: rgba(0,0,0,0.6); display: none; position: fixed; inset: 0; z-index: 3000; justify-content: center; align-items: center;}
-        .modal-box { background: #f4f5f7; width: 500px; max-height: 90vh; overflow-y: auto; text-align: left; position: relative; padding: 20px; border-radius: 8px; }
-        .close-btn { position: absolute; right: 15px; top: 10px; font-size: 24px; cursor: pointer; color: #888; }
+        input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #dfe1e6; border-radius: 4px; box-sizing: border-box; }
+        button { padding: 10px; width: 100%; background: var(--primary); color: white; border: none; cursor: pointer; margin-top: 10px; border-radius: 4px; font-weight: 600; }
+        button.secondary { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.4); width: auto; padding: 6px 12px; font-size: 0.9rem; margin: 0; }
+        button.danger { background: var(--danger); }
         
-        /* Utils */
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .checklist-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #eee; }
+        /* Toast Notification */
+        #toast { position: absolute; top: 60px; right: 20px; background: #333; color: white; padding: 10px 20px; border-radius: 4px; opacity: 0; transition: opacity 0.5s; pointer-events: none; z-index: 3000; }
     </style>
 </head>
 <body>
 
-    <div id="loading-screen" class="overlay" style="display: none; background: rgba(255,255,255,0.95); z-index: 2000;">
-        <div class="box" style="box-shadow: none; background: transparent;">
-            <div class="loader"></div>
-            <h3 style="color:#333">Conectando a "pro-task-app"...</h3>
-        </div>
-    </div>
+    <div id="toast">Notificación</div>
 
-    <div id="auth-screen" class="overlay">
+    <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="color:var(--primary)">Pro-Task v15</h2>
-            <p>Conectado a Base de Datos Nativa</p>
+            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v16</h2>
+            <p>Sistema Colaborativo</p>
             <input type="email" id="email" placeholder="Correo electrónico">
             <input type="password" id="password" placeholder="Contraseña">
-            <button onclick="login()">Iniciar Sesión</button>
-            <button onclick="register()" style="background: white; color: var(--primary); border: 1px solid var(--primary);">Registrarse</button>
-            <p id="auth-msg" style="color:red; font-size: 0.8rem; margin-top: 10px;"></p>
+            <button onclick="login()">Entrar</button>
+            <button onclick="register()" style="background: white; color: var(--primary); border: 1px solid var(--primary);">Crear Cuenta</button>
+            <p id="auth-msg" style="color:red; font-size: 0.8rem; margin-top: 10px; text-align: center;"></p>
         </div>
     </div>
 
     <div id="app-screen" class="app-container" style="display: none;">
         <div class="sidebar">
-            <h3>MIS PROYECTOS</h3>
-            <div id="board-list" class="board-list"></div>
-            <div style="padding:15px"><button onclick="createBoard()">+ Nuevo Proyecto</button></div>
+            <div class="sidebar-section">MIS PROYECTOS</div>
+            <div id="my-boards" class="board-list" style="flex:0 0 auto; max-height: 40%;"></div>
+            
+            <div class="sidebar-section">COMPARTIDOS CONMIGO</div>
+            <div id="shared-boards" class="board-list"></div>
+
+            <div style="padding:15px; border-top: 1px solid #ddd;">
+                <button onclick="createBoard()">+ Nuevo Tablero</button>
+            </div>
         </div>
+
         <div class="main">
             <header>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <strong id="header-title">Selecciona un proyecto</strong>
-                    <span id="save-indicator" style="font-size: 0.7rem; background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 4px; display: none;">Guardando...</span>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <strong id="header-title" style="font-size: 1.1rem;">Selecciona un tablero</strong>
+                    <span id="save-status" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 3px 8px; border-radius: 4px; display: none;">Guardando...</span>
                 </div>
-                <div>
-                    <span id="user-display" style="font-size: 0.8rem; margin-right: 10px;"></span>
-                    <button onclick="logout()" style="width:auto; padding:5px 15px; background:rgba(255,255,255,0.2);">Salir</button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="btn-share" class="secondary" onclick="openShareModal()" style="display:none;">👤 Compartir</button>
+                    <span id="user-display" style="font-size: 0.85rem; opacity: 0.9;"></span>
+                    <button class="secondary" onclick="logout()">Salir</button>
                 </div>
             </header>
+
             <div id="kanban" class="kanban">
-                <div style="margin: 50px auto; text-align: center; color: #888;">
-                    <p>← Crea o selecciona un proyecto del menú.</p>
+                <div style="margin: 100px auto; text-align: center; color: #888;">
+                    <h3>Bienvenido a tu espacio de trabajo</h3>
+                    <p>Selecciona un proyecto a la izquierda o crea uno nuevo.</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-overlay">
-        <div class="modal-box">
-            <span class="close-btn" onclick="closeModal()">&times;</span>
-            <input type="text" id="m-title" style="font-size:1.4rem; font-weight:bold; border:none; padding-left:0; width: 100%;">
-            
-            <label style="font-size:0.8rem; color:#666;">Prioridad</label>
-            <select id="m-priority" onchange="updateTaskMeta()">
+    <div id="share-modal" class="overlay" style="display: none;">
+        <div class="box">
+            <span onclick="document.getElementById('share-modal').style.display='none'" style="float:right; cursor:pointer;">&times;</span>
+            <h3>Compartir Proyecto</h3>
+            <p style="font-size:0.9rem; color:#666;">Invita a otros usuarios por su correo electrónico.</p>
+            <input type="email" id="share-email" placeholder="correo@ejemplo.com">
+            <button onclick="shareBoard()">Invitar</button>
+        </div>
+    </div>
+
+    <div id="task-modal" class="overlay" style="display: none;">
+        <div class="box modal-lg">
+            <span onclick="closeModal()" style="float:right; cursor:pointer; font-size:1.5rem;">&times;</span>
+            <input type="text" id="m-title" style="font-size:1.4rem; font-weight:bold; border:none; padding-left:0;">
+            <select id="m-priority" onchange="updateTask()">
                 <option value="low">Baja (Verde)</option>
                 <option value="medium">Media (Amarillo)</option>
                 <option value="high">Alta (Rojo)</option>
             </select>
+            <textarea id="m-desc" rows="5" placeholder="Descripción detallada..." onblur="updateTask()"></textarea>
             
-            <label style="font-size:0.8rem; color:#666;">Descripción</label>
-            <textarea id="m-desc" rows="4" placeholder="Detalles..." onblur="updateTaskMeta()"></textarea>
-            
-            <label style="font-size:0.8rem; color:#666;">Checklist</label>
+            <h4>Checklist</h4>
             <div id="m-checklist"></div>
-            <div style="display:flex; gap:5px; margin-top:5px;">
-                <input id="m-new-check" placeholder="Nueva sub-tarea...">
+            <div style="display:flex; gap:5px;">
+                <input id="m-new-check" placeholder="Nueva tarea...">
                 <button onclick="addCheck()" style="width:auto;">+</button>
             </div>
             
-            <button onclick="deleteCard()" class="danger" style="margin-top: 30px;">Eliminar Tarea</button>
+            <button onclick="deleteTask()" class="danger" style="margin-top:20px;">Eliminar Tarea</button>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, orderBy, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, where, orderBy, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- TUS CREDENCIALES ---
+        // --- CONFIGURACIÓN ---
         const firebaseConfig = {
             apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
             authDomain: "trello-d2532.firebaseapp.com",
             projectId: "trello-d2532",
             storageBucket: "trello-d2532.firebasestorage.app",
             messagingSenderId: "630892154656",
-            appId: "1:630892154656:web:1d0dfce355216a1d879145",
-            measurementId: "G-4L4P7E6TZC"
+            appId: "1:630892154656:web:1d0dfce355216a1d879145"
         };
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        
-        // --- 🔴 CONEXIÓN CORRECTA A "pro-task-app" ---
-        const db = getFirestore(app, "pro-task-app");
-        // ---------------------------------------------
+        const db = getFirestore(app, "pro-task-app"); // BD Nativa
 
+        // --- ESTADO ---
         let currentUser = null;
         let currentBoardId = null;
         let boardData = null;
         let unsubscribeBoard = null;
-        let dataLoaded = false; 
 
-        // 1. AUTH
-        window.login = () => {
-            const e = document.getElementById('email').value;
-            const p = document.getElementById('password').value;
-            signInWithEmailAndPassword(auth, e, p).catch(err => document.getElementById('auth-msg').innerText = err.message);
-        };
-
-        window.register = () => {
-            const e = document.getElementById('email').value;
-            const p = document.getElementById('password').value;
-            createUserWithEmailAndPassword(auth, e, p).catch(err => document.getElementById('auth-msg').innerText = err.message);
-        };
-
-        window.logout = () => { localStorage.clear(); signOut(auth); location.reload(); };
+        // --- 1. AUTENTICACIÓN ---
+        window.login = () => signInWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => _err(e.message));
+        window.register = () => createUserWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => _err(e.message));
+        window.logout = () => { localStorage.removeItem('lastBoard'); signOut(auth); location.reload(); };
 
         onAuthStateChanged(auth, user => {
             if (user) {
@@ -172,228 +163,242 @@
                 document.getElementById('user-display').innerText = user.email;
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('app-screen').style.display = 'flex';
-                loadBoardList(); 
+                initDashboard();
             } else {
                 document.getElementById('auth-screen').style.display = 'flex';
                 document.getElementById('app-screen').style.display = 'none';
             }
         });
 
-        // 2. GESTIÓN DE TABLEROS
-        function loadBoardList() {
-            // Escuchar cambios en "pro-task-app"
-            const q = query(collection(db, `users/${currentUser.uid}/boards`), orderBy("createdAt", "desc"));
-            
-            onSnapshot(q, (snapshot) => {
-                const list = document.getElementById('board-list');
-                list.innerHTML = '';
-                
-                snapshot.forEach(docSnap => {
-                    const d = docSnap.data();
-                    const div = document.createElement('div');
-                    div.className = `board-item ${docSnap.id === currentBoardId ? 'active' : ''}`;
-                    div.innerHTML = `📁 ${d.name}`;
-                    div.onclick = () => openBoard(docSnap.id);
-                    list.appendChild(div);
-                });
+        // --- 2. GESTIÓN DE TABLEROS (NUEVA ESTRUCTURA) ---
+        function initDashboard() {
+            // A. Mis Tableros (Soy Dueño)
+            // IMPORTANTE: Ahora guardamos en la raíz 'boards' para poder compartir
+            const qMy = query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+            onSnapshot(qMy, snap => renderList('my-boards', snap));
 
-                // Rescate de sesión
-                const lastId = localStorage.getItem('lastBoardId');
-                if (lastId && !currentBoardId) {
-                    const exists = snapshot.docs.find(d => d.id === lastId);
-                    if (exists) openBoard(lastId);
-                    else localStorage.removeItem('lastBoardId');
-                }
+            // B. Compartidos Conmigo (Soy Miembro)
+            const qShared = query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email), orderBy('createdAt', 'desc'));
+            onSnapshot(qShared, snap => renderList('shared-boards', snap, true));
+
+            // C. Restaurar Sesión
+            const lastId = localStorage.getItem('lastBoard');
+            if (lastId) openBoard(lastId);
+        }
+
+        function renderList(elementId, snap, isShared = false) {
+            const container = document.getElementById(elementId);
+            container.innerHTML = '';
+            if (snap.empty) {
+                container.innerHTML = '<div style="padding:10px; color:#999; font-size:0.8rem;">No hay proyectos</div>';
+                return;
+            }
+            snap.forEach(d => {
+                const data = d.data();
+                // Filtro visual: Si es compartido, no mostrar mis propios tableros otra vez
+                if (isShared && data.ownerId === currentUser.uid) return;
+
+                const div = document.createElement('div');
+                div.className = `board-item ${currentBoardId === d.id ? 'active' : ''}`;
+                div.innerHTML = `
+                    <span>${isShared ? '👥' : '📁'} ${data.name}</span>
+                    ${isShared ? '<span class="badge">Compartido</span>' : ''}
+                `;
+                div.onclick = () => openBoard(d.id);
+                container.appendChild(div);
             });
         }
 
         window.createBoard = async () => {
-            const name = prompt("Nombre del proyecto:");
+            const name = prompt("Nombre del Proyecto:");
             if (!name) return;
             try {
-                const ref = await addDoc(collection(db, `users/${currentUser.uid}/boards`), {
+                // ESTRUCTURA NUEVA: Raíz 'boards'
+                const ref = await addDoc(collection(db, 'boards'), {
                     name: name,
+                    ownerId: currentUser.uid,
+                    ownerEmail: currentUser.email,
+                    members: [currentUser.email], // Array para permisos
                     createdAt: serverTimestamp(),
                     columns: { todo: [], doing: [], done: [] }
                 });
                 openBoard(ref.id);
+                showToast("✅ Proyecto creado");
             } catch (e) {
-                alert("Error al guardar. Verifica que creaste la BD en 'Standard Edition' y 'Test Mode'.");
-                console.error(e);
+                alert("Error: " + e.message);
             }
         };
 
-        function openBoard(id) {
+        window.openBoard = (id) => {
             if (unsubscribeBoard) unsubscribeBoard();
-            dataLoaded = false; 
             currentBoardId = id;
-            localStorage.setItem('lastBoardId', id);
+            localStorage.setItem('lastBoard', id);
             
-            document.getElementById('loading-screen').style.display = 'flex';
+            // Visual Active State
+            document.querySelectorAll('.board-item').forEach(el => el.classList.remove('active'));
+            // (Se actualizará al repintar la lista, pero esto da feedback rápido)
 
-            unsubscribeBoard = onSnapshot(doc(db, `users/${currentUser.uid}/boards`, id), (docSnap) => {
-                document.getElementById('loading-screen').style.display = 'none';
-                
-                if (!docSnap.exists()) return; 
-                
-                boardData = docSnap.data();
-                dataLoaded = true; 
-                
+            unsubscribeBoard = onSnapshot(doc(db, 'boards', id), (snap) => {
+                if (!snap.exists()) {
+                    document.getElementById('kanban').innerHTML = "<p>El tablero no existe o te quitaron el acceso.</p>";
+                    return;
+                }
+                boardData = snap.data();
                 document.getElementById('header-title').innerText = boardData.name;
-                renderKanban();
                 
-                document.querySelectorAll('.board-item').forEach(el => el.classList.remove('active'));
+                // Mostrar botón compartir solo si soy el dueño
+                document.getElementById('btn-share').style.display = (boardData.ownerId === currentUser.uid) ? 'block' : 'none';
+                
+                renderKanban();
             });
-        }
+        };
 
-        // 3. RENDERIZADO
+        // --- 3. COMPARTIR (NUEVO) ---
+        window.openShareModal = () => document.getElementById('share-modal').style.display = 'flex';
+        
+        window.shareBoard = async () => {
+            const email = document.getElementById('share-email').value.trim();
+            if (!email) return;
+            
+            try {
+                await updateDoc(doc(db, 'boards', currentBoardId), {
+                    members: arrayUnion(email) // Magia de Firestore: Añade sin duplicar
+                });
+                showToast(`📧 Invitación enviada a ${email}`);
+                document.getElementById('share-modal').style.display = 'none';
+                document.getElementById('share-email').value = '';
+            } catch (e) {
+                alert("Error al compartir: " + e.message);
+            }
+        };
+
+        // --- 4. KANBAN Y EDICIÓN ---
         function renderKanban() {
             const container = document.getElementById('kanban');
             container.innerHTML = '';
-            
             const cols = { todo: "Pendientes", doing: "En Proceso", done: "Hecho" };
-            
-            for (const [key, title] of Object.entries(cols)) {
+
+            Object.keys(cols).forEach(key => {
                 const list = document.createElement('div');
                 list.className = 'list';
+                list.innerHTML = `
+                    <h4 style="margin:0 0 10px;">${cols[key]}</h4>
+                    <div class="cards" id="${key}"></div>
+                    <button class="secondary" style="color:#666; border:1px dashed #ccc;" onclick="addTask('${key}')">+ Añadir</button>
+                `;
                 
-                const addBtn = `<button onclick="window.addTask('${key}')" style="background:transparent; color:#666; border:1px dashed #ccc; margin-bottom:10px;">+ Añadir</button>`;
-                
-                list.innerHTML = `<h4>${title}</h4><div class="cards" id="col-${key}"></div>${addBtn}`;
-                
-                const cardArea = list.querySelector('.cards');
-                cardArea.ondragover = e => e.preventDefault();
-                cardArea.ondrop = e => handleDrop(e, key);
+                const cardsDiv = list.querySelector('.cards');
+                cardsDiv.ondragover = e => e.preventDefault();
+                cardsDiv.ondrop = e => handleDrop(e, key);
 
                 (boardData.columns[key] || []).forEach(task => {
                     const card = document.createElement('div');
                     card.className = `card ${task.priority}`;
-                    card.innerText = task.title;
                     card.draggable = true;
-                    card.ondragstart = e => e.dataTransfer.setData('text', JSON.stringify({ id: task.id, src: key }));
-                    card.onclick = () => openModal(task, key);
-                    cardArea.appendChild(card);
+                    card.innerHTML = `<div>${task.title}</div>`;
+                    if(task.checklist && task.checklist.length > 0) {
+                        const done = task.checklist.filter(c => c.done).length;
+                        card.innerHTML += `<div style="font-size:0.75rem; color:#666; margin-top:5px;">☑ ${done}/${task.checklist.length}</div>`;
+                    }
+                    
+                    card.ondragstart = e => e.dataTransfer.setData('text', JSON.stringify({id: task.id, src: key}));
+                    card.onclick = () => openTaskModal(task, key);
+                    cardsDiv.appendChild(card);
                 });
-                
                 container.appendChild(list);
-            }
+            });
         }
 
-        // 4. GUARDADO
-        async function saveToCloud() {
-            if (!dataLoaded || !currentBoardId) return; 
-            
-            const indicator = document.getElementById('save-indicator');
-            indicator.style.display = 'block';
-            indicator.innerText = "Guardando...";
-
-            try {
-                await updateDoc(doc(db, `users/${currentUser.uid}/boards`, currentBoardId), {
-                    columns: boardData.columns
-                });
-                indicator.innerText = "✅ Guardado";
-                setTimeout(() => indicator.style.display = 'none', 1500);
-            } catch (e) {
-                indicator.innerText = "❌ Error";
-                console.error(e);
-            }
+        async function save() {
+            if (!currentBoardId) return;
+            document.getElementById('save-status').style.display = 'block';
+            await updateDoc(doc(db, 'boards', currentBoardId), { columns: boardData.columns });
+            setTimeout(() => document.getElementById('save-status').style.display = 'none', 1000);
         }
 
-        // 5. OPERACIONES
         window.addTask = (col) => {
-            const title = prompt("Tarea:");
-            if (!title) return;
-            if (!boardData.columns[col]) boardData.columns[col] = [];
-            
-            boardData.columns[col].push({ id: Date.now().toString(), title, priority: 'low', desc: '', checklist: [] });
-            renderKanban();
-            saveToCloud();
+            const t = prompt("Nueva Tarea:");
+            if(!t) return;
+            boardData.columns[col].push({ id: Date.now().toString(), title: t, priority: 'low', desc: '', checklist: [] });
+            renderKanban(); save();
         };
 
-        window.handleDrop = (e, destCol) => {
+        window.handleDrop = (e, dest) => {
             e.preventDefault();
-            const data = JSON.parse(e.dataTransfer.getData('text'));
-            if (data.src === destCol) return;
-
-            const srcList = boardData.columns[data.src];
-            const idx = srcList.findIndex(t => t.id === data.id);
-            if(idx > -1) {
-                const [task] = srcList.splice(idx, 1);
-                if (!boardData.columns[destCol]) boardData.columns[destCol] = [];
-                boardData.columns[destCol].push(task);
-                renderKanban();
-                saveToCloud();
-            }
+            const {id, src} = JSON.parse(e.dataTransfer.getData('text'));
+            if(src === dest) return;
+            const idx = boardData.columns[src].findIndex(x => x.id === id);
+            const [task] = boardData.columns[src].splice(idx, 1);
+            boardData.columns[dest].push(task);
+            renderKanban(); save();
         };
 
-        // 6. MODAL
-        let editTask = null;
-        let editCol = null;
-
-        window.openModal = (task, col) => {
-            editTask = task; editCol = col;
+        // --- 5. MODAL TAREA ---
+        let editT = null;
+        
+        window.openTaskModal = (task, col) => {
+            editT = task; 
+            // Bindear valores
             document.getElementById('m-title').value = task.title;
-            document.getElementById('m-priority').value = task.priority || 'low';
+            document.getElementById('m-priority').value = task.priority;
             document.getElementById('m-desc').value = task.desc || '';
-            renderChecklist();
-            document.getElementById('modal-overlay').style.display = 'flex';
+            renderChecks();
+            document.getElementById('task-modal').style.display = 'flex';
         };
 
-        window.closeModal = () => document.getElementById('modal-overlay').style.display = 'none';
+        window.closeModal = () => document.getElementById('task-modal').style.display = 'none';
 
-        window.renderChecklist = () => {
+        window.renderChecks = () => {
             const div = document.getElementById('m-checklist');
-            div.innerHTML = (editTask.checklist || []).map((item, i) => `
-                <div class="checklist-item">
-                    <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleCheck(${i})" style="width:auto;">
-                    <span style="${item.done ? 'text-decoration:line-through; color:#aaa;' : ''}">${item.text}</span>
-                    <span onclick="deleteCheck(${i})" style="margin-left:auto; color:red; cursor:pointer;">&times;</span>
+            div.innerHTML = (editT.checklist||[]).map((c, i) => `
+                <div style="display:flex; gap:10px; align-items:center; margin-bottom:5px;">
+                    <input type="checkbox" ${c.done?'checked':''} onchange="toggleCheck(${i})" style="width:20px;">
+                    <span style="${c.done?'text-decoration:line-through; color:#aaa':''}">${c.text}</span>
+                    <span style="color:red; cursor:pointer; margin-left:auto;" onclick="delCheck(${i})">&times;</span>
                 </div>
             `).join('');
         };
 
         window.addCheck = () => {
-            const val = document.getElementById('m-new-check').value;
-            if(!val) return;
-            if(!editTask.checklist) editTask.checklist = [];
-            editTask.checklist.push({ text: val, done: false });
+            const v = document.getElementById('m-new-check').value;
+            if(!v) return;
+            if(!editT.checklist) editT.checklist = [];
+            editT.checklist.push({text: v, done: false});
             document.getElementById('m-new-check').value = '';
-            renderChecklist();
-            saveToCloud();
+            renderChecks(); save();
         };
 
-        window.toggleCheck = (i) => {
-            editTask.checklist[i].done = !editTask.checklist[i].done;
-            renderChecklist(); 
-            saveToCloud();
+        window.toggleCheck = (i) => { editT.checklist[i].done = !editT.checklist[i].done; renderChecks(); save(); };
+        window.delCheck = (i) => { editT.checklist.splice(i, 1); renderChecks(); save(); };
+
+        window.updateTask = () => {
+            editT.title = document.getElementById('m-title').value;
+            editT.priority = document.getElementById('m-priority').value;
+            editT.desc = document.getElementById('m-desc').value;
+            renderKanban(); save();
         };
 
-        window.deleteCheck = (i) => {
-            editTask.checklist.splice(i, 1);
-            renderChecklist();
-            saveToCloud();
+        window.deleteTask = () => {
+            if(!confirm("¿Eliminar tarea?")) return;
+            // Buscar en todas las columnas
+            Object.keys(boardData.columns).forEach(k => {
+                boardData.columns[k] = boardData.columns[k].filter(x => x.id !== editT.id);
+            });
+            closeModal(); renderKanban(); save();
         };
 
-        window.updateTaskMeta = () => {
-            if (!editTask) return;
-            editTask.title = document.getElementById('m-title').value;
-            editTask.priority = document.getElementById('m-priority').value;
-            editTask.desc = document.getElementById('m-desc').value;
-            renderKanban(); 
-            saveToCloud();
-        };
+        // Helpers
+        function _val(id) { return document.getElementById(id).value; }
+        function _err(msg) { document.getElementById('auth-msg').innerText = msg; }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.opacity = 1;
+            setTimeout(() => t.style.opacity = 0, 3000);
+        }
+        
+        // Auto-guardado en título
+        document.getElementById('m-title').onblur = updateTask;
 
-        window.deleteCard = () => {
-            if(!confirm("¿Borrar definitivamente?")) return;
-            const list = boardData.columns[editCol];
-            const idx = list.findIndex(t => t.id === editTask.id);
-            if (idx > -1) list.splice(idx, 1);
-            closeModal();
-            renderKanban();
-            saveToCloud();
-        };
-
-        document.getElementById('m-title').onblur = updateTaskMeta;
     </script>
 </body>
 </html>
