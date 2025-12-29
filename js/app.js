@@ -1,225 +1,137 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { db, auth } from './firebase-config.js';
+import { initAuth } from './auth.js';
+import { doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-const firebaseConfig = {
-    apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
-    authDomain: "trello-d2532.firebaseapp.com",
-    projectId: "trello-d2532",
-    storageBucket: "trello-d2532.firebasestorage.app",
-    messagingSenderId: "630892154656",
-    appId: "1:630892154656:web:1d0dfce355216a1d879145",
-    measurementId: "G-4L4P7E6TZC"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-
-const MEMBERS = [
-    { id: 'u1', name: 'Juan', initial: 'JP', color: '#e91e63' },
-    { id: 'u2', name: 'Maria', initial: 'ML', color: '#9c27b0' },
-    { id: 'u3', name: 'Carlos', initial: 'CR', color: '#2196f3' },
-    { id: 'u4', name: 'Ana', initial: 'AV', color: '#4caf50' }
-];
-
-let boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' } };
+let boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' }, collaborators: [] };
 let currentEditingId = null;
+let currentUser = null;
+let isDataLoaded = false; // Bandera para evitar que el save() inicial borre datos
 
-// --- GLOBALES ---
-window.handleAddNewCard = function(btn) {
+// --- LÓGICA DE PERSISTENCIA POR USUARIO (CARPETAS) ---
+initAuth((user) => {
+    currentUser = user;
+    document.getElementById('user-display').innerText = user.email;
+    document.getElementById('loading-screen').style.display = 'flex';
+    startSync();
+});
+
+function startSync() {
+    // Apuntamos a una "carpeta" única para este usuario usando su UID
+    const userDocRef = doc(db, "user_boards", currentUser.uid);
+
+    onSnapshot(userDocRef, (snap) => {
+        if (snap.exists()) {
+            boardData = snap.data();
+            isDataLoaded = true; // Confirmamos que ya leímos datos reales
+            renderBoard();
+            renderHistory();
+            document.body.className = (boardData.settings?.theme || 'light') + '-theme';
+        } else {
+            // Si el usuario es nuevo, creamos su carpeta inicial
+            boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' }, collaborators: [currentUser.email] };
+            isDataLoaded = true;
+            save();
+        }
+        document.getElementById('loading-screen').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+    });
+}
+
+async function save() {
+    // IMPORTANTE: Solo guardamos si hemos cargado datos previamente para no sobreescribir con vacío
+    if (!isDataLoaded || !currentUser) return;
+    await setDoc(doc(db, "user_boards", currentUser.uid), boardData);
+}
+
+// --- FUNCIONES DEL TABLERO ---
+window.handleAddNewCard = (btn) => {
     const input = btn.parentElement.querySelector('.card-input');
     const colId = btn.closest('.list').dataset.id;
     if (!input.value.trim()) return;
     const newCard = { id: 'c'+Date.now(), title: input.value, desc: '', tags: [], members: [], date: '', checklist: [], priority: 'low' };
     boardData[colId].push(newCard);
-    addLog(`Tarea creada: ${newCard.title}`);
+    addLog(`Nueva tarea: ${newCard.title}`);
     input.value = ''; save();
 };
 
-window.allowDrop = (e) => e.preventDefault();
 window.drop = (e) => {
-    e.preventDefault();
     const id = e.dataTransfer.getData("text");
     const targetCol = e.target.closest('.list').dataset.id;
-    let cardObj, oldCol;
-    ['todo','in-progress','done'].forEach(c => {
-        const idx = boardData[c].findIndex(x => x.id === id);
-        if(idx !== -1) { oldCol = c; cardObj = boardData[c].splice(idx,1)[0]; }
+    let cardObj;
+    ['todo', 'in-progress', 'done'].forEach(col => {
+        const idx = boardData[col].findIndex(c => c.id === id);
+        if(idx !== -1) cardObj = boardData[col].splice(idx, 1)[0];
     });
-    if(cardObj) { boardData[targetCol].push(cardObj); addLog(`Movido: "${cardObj.title}" a ${targetCol}`); save(); }
+    if(cardObj) { boardData[targetCol].push(cardObj); addLog(`Movido a ${targetCol}`); save(); }
 };
 
-window.updatePriority = () => {
-    const card = findCard(currentEditingId);
-    card.priority = document.getElementById('modal-priority').value;
-    renderBoard(); save();
-};
-
-window.addTag = () => {
-    const input = document.getElementById('tag-input');
-    const card = findCard(currentEditingId);
-    if(input.value && !card.tags.includes(input.value)) { card.tags.push(input.value); renderTags(card); renderBoard(); save(); }
-    input.value = '';
-};
-
-window.toggleMember = (mId) => {
-    const card = findCard(currentEditingId);
-    if(!card.members) card.members = [];
-    const idx = card.members.indexOf(mId);
-    idx === -1 ? card.members.push(mId) : card.members.splice(idx, 1);
-    renderMembers(card); renderBoard(); save();
-};
-
-window.addChecklistItem = () => {
-    const input = document.getElementById('new-check-input');
-    const card = findCard(currentEditingId);
-    if(!input.value) return;
-    if(!card.checklist) card.checklist = [];
-    card.checklist.push({ text: input.value, done: false });
-    input.value = ''; renderChecklist(card); renderBoard(); save();
-};
-
-window.toggleCheck = (i) => {
-    const card = findCard(currentEditingId);
-    card.checklist[i].done = !card.checklist[i].done;
-    renderChecklist(card); renderBoard(); save();
-};
-
-window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
-
-window.archiveCardFromModal = () => {
-    if(confirm("¿Eliminar tarea permanentemente?")) {
-        ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId));
-        window.closeModal(); save();
-    }
-};
-
-window.searchCards = () => {
-    const q = document.getElementById('board-search').value.toLowerCase();
-    document.querySelectorAll('.card').forEach(el => {
-        const c = findCard(el.id);
-        const match = c.title.toLowerCase().includes(q) || c.priority.includes(q) || MEMBERS.some(m => c.members.includes(m.id) && m.name.toLowerCase().includes(q));
-        el.style.display = match ? 'block' : 'none';
-    });
-};
-
-// --- CORE ---
-async function save() { await setDoc(doc(db, "boards", "master"), boardData); }
-
-function startSync() {
-    onSnapshot(doc(db, "boards", "master"), (snap) => {
-        if (snap.exists()) {
-            boardData = snap.data();
-            renderBoard(); renderHistory();
-            document.body.className = (boardData.settings?.theme || 'light') + '-theme';
-        } else { save(); }
-    });
-}
+window.allowDrop = (e) => e.preventDefault();
 
 function renderBoard() {
     ['todo', 'in-progress', 'done'].forEach(col => {
-        const container = document.getElementById(col); container.innerHTML = '';
+        const cont = document.getElementById(col); cont.innerHTML = '';
         (boardData[col] || []).forEach(card => {
             const el = document.createElement('div');
-            el.className = `card ${card.priority}`; el.draggable = true; el.id = card.id;
+            el.className = `card ${card.priority}`; el.draggable = true;
+            el.id = card.id;
             el.onclick = () => openModal(card.id);
             el.ondragstart = (e) => e.dataTransfer.setData("text", card.id);
-            const mIcons = (card.members || []).map(mId => {
-                const m = MEMBERS.find(u => u.id === mId);
-                return `<div class="avatar" style="background:${m.color}">${m.initial}</div>`;
-            }).join('');
-            el.innerHTML = `
-                <div class="card-tags">${(card.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
-                <strong>${card.title}</strong>
-                <div class="card-footer" style="display:flex; justify-content:space-between; align-items:center;">
-                    <small>${card.date ? '📅 '+card.date : ''}</small>
-                    <div class="avatar-stack">${mIcons}</div>
-                </div>`;
-            container.appendChild(el);
+            el.innerHTML = `<strong>${card.title}</strong><br><small>${card.date || ''}</small>`;
+            cont.appendChild(el);
         });
     });
-    updateStats();
 }
 
+// --- MODAL Y DETALLES ---
 function openModal(id) {
-    currentEditingId = id;
-    const card = findCard(id);
+    currentEditingId = id; const card = findCard(id);
     document.getElementById('modal-title').value = card.title;
     document.getElementById('modal-desc').value = card.desc || '';
-    document.getElementById('modal-date').value = card.date || '';
     document.getElementById('modal-priority').value = card.priority || 'low';
-    renderMembers(card); renderTags(card); renderChecklist(card);
+    renderChecklist(card);
     document.getElementById('card-modal').style.display = 'block';
 }
 
 function findCard(id) { return [...boardData.todo, ...boardData['in-progress'], ...boardData.done].find(c => c.id === id); }
 
-function renderMembers(card) {
-    document.getElementById('modal-members').innerHTML = MEMBERS.map(m => `
-        <div class="avatar avatar-selectable ${card.members?.includes(m.id) ? 'selected' : ''}" 
-             style="background:${m.color}" onclick="window.toggleMember('${m.id}')">${m.initial}</div>`).join('');
-}
-
-function renderTags(card) { document.getElementById('modal-tags').innerHTML = (card.tags || []).map(t => `<span class="tag">${t}</span>`).join(''); }
+window.addChecklistItem = () => {
+    const input = document.getElementById('new-check-input');
+    const card = findCard(currentEditingId);
+    if(!card.checklist) card.checklist = [];
+    card.checklist.push({ text: input.value, done: false });
+    input.value = ''; renderChecklist(card); save();
+};
 
 function renderChecklist(card) {
     const cont = document.getElementById('modal-checklist');
     cont.innerHTML = (card.checklist || []).map((item, i) => `
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
-            <input type="checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleCheck(${i})">
-            <span>${item.text}</span>
-        </div>`).join('');
-    const done = card.checklist ? card.checklist.filter(x => x.done).length : 0;
-    const pc = (card.checklist && card.checklist.length) ? Math.round((done/card.checklist.length)*100) : 0;
-    document.getElementById('progress-fill').style.width = pc+'%';
-    document.getElementById('check-percent').innerText = pc+'%';
+        <div><input type="checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleCheck(${i})"> ${item.text}</div>
+    `).join('');
 }
 
-function addLog(action) {
+window.toggleCheck = (i) => { const card = findCard(currentEditingId); card.checklist[i].done = !card.checklist[i].done; renderChecklist(card); save(); };
+
+window.updatePriority = () => { findCard(currentEditingId).priority = document.getElementById('modal-priority').value; renderBoard(); save(); };
+
+window.archiveCardFromModal = () => {
+    if(confirm("¿Eliminar?")) {
+        ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId));
+        window.closeModal(); save();
+    }
+};
+
+window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
+
+function addLog(msg) {
     if(!boardData.history) boardData.history = [];
-    boardData.history.unshift({ time: new Date().toLocaleTimeString(), action });
-    if(boardData.history.length > 20) boardData.history.pop();
+    boardData.history.unshift({t: new Date().toLocaleTimeString(), m: msg});
 }
 
 function renderHistory() {
-    document.getElementById('history-log').innerHTML = (boardData.history || []).map(h => `<div><b>${h.time}</b>: ${h.action}</div>`).join('');
+    document.getElementById('history-log').innerHTML = (boardData.history || []).map(h => `<div>${h.t}: ${h.m}</div>`).join('');
 }
 
-function updateStats() {
-    const total = boardData.todo.length + boardData['in-progress'].length + boardData.done.length;
-    document.getElementById('board-stats').innerHTML = `<span>Tareas: ${total}</span> | <span>Completadas: ${boardData.done.length}</span>`;
-}
-
-// Auth & Listeners
-document.getElementById('btn-login').onclick = () => {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-pass').value;
-    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Credenciales incorrectas"));
-};
-
-document.getElementById('btn-signup').onclick = () => {
-    const e = document.getElementById('login-email').value;
-    const p = document.getElementById('login-pass').value;
-    createUserWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
-};
-
-onAuthStateChanged(auth, user => {
-    if (user) {
-        document.getElementById('auth-container').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-        document.getElementById('user-display').innerText = user.email;
-        startSync();
-    } else {
-        document.getElementById('auth-container').style.display = 'flex';
-        document.getElementById('app-container').style.display = 'none';
-    }
-});
-
+// Guardado de campos de texto
 document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; renderBoard(); save(); };
 document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; save(); };
-document.getElementById('modal-date').onchange = e => { findCard(currentEditingId).date = e.target.value; renderBoard(); save(); };
 document.getElementById('btn-theme').onclick = () => { boardData.settings.theme = boardData.settings.theme === 'light' ? 'dark' : 'light'; save(); };
-document.getElementById('btn-toggle-log').onclick = () => document.getElementById('history-panel').classList.toggle('active');
-document.getElementById('close-history').onclick = () => document.getElementById('history-panel').classList.remove('active');
-document.getElementById('btn-logout').onclick = () => signOut(auth);
