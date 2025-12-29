@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v37 | Ultimate + AI</title>
+    <title>Pro-Task v38 | Fixed & Stable</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -11,148 +11,86 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
     <style>
-        /* --- VARIABLES CSS (THEMING) --- */
+        /* --- ESTILOS BASE --- */
         :root {
-            --primary: #0079bf; --primary-dark: #055a8c;
-            --bg: #ffffff; --sidebar: #f4f5f7; --surface: #ffffff;
+            --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --surface: #ffffff;
             --text: #172b4d; --text-sub: #5e6c84; --border: #dfe1e6;
-            --success: #61bd4f; --danger: #eb5a46; --warning: #ff9f1a; --info: #00c2e0;
-            --shadow: 0 1px 2px rgba(0,0,0,0.15);
-            --radius: 6px;
+            --success: #61bd4f; --danger: #eb5a46; --warning: #ff9f1a;
+            --shadow: 0 1px 3px rgba(0,0,0,0.12); --radius: 6px;
         }
-
         [data-theme="dark"] {
-            --primary: #4a90e2; --primary-dark: #357abd;
-            --bg: #1e1e1e; --sidebar: #252526; --surface: #2d2d30;
+            --primary: #4a90e2; --bg: #1e1e1e; --sidebar: #252526; --surface: #2d2d30;
             --text: #e1e1e1; --text-sub: #a1a1a1; --border: #3e3e42;
-            --shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
-
-        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); background: var(--bg); transition: background 0.3s; user-select: none; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); background: var(--bg); user-select: none; }
         
-        /* --- LAYOUT --- */
+        /* LAYOUT */
         .app-container { display: flex; width: 100%; height: 100%; }
-        .sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
+        .sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; }
         .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; overflow: hidden; }
-        
-        /* HEADER & SEARCH */
         header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 55px; display: flex; align-items: center; justify-content: space-between; }
-        .search-box { position: relative; width: 250px; }
-        .search-box input { width: 100%; padding: 6px 10px 6px 30px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
-        .search-box span { position: absolute; left: 10px; top: 6px; color: var(--text-sub); }
-
-        /* KANBAN */
+        
+        /* KANBAN ROBUSTO */
         .kanban { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; }
-        .list { background: var(--sidebar); width: 280px; min-width: 280px; border-radius: var(--radius); padding: 10px; max-height: 90%; display: flex; flex-direction: column; border: 1px solid var(--border); transition: 0.2s;}
-        .list.drag-hover { box-shadow: 0 0 15px var(--primary); border: 2px solid var(--primary); transform: scale(1.02); } /* Feedback visual IA */
+        .list { background: var(--sidebar); width: 280px; min-width: 280px; border-radius: var(--radius); padding: 10px; max-height: 90%; display: flex; flex-direction: column; border: 1px solid var(--border); }
         .list h4 { margin: 0 0 10px 5px; color: var(--text); font-weight: 700; display:flex; justify-content:space-between; }
-        .cards { flex: 1; overflow-y: auto; min-height: 20px; padding-right: 4px; }
+        .cards { flex: 1; overflow-y: auto; min-height: 20px; padding-right: 4px; margin-bottom: 10px; }
         
-        /* TARJETAS AVANZADAS */
-        .card { background: var(--surface); padding: 0; margin-bottom: 10px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); position: relative; transition: transform 0.15s, box-shadow 0.15s; overflow: hidden; }
+        /* TARJETA */
+        .card { background: var(--surface); padding: 10px; margin-bottom: 8px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); position: relative; }
         .card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
-        
-        .card-cover { height: 80px; background-size: cover; background-position: center; display: none; }
-        .card-content { padding: 10px; }
-        
-        /* Etiquetas */
         .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 5px; }
-        .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; color: white; font-weight: 600; }
-        .tag.bug { background: var(--danger); }
-        .tag.design { background: #9b59b6; }
-        .tag.urgent { background: var(--warning); }
-        .tag.feature { background: var(--info); }
+        .tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; color: white; font-weight: 600; }
+        .tag.urgent { background: var(--warning); } .tag.bug { background: var(--danger); }
+        .card-meta { display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; color: var(--text-sub); }
         
-        /* Meta Datos */
-        .card-meta { display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; color: var(--text-sub); align-items: center; }
-        .meta-badge { display: flex; align-items: center; gap: 3px; background: var(--bg); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border); }
-        .meta-badge.overdue { background: #ffe3e3; color: var(--danger); border-color: var(--danger); }
-        .meta-badge.today { background: #fff8e1; color: var(--warning); border-color: var(--warning); }
-        
-        /* Barra Progreso */
-        .progress-bar { height: 4px; background: #eee; border-radius: 2px; margin-top: 8px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
-        
-        /* Avatares */
-        .avatars { display: flex; margin-top: 8px; justify-content: flex-end; }
-        .avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; border: 2px solid var(--surface); margin-left: -5px; }
+        /* BOTONES */
+        button { cursor: pointer; border: none; padding: 8px 12px; border-radius: 4px; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: rgba(0,0,0,0.05); }
+        .btn-add-task { width: 100%; text-align: left; background: transparent; color: var(--text-sub); border: 1px dashed var(--border); padding: 8px; }
+        .btn-add-task:hover { background: rgba(0,0,0,0.05); color: var(--primary); border-color: var(--primary); }
 
-        /* --- MENÚ CONTEXTUAL --- */
-        #context-menu { position: absolute; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-radius: 4px; width: 150px; display: none; z-index: 5000; overflow: hidden; }
-        .ctx-item { padding: 8px 12px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; color: var(--text); }
-        .ctx-item:hover { background: var(--sidebar); }
-        .ctx-danger { color: var(--danger); }
+        /* UI ELEMENTS */
+        input, select, textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; }
+        
+        /* VISIÓN IA ELEMENTS */
+        #webcam-container { position: fixed; bottom: 80px; right: 20px; width: 160px; height: 120px; background: black; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary); z-index: 5000; display: none; transform: scaleX(-1); }
+        #webcam-feed { width: 100%; height: 100%; object-fit: cover; }
+        #virtual-cursor { position: fixed; top: 0; left: 0; width: 25px; height: 25px; background: rgba(0, 121, 191, 0.5); border: 2px solid white; border-radius: 50%; pointer-events: none; z-index: 9999; display: none; transform: translate(-50%, -50%); transition: background 0.1s; }
+        #virtual-cursor.pinching { background: var(--success); width: 15px; height: 15px; border-color: lime; }
+        #ai-ghost-card { position: fixed; width: 260px; padding: 15px; background: var(--surface); box-shadow: 0 15px 30px rgba(0,0,0,0.4); border-radius: 8px; border: 2px solid var(--success); z-index: 9998; pointer-events: none; opacity: 0.95; display: none; transform: rotate(3deg); }
+        .ai-toggle { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: var(--bg); padding: 12px 24px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 5001; display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer; }
 
-        /* --- MODALES --- */
+        /* MODAL Y TABS */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(2px); }
-        .box { background: var(--surface); padding: 25px; border-radius: 8px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--border); }
+        .box { background: var(--surface); padding: 25px; border-radius: 8px; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--border); }
         .modal-lg { width: 700px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
-        
-        /* Modal Tabs */
         .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
         .tab { padding: 10px 15px; cursor: pointer; color: var(--text-sub); border-bottom: 2px solid transparent; }
         .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: bold; }
         
-        /* Comentarios */
-        .comment-list { max-height: 200px; overflow-y: auto; background: var(--sidebar); padding: 10px; border-radius: 4px; margin-bottom: 10px; }
-        .comment-item { font-size: 0.85rem; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #ddd; }
-        .comment-header { font-weight: bold; font-size: 0.75rem; color: var(--primary); display: flex; justify-content: space-between; }
-
-        /* Actividad / Log */
-        .activity-panel { position: fixed; right: -300px; top: 55px; bottom: 0; width: 300px; background: var(--surface); border-left: 1px solid var(--border); transition: 0.3s; padding: 20px; overflow-y: auto; z-index: 1000; }
-        .activity-panel.open { right: 0; }
-        .log-item { font-size: 0.8rem; margin-bottom: 10px; color: var(--text-sub); border-left: 2px solid var(--border); padding-left: 8px; }
-
-        /* UI Elements */
-        input, select, textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; font-family: inherit; }
-        button { cursor: pointer; border: none; padding: 8px 12px; border-radius: 4px; font-weight: 600; transition: 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { filter: brightness(1.1); }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
-        .btn-ghost:hover { background: var(--sidebar); }
-        
-        /* Toast Undo */
-        #toast-undo { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 4px; display: none; align-items: center; gap: 15px; z-index: 6000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
-
-        /* --- AGREGADOS IA (Cámara, Cursor, Voz) --- */
-        #webcam-container {
-            position: fixed; bottom: 80px; right: 20px; width: 160px; height: 120px;
-            background: black; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary);
-            z-index: 5000; display: none; transform: scaleX(-1);
-        }
-        #webcam-feed { width: 100%; height: 100%; object-fit: cover; }
-        
-        #virtual-cursor {
-            position: fixed; top: 0; left: 0; width: 25px; height: 25px;
-            background: rgba(0, 121, 191, 0.5); border: 2px solid white;
-            border-radius: 50%; pointer-events: none; z-index: 9999;
-            transform: translate(-50%, -50%); display: none;
-            box-shadow: 0 0 15px var(--primary); transition: background 0.1s, width 0.1s, height 0.1s;
-        }
-        #virtual-cursor.pinching { background: var(--success); width: 15px; height: 15px; border-color: lime; }
-
-        #ai-ghost-card {
-            position: fixed; width: 260px; padding: 15px; background: var(--surface);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.4); border-radius: 8px;
-            border: 2px solid var(--success); z-index: 9998;
-            pointer-events: none; opacity: 0.95; display: none; transform: rotate(3deg) scale(1.05);
-        }
-
-        .ai-toggle {
-            position: fixed; bottom: 20px; right: 20px; 
-            background: var(--text); color: var(--bg); 
-            padding: 12px 24px; border-radius: 30px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 5001;
-            display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;
-        }
-
-        /* Micrófono Estilos */
+        /* MICROFONO */
         .mic-wrapper { position: relative; display: flex; align-items: center; width: 100%; margin-bottom: 10px; }
-        .mic-wrapper input, .mic-wrapper textarea { padding-right: 40px; }
-        .mic-btn { position: absolute; right: 5px; top: 5px; background: transparent; border: none; font-size: 1.2rem; cursor: pointer; color: var(--danger); opacity: 0.6; z-index: 10; }
-        .mic-btn:hover { opacity: 1; transform: scale(1.1); }
-        .mic-active { animation: pulse 1s infinite; opacity: 1; color: red; }
+        .mic-wrapper input, .mic-wrapper textarea { padding-right: 45px; }
+        .mic-btn { 
+            position: absolute; right: 5px; top: 50%; transform: translateY(-50%); 
+            background: var(--danger); color: white; border-radius: 50%; width: 30px; height: 30px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem;
+            z-index: 10;
+        }
+        .mic-btn:hover { background: red; }
+        .mic-active { animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) scale(1.2); } 100% { transform: translateY(-50%) scale(1); } }
+
+        /* UTILIDADES */
+        .board-item { padding: 10px; cursor: pointer; border-radius: 4px; color: var(--text); margin-bottom: 2px; }
+        .board-item:hover { background: rgba(0,0,0,0.05); }
+        .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: bold; }
+        .checklist-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #eee; }
+        #toast { position: fixed; top: 70px; right: 20px; background: #333; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 6000; }
+        #toast.show { opacity: 1; pointer-events: auto; }
     </style>
 </head>
 <body>
@@ -160,93 +98,53 @@
     <div id="virtual-cursor"></div>
     <div id="ai-ghost-card">
         <strong id="ghost-title">Tarea</strong>
-        <div style="font-size:0.8rem; margin-top:5px; color:var(--text-sub);">Suelta los dedos para dejar caer</div>
+        <div style="font-size:0.8rem; margin-top:5px; color:var(--text-sub);">Abre la mano para soltar</div>
     </div>
-    
     <div id="webcam-container">
         <video id="webcam-feed" autoplay playsinline></video>
     </div>
+    <div id="toast"><strong id="toast-title"></strong><div id="toast-msg"></div></div>
 
-    <button class="ai-toggle" onclick="window.toggleAI()">
-        👁️ Activar Cámara
-    </button>
-
-    <div id="context-menu">
-        <div class="ctx-item" onclick="window.duplicateTaskCtx()">📄 Duplicar</div>
-        <div class="ctx-item" onclick="window.moveTaskCtx('done')">✅ Mover a Hecho</div>
-        <div class="ctx-item ctx-danger" onclick="window.deleteTaskCtx()">🗑️ Eliminar</div>
-    </div>
-
-    <div id="toast-undo">
-        <span>Acción realizada</span>
-        <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="window.undoAction()">DESHACER</button>
-    </div>
-
-    <div id="activity-panel" class="activity-panel">
-        <h3>📜 Historial</h3>
-        <div id="activity-list"></div>
-    </div>
+    <button class="ai-toggle" onclick="window.toggleAI()">👁️ Activar Cámara</button>
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="color:var(--primary); text-align:center;">Pro-Task Ultimate</h2>
-            <p style="text-align:center; color:white; opacity:0.8;">+ AI Vision & Voice</p>
-            <input type="email" id="email" placeholder="Correo electrónico">
-            <input type="password" id="password" placeholder="Contraseña">
-            <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="window.login()">Entrar</button>
-            <button class="btn-ghost" style="width:100%; margin-top:5px; color:white; border:1px solid white;" onclick="window.register()">Registrarse</button>
-            <p id="auth-msg" style="color:var(--danger); font-size:0.8rem; text-align:center; background:white; padding:5px; display:none; border-radius:4px; margin-top:5px;"></p>
+            <h2 style="text-align:center; color:white;">Pro-Task v38</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button class="btn-primary" style="width:100%; margin-top:10px; background:white; color:var(--primary);" onclick="window.login()">Entrar</button>
+            <button class="btn-ghost" style="width:100%; margin-top:5px; color:white; border-color:white;" onclick="window.register()">Crear Cuenta</button>
+            <p id="auth-msg" style="color:white; text-align:center; margin-top:10px;"></p>
         </div>
     </div>
 
     <div id="app-screen" class="app-container" style="display: none;">
-        
         <div class="sidebar">
-            <div style="padding:15px; font-weight:bold; color:var(--primary); display:flex; align-items:center; gap:10px;">
-                <span>⚡ PRO-TASK</span>
-                <button onclick="window.toggleTheme()" style="background:none; border:none; font-size:1.2rem;">🌓</button>
-            </div>
-            
-            <div style="padding:0 10px; font-size:0.75rem; color:var(--text-sub); font-weight:bold;">MIS PROYECTOS</div>
+            <div style="padding:15px; font-weight:bold; color:var(--primary);">⚡ PRO-TASK</div>
+            <div style="padding:0 10px; font-size:0.7rem; color:var(--text-sub); font-weight:bold;">MIS PROYECTOS</div>
             <div id="my-boards" style="flex:1; overflow-y:auto; padding:10px;"></div>
-            
-            <div style="padding:0 10px; font-size:0.75rem; color:var(--text-sub); font-weight:bold;">COMPARTIDOS</div>
+            <div style="padding:0 10px; font-size:0.7rem; color:var(--text-sub); font-weight:bold;">COMPARTIDOS</div>
             <div id="shared-boards" style="max-height:150px; overflow-y:auto; padding:10px;"></div>
-            
             <div style="padding:15px; border-top:1px solid var(--border);">
-                <button class="btn-primary" style="width:100%;" onclick="window.createBoard()">+ Nuevo</button>
-                <div onclick="window.openTrash()" style="margin-top:10px; cursor:pointer; color:var(--text-sub); font-size:0.9rem; display:flex; align-items:center; gap:5px;">
-                    🗑️ Papelera
-                </div>
+                <button class="btn-primary" style="width:100%;" onclick="window.createBoard()">+ Nuevo Tablero</button>
             </div>
         </div>
 
         <div class="main">
             <header>
-                <div class="search-box">
-                    <span>🔍</span>
-                    <input type="text" placeholder="Buscar tarjetas..." onkeyup="window.filterCards(this.value)">
-                </div>
-                
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <button class="btn-ghost" onclick="window.toggleActivity()">📜 Log</button>
-                    <button class="btn-ghost" onclick="window.exportCSV()">📊 Exportar</button>
-                    <button class="btn-ghost" onclick="window.openStats()">📈 Stats</button>
-                    
-                    <div style="position:relative; cursor:pointer; margin:0 10px;" onclick="window.openUnread()">
-                        🔔 <span id="bell-count" style="position:absolute; top:-5px; right:-5px; background:var(--danger); color:white; font-size:0.6rem; padding:2px 4px; border-radius:10px; display:none;">0</span>
-                    </div>
-                    
-                    <span id="user-display" style="font-size:0.8rem; font-weight:bold;"></span>
+                <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar..." onkeyup="window.filterCards(this.value)"></div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button class="btn-ghost" onclick="window.toggleTheme()">🌓</button>
+                    <span id="user-display" style="font-size:0.8rem;"></span>
                     <button class="btn-ghost" onclick="window.logout()">Salir</button>
                 </div>
             </header>
-
+            
             <div style="padding:10px 20px; display:flex; justify-content:space-between; align-items:center;">
                 <h2 id="header-title" style="margin:0;">Selecciona un Tablero</h2>
                 <div id="board-actions" style="display:none;">
                     <button class="btn-ghost" onclick="window.openShare()">👤 Invitar</button>
-                    <button class="btn-ghost" style="color:var(--danger);" onclick="window.softDeleteBoard()">🗑️ Borrar Tablero</button>
+                    <button class="btn-ghost" style="color:var(--danger);" onclick="window.softDeleteBoard()">🗑️ Borrar</button>
                 </div>
             </div>
 
@@ -258,116 +156,79 @@
         <div class="box modal-lg">
             <span onclick="window.closeModals()" style="align-self:flex-end; cursor:pointer; font-size:1.5rem;">&times;</span>
             
-            <div id="m-cover-preview" style="height:100px; background:#eee; border-radius:4px; margin-bottom:10px; background-size:cover; background-position:center; display:none;"></div>
-
+            <label style="font-size:0.8rem; color:var(--text-sub);">Título</label>
             <div class="mic-wrapper">
-                <input type="text" id="m-title" style="font-size:1.5rem; font-weight:bold; border:none; padding:5px 0; background:transparent;" placeholder="Título de la tarea" onblur="window.updateTask()">
-                <button class="mic-btn" onclick="window.startDictation('m-title')" title="Dictar título">🎤</button>
+                <input type="text" id="m-title" style="font-size:1.2rem; font-weight:bold;" onblur="window.updateTask()">
+                <div class="mic-btn" onclick="window.startDictation('m-title')">🎤</div>
             </div>
 
             <div class="tabs">
-                <div class="tab active" onclick="window.switchTab('details')">Detalles</div>
-                <div class="tab" onclick="window.switchTab('comments')">Comentarios</div>
-                <div class="tab" onclick="window.switchTab('files')">Adjuntos</div>
+                <div class="tab active" onclick="window.switchTab('details', this)">Detalles</div>
+                <div class="tab" onclick="window.switchTab('comments', this)">Comentarios</div>
+                <div class="tab" onclick="window.switchTab('files', this)">Adjuntos</div>
             </div>
 
             <div id="tab-details">
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
                     <div>
-                        <label style="font-size:0.8rem; color:var(--text-sub);">Asignar a</label>
-                        <select id="m-assignee" onchange="window.updateTask()"></select>
-                    </div>
-                    <div>
                         <label style="font-size:0.8rem; color:var(--text-sub);">Etiqueta</label>
                         <select id="m-tag" onchange="window.updateTask()">
                             <option value="">Ninguna</option>
-                            <option value="bug">🐛 Bug</option>
-                            <option value="feature">✨ Feature</option>
                             <option value="urgent">🔥 Urgente</option>
-                            <option value="design">🎨 Diseño</option>
+                            <option value="bug">🐛 Bug</option>
                         </select>
                     </div>
                     <div>
                         <label style="font-size:0.8rem; color:var(--text-sub);">Vencimiento</label>
                         <input type="date" id="m-due" onchange="window.updateTask()">
                     </div>
-                    <div>
-                        <label style="font-size:0.8rem; color:var(--text-sub);">Tiempo (Cronómetro)</label>
-                        <div style="display:flex; gap:5px; align-items:center;">
-                            <button id="btn-timer" class="btn-ghost" onclick="window.toggleTimer()">▶️</button>
-                            <span id="m-timer-display" style="font-weight:bold;">00:00</span>
-                        </div>
-                    </div>
                 </div>
 
                 <label style="font-size:0.8rem; color:var(--text-sub);">Descripción</label>
                 <div class="mic-wrapper">
                     <textarea id="m-desc" rows="3" onblur="window.updateTask()"></textarea>
-                    <button class="mic-btn" style="top:5px;" onclick="window.startDictation('m-desc')" title="Dictar descripción">🎤</button>
+                    <div class="mic-btn" onclick="window.startDictation('m-desc')">🎤</div>
                 </div>
 
                 <div style="margin-top:15px;">
-                    <div style="display:flex; justify-content:space-between;">
-                        <strong>Checklist</strong>
-                        <span id="m-progress-text" style="font-size:0.8rem;">0%</span>
-                    </div>
-                    <div class="progress-bar"><div id="m-progress-bar" class="progress-fill"></div></div>
-                    <div id="m-checklist" style="margin-top:10px;"></div>
+                    <strong>Checklist</strong>
+                    <div id="m-checklist" style="margin-top:5px;"></div>
                     <div style="display:flex; gap:5px; margin-top:5px;">
-                        <input id="m-new-check" placeholder="Nueva subtarea..." onkeypress="if(event.key==='Enter') window.addCheck()">
+                        <input id="m-new-check" placeholder="Nueva subtarea...">
                         <button class="btn-ghost" onclick="window.addCheck()">+</button>
                     </div>
                 </div>
             </div>
 
             <div id="tab-comments" style="display:none;">
-                <div id="comment-list" class="comment-list"></div>
+                <div id="comment-list" style="margin-bottom:10px; max-height:150px; overflow-y:auto;"></div>
                 <div style="display:flex; gap:5px;">
-                    <input id="m-new-comment" placeholder="Escribe un comentario...">
+                    <input id="m-new-comment" placeholder="Comentar...">
                     <button class="btn-primary" onclick="window.addComment()">Enviar</button>
                 </div>
             </div>
 
             <div id="tab-files" style="display:none;">
-                <label>Link de Portada (Imagen)</label>
-                <input id="m-cover-url" placeholder="https://..." onblur="window.updateTask()">
-                <hr style="margin:10px 0; border:0; border-top:1px solid #eee;">
-                <div id="file-list"></div>
-                <div style="display:flex; gap:5px; margin-top:10px;">
-                    <input id="m-file-name" placeholder="Nombre (ej: Drive)">
+                <div id="file-list" style="margin-bottom:10px;"></div>
+                <div style="display:flex; gap:5px;">
+                    <input id="m-file-name" placeholder="Nombre">
                     <input id="m-file-url" placeholder="URL">
                     <button class="btn-ghost" onclick="window.addFile()">+</button>
                 </div>
             </div>
 
-            <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:10px; text-align:right;">
-                <button class="btn-danger" onclick="window.deleteTask()">Eliminar Tarea</button>
+            <div style="margin-top:20px; text-align:right; border-top:1px solid var(--border); padding-top:10px;">
+                <button class="btn-danger" style="background:var(--danger); color:white;" onclick="window.deleteTask()">Eliminar Tarea</button>
             </div>
         </div>
     </div>
 
     <div id="share-modal" class="overlay" style="display:none;">
         <div class="box">
-            <h3>Invitar Miembro</h3>
+            <h3>Invitar</h3>
             <input id="share-email" placeholder="Email">
             <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="window.shareBoard()">Enviar</button>
             <button class="btn-ghost" style="width:100%; margin-top:5px;" onclick="window.closeModals()">Cancelar</button>
-        </div>
-    </div>
-
-    <div id="stats-modal" class="overlay" style="display:none;">
-        <div class="box">
-            <h3>Estadísticas</h3>
-            <div id="stats-content"></div>
-            <button class="btn-ghost" style="width:100%; margin-top:10px;" onclick="window.closeModals()">Cerrar</button>
-        </div>
-    </div>
-
-    <div id="trash-modal" class="overlay" style="display:none;">
-        <div class="box modal-lg">
-            <h3>Papelera</h3>
-            <div id="trash-list"></div>
-            <button class="btn-ghost" onclick="window.closeModals()">Cerrar</button>
         </div>
     </div>
 
@@ -378,7 +239,7 @@
 
         // CREDENCIALES
         const firebaseConfig = {
-            apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk", 
+            apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
             authDomain: "trello-d2532.firebaseapp.com",
             projectId: "trello-d2532",
             storageBucket: "trello-d2532.firebasestorage.app",
@@ -393,15 +254,11 @@
         let currentUser = null;
         let currentBoardId = null;
         let boardData = null;
-        let editTask = null;
-        let editCol = null;
-        let activeTimers = {};
-        let undoStack = null; 
-        let undoTimeout = null;
+        let editTask = null; let editCol = null;
 
-        // --- AUTH & CORE ---
-        window.login = () => signInWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => { _id('auth-msg').innerText=e.message; _id('auth-msg').style.display='block'; });
-        window.register = () => createUserWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => { _id('auth-msg').innerText=e.message; _id('auth-msg').style.display='block'; });
+        // --- AUTH ---
+        window.login = () => signInWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => _id('auth-msg').innerText = e.message);
+        window.register = () => createUserWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => _id('auth-msg').innerText = e.message);
         window.logout = () => { signOut(auth); location.reload(); };
 
         onAuthStateChanged(auth, user => {
@@ -411,192 +268,111 @@
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('app-screen').style.display = 'flex';
                 initDashboard();
-                if(localStorage.getItem('theme')) document.documentElement.setAttribute('data-theme', localStorage.getItem('theme'));
             }
         });
 
-        // --- DASHBOARD ---
+        // --- CORE ---
         function initDashboard() {
             onSnapshot(query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid)), snap => {
-                const div = document.getElementById('my-boards'); div.innerHTML = '';
-                snap.forEach(d => { if(!d.data().deleted) div.innerHTML += renderBoardItem(d.id, d.data()); });
+                _id('my-boards').innerHTML = '';
+                snap.forEach(d => { if(!d.data().deleted) _id('my-boards').innerHTML += renderBoardItem(d.id, d.data()); });
             });
             onSnapshot(query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email)), snap => {
-                const div = document.getElementById('shared-boards'); div.innerHTML = '';
-                snap.forEach(d => { if(!d.data().deleted && d.data().ownerId !== currentUser.uid) div.innerHTML += renderBoardItem(d.id, d.data(), true); });
+                _id('shared-boards').innerHTML = '';
+                snap.forEach(d => { if(!d.data().deleted && d.data().ownerId !== currentUser.uid) _id('shared-boards').innerHTML += renderBoardItem(d.id, d.data(), true); });
             });
         }
         const renderBoardItem = (id, data, shared) => `<div class="board-item" onclick="window.openBoard('${id}')"><span>${shared?'👥':'📁'} ${data.name}</span></div>`;
 
         window.createBoard = async () => {
-            const name = prompt("Nombre:"); if(!name) return;
+            const name = prompt("Nombre del Tablero:"); if(!name) return;
             const res = await addDoc(collection(db, 'boards'), {
                 name, ownerId: currentUser.uid, members: [currentUser.email],
-                deleted: false, createdAt: serverTimestamp(), columns: { todo: [], doing: [], done: [] },
-                activityLog: []
+                deleted: false, createdAt: serverTimestamp(), columns: { todo: [], doing: [], done: [] }
             });
-            openBoard(res.id);
+            window.openBoard(res.id);
         };
 
         window.openBoard = (id) => {
             currentBoardId = id;
             onSnapshot(doc(db, 'boards', id), snap => {
-                if(!snap.exists() || snap.data().deleted) return document.getElementById('kanban').innerHTML = '<p style="padding:20px; color:var(--text-sub)">Tablero no disponible.</p>';
+                if(!snap.exists() || snap.data().deleted) return _id('kanban').innerHTML = '<p>No disponible</p>';
                 boardData = snap.data();
-                document.getElementById('header-title').innerText = boardData.name;
-                document.getElementById('board-actions').style.display = (boardData.ownerId === currentUser.uid) ? 'block' : 'none';
+                _id('header-title').innerText = boardData.name;
+                _id('board-actions').style.display = (boardData.ownerId === currentUser.uid) ? 'block' : 'none';
                 renderKanban();
-                renderActivityLog();
             });
         };
 
-        // --- KANBAN ---
+        // --- KANBAN RENDERIZADO SEGURO ---
         function renderKanban() {
             const container = _id('kanban'); container.innerHTML = '';
-            const cols = { todo: "Por Hacer", doing: "En Progreso", done: "Finalizado" };
+            const cols = { todo: "Por Hacer", doing: "En Progreso", done: "Hecho" };
             
             for (let k in cols) {
                 const list = document.createElement('div'); list.className = 'list';
-                list.id = `col-${k}`; // ID para AI
-                list.setAttribute('data-col', k);
+                list.id = `col-${k}`; list.setAttribute('data-col', k);
 
-                const cardCont = document.createElement('div'); cardCont.className = 'cards';
-                cardCont.id = k;
-                cardCont.ondragover = e => e.preventDefault();
-                cardCont.ondrop = e => handleDrop(e, k); // Standard Drop
-
-                (boardData.columns[k] || []).forEach(task => cardCont.appendChild(createCard(task, k)));
-
+                // 1. HEADER
                 list.innerHTML = `<h4>${cols[k]} <span>${(boardData.columns[k]||[]).length}</span></h4>`;
-                list.appendChild(cardCont);
                 
-                const addBtn = document.createElement('button');
-                addBtn.className = 'btn-ghost'; addBtn.style.width = '100%'; addBtn.style.textAlign = 'left';
-                addBtn.innerText = '+ Añadir'; addBtn.onclick = () => window.addTask(k);
-                list.appendChild(addBtn);
+                // 2. CARDS CONTAINER
+                const cardCont = document.createElement('div'); cardCont.className = 'cards';
+                cardCont.ondragover = e => e.preventDefault();
+                cardCont.ondrop = e => handleDrop(e, k);
+                (boardData.columns[k] || []).forEach(task => cardCont.appendChild(createCard(task, k)));
+                list.appendChild(cardCont);
+
+                // 3. BOTÓN AÑADIR (AQUÍ ESTABA EL ERROR, AHORA ES SEGURO)
+                const btn = document.createElement('button');
+                btn.className = 'btn-add-task';
+                btn.innerText = '+ Añadir Tarea';
+                btn.onclick = () => window.addTask(k);
+                list.appendChild(btn);
 
                 container.appendChild(list);
             }
         }
 
         const createCard = (task, col) => {
-            const el = document.createElement('div');
-            el.className = 'card';
-            el.draggable = true;
-            // ATRIBUTOS PARA IA
-            el.setAttribute('data-task-id', task.id);
-            el.setAttribute('data-col', col);
-            // EVENTOS ESTÁNDAR
+            const el = document.createElement('div'); el.className = 'card'; el.draggable = true;
+            el.setAttribute('data-task-id', task.id); el.setAttribute('data-col', col);
             el.ondragstart = e => e.dataTransfer.setData('text', JSON.stringify({id: task.id, src: col}));
-            el.oncontextmenu = e => showContext(e, task, col);
             el.onclick = () => window.openTaskModal(task, col);
-
-            let html = '';
-            if(task.cover) html += `<div class="card-cover" style="display:block; background-image:url('${task.cover}')"></div>`;
-            html += `<div class="card-content">`;
+            
+            let html = `<strong>${task.title}</strong>`;
             if(task.tag) html += `<div class="card-tags"><span class="tag ${task.tag}">${task.tag.toUpperCase()}</span></div>`;
-            html += `<strong>${task.title}</strong>`;
-            
-            html += `<div class="card-meta">`;
-            if(task.due) {
-                const today = new Date().toISOString().split('T')[0];
-                const cls = task.due < today ? 'overdue' : (task.due === today ? 'today' : '');
-                html += `<span class="meta-badge ${cls}">📅 ${task.due.slice(5)}</span>`;
-            }
-            if(task.checklist && task.checklist.length > 0) {
-                const done = task.checklist.filter(c => c.done).length;
-                html += `<span class="meta-badge">☑ ${done}/${task.checklist.length}</span>`;
-            }
-            if(task.files && task.files.length) html += `<span class="meta-badge">📎 ${task.files.length}</span>`;
-            html += `</div>`;
-
-            if(task.assignedTo) {
-                html += `<div class="avatars"><div class="avatar" title="${task.assignedTo}">${task.assignedTo.substring(0,2).toUpperCase()}</div></div>`;
-            }
-
-            if(task.checklist && task.checklist.length > 0) {
-                const pct = Math.round((task.checklist.filter(c => c.done).length / task.checklist.length) * 100);
-                html += `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
-            }
-            
-            html += `</div>`;
             el.innerHTML = html;
             return el;
         };
 
+        // --- LOGIC ---
         window.addTask = (col) => {
-            const t = prompt("Tarea:"); if(!t) return;
-            const newTask = { 
-                id: Date.now().toString(), title: t, desc: '', 
-                checklist: [], comments: [], files: [], 
-                tag: '', due: '', assignedTo: '', cover: '', 
-                timeLog: 0, createdBy: currentUser.email 
-            };
-            boardData.columns[col].push(newTask);
-            logActivity(`creó tarea "${t}"`);
-            save();
+            const t = prompt("Nueva Tarea:"); if(!t) return;
+            const newTask = { id: Date.now().toString(), title: t, desc: '', tag: '', due: '', checklist: [], comments: [], files: [] };
+            boardData.columns[col].push(newTask); save();
         };
 
         const handleDrop = (e, dest) => {
-            e.preventDefault();
-            const data = e.dataTransfer.getData('text');
-            if(!data) return;
-            const {id, src} = JSON.parse(data);
-            if(src === dest) return;
+            e.preventDefault(); const data = e.dataTransfer.getData('text'); if(!data) return;
+            const {id, src} = JSON.parse(data); if(src === dest) return;
             const idx = boardData.columns[src].findIndex(t => t.id === id);
-            if(idx === -1) return;
             const [task] = boardData.columns[src].splice(idx, 1);
-            boardData.columns[dest].push(task);
-            logActivity(`movió tarea "${task.title}" a ${dest}`);
-            save();
+            boardData.columns[dest].push(task); save();
         };
 
-        async function save() {
-            await updateDoc(doc(db, 'boards', currentBoardId), { 
-                columns: boardData.columns,
-                activityLog: boardData.activityLog || []
-            });
-        }
+        async function save() { await updateDoc(doc(db, 'boards', currentBoardId), { columns: boardData.columns }); }
 
-        const logActivity = (msg) => {
-            if(!boardData.activityLog) boardData.activityLog = [];
-            boardData.activityLog.unshift(`${new Date().toLocaleTimeString()} - ${currentUser.email} ${msg}`);
-            if(boardData.activityLog.length > 50) boardData.activityLog.pop();
-        };
-
-        // --- SUPER MODAL (V30 Logic) ---
+        // --- MODAL ---
         window.openTaskModal = (task, col) => {
             editTask = task; editCol = col;
             _id('task-modal').style.display = 'flex';
-            
             _id('m-title').value = task.title;
             _id('m-desc').value = task.desc || '';
             _id('m-due').value = task.due || '';
             _id('m-tag').value = task.tag || '';
-            _id('m-cover-url').value = task.cover || '';
-            
-            const sel = _id('m-assignee'); sel.innerHTML = '<option value="">Sin asignar</option>';
-            (boardData.members || [currentUser.email]).forEach(m => {
-                sel.innerHTML += `<option value="${m}" ${task.assignedTo===m?'selected':''}>${m}</option>`;
-            });
-
-            if(task.cover) { _id('m-cover-preview').style.display='block'; _id('m-cover-preview').style.backgroundImage=`url('${task.cover}')`; }
-            else _id('m-cover-preview').style.display='none';
-
-            updateTimerDisplay();
-            renderChecklist();
-            renderComments();
-            renderFiles();
+            renderChecklist(); renderComments(); renderFiles();
             window.switchTab('details');
-        };
-
-        window.switchTab = (tab) => {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            // Find tab element based on onclick trigger or manual lookup
-            const tabEl = Array.from(document.querySelectorAll('.tab')).find(el => el.innerText.toLowerCase().includes(tab === 'files' ? 'adjuntos' : tab));
-            if(tabEl) tabEl.classList.add('active');
-            
-            ['details','comments','files'].forEach(t => _id('tab-'+t).style.display = (t===tab?'block':'none'));
         };
 
         window.updateTask = () => {
@@ -605,62 +381,42 @@
             editTask.desc = _id('m-desc').value;
             editTask.due = _id('m-due').value;
             editTask.tag = _id('m-tag').value;
-            editTask.assignedTo = _id('m-assignee').value;
-            editTask.cover = _id('m-cover-url').value;
             save();
         };
 
-        // Sub-funciones del Modal
+        window.switchTab = (tab, btn) => {
+            if(btn) { document.querySelectorAll('.tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); }
+            ['details','comments','files'].forEach(t => _id('tab-'+t).style.display = (t===tab?'block':'none'));
+        };
+
+        // Sub-funciones
         window.addCheck = () => {
             const val = _id('m-new-check').value; if(!val) return;
             if(!editTask.checklist) editTask.checklist = [];
             editTask.checklist.push({text: val, done: false}); _id('m-new-check').value=''; renderChecklist(); save();
         };
-        window.toggleCheck = (i) => { editTask.checklist[i].done = !editTask.checklist[i].done; renderChecklist(); save(); };
-        function renderChecklist() {
-            const list = _id('m-checklist'); list.innerHTML = '';
-            let done = 0;
-            (editTask.checklist||[]).forEach((c, i) => {
-                if(c.done) done++;
-                const item = document.createElement('div');
-                item.className = 'checklist-item';
-                item.innerHTML = `<input type="checkbox" ${c.done?'checked':''}> <span>${c.text}</span>`;
-                item.querySelector('input').onchange = () => window.toggleCheck(i);
-                list.appendChild(item);
-            });
-            const pct = editTask.checklist && editTask.checklist.length ? Math.round((done/editTask.checklist.length)*100) : 0;
-            _id('m-progress-bar').style.width = pct + '%'; _id('m-progress-text').innerText = pct + '%';
-        }
+        const renderChecklist = () => {
+            _id('m-checklist').innerHTML = (editTask.checklist||[]).map((c, i) => `<div class="checklist-item"><input type="checkbox" ${c.done?'checked':''} onchange="window.toggleCheck(${i})"> <span>${c.text}</span></div>`).join('');
+        };
+        window.toggleCheck = (i) => { editTask.checklist[i].done = !editTask.checklist[i].done; save(); };
 
         window.addComment = () => {
-            const txt = _id('m-new-comment').value; if(!txt) return;
+            const val = _id('m-new-comment').value; if(!val) return;
             if(!editTask.comments) editTask.comments = [];
-            editTask.comments.push({user: currentUser.email, text: txt, date: new Date().toISOString()}); _id('m-new-comment').value=''; renderComments(); save();
+            editTask.comments.push({user: currentUser.email, text: val}); _id('m-new-comment').value=''; renderComments(); save();
         };
-        function renderComments() {
+        const renderComments = () => {
             _id('comment-list').innerHTML = (editTask.comments||[]).map(c => `<div class="comment-item"><strong>${c.user}</strong>: ${c.text}</div>`).join('');
-        }
+        };
 
         window.addFile = () => {
+            const name = _id('m-file-name').value; const url = _id('m-file-url').value; if(!url) return;
             if(!editTask.files) editTask.files = [];
-            editTask.files.push({name: _id('m-file-name').value||'Link', url: _id('m-file-url').value}); renderFiles(); save();
+            editTask.files.push({name: name||'Link', url}); renderFiles(); save();
         };
-        function renderFiles() {
+        const renderFiles = () => {
             _id('file-list').innerHTML = (editTask.files||[]).map(f => `<a href="${f.url}" target="_blank" style="display:block; padding:5px; background:#eee; margin:5px 0;">📎 ${f.name}</a>`).join('');
-        }
-
-        window.toggleTimer = () => {
-            if(activeTimers[editTask.id]) {
-                clearInterval(activeTimers[editTask.id]); delete activeTimers[editTask.id]; _id('btn-timer').innerText = "▶️";
-            } else {
-                activeTimers[editTask.id] = setInterval(() => { editTask.timeLog = (editTask.timeLog || 0) + 1; updateTimerDisplay(); }, 1000); _id('btn-timer').innerText = "⏸️";
-            }
         };
-        function updateTimerDisplay() {
-            const sec = editTask.timeLog || 0;
-            const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60); const s = sec % 60;
-            _id('m-timer-display').innerText = `${h}:${m<10?'0'+m:m}:${s<10?'0'+s:s}`;
-        }
 
         window.deleteTask = () => {
             if(!confirm("¿Eliminar?")) return;
@@ -668,166 +424,96 @@
             window.closeModals(); renderKanban(); save();
         };
 
-        // Context Menu
-        const showContext = (e, task, col) => {
-            e.preventDefault(); editTask = task; editCol = col;
-            const menu = _id('context-menu'); menu.style.display = 'block'; menu.style.left = e.pageX + 'px'; menu.style.top = e.pageY + 'px';
-            return false;
-        };
-        window.onclick = () => _id('context-menu').style.display = 'none';
-
-        window.duplicateTaskCtx = () => {
-            const copy = {...editTask, id: Date.now().toString(), title: editTask.title + ' (Copia)'};
-            boardData.columns[editCol].push(copy); save(); renderKanban();
-        };
-        window.moveTaskCtx = (target) => {
-            if(editCol === target) return;
-            const t = boardData.columns[editCol].find(x => x.id === editTask.id);
-            boardData.columns[editCol] = boardData.columns[editCol].filter(x => x.id !== editTask.id);
-            boardData.columns[target].push(t);
-            save(); renderKanban();
-        };
-        window.deleteTaskCtx = () => window.deleteTask();
-
-        // Extras
-        window.filterCards = (q) => document.querySelectorAll('.card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q.toLowerCase()) ? 'block' : 'none');
-        window.toggleTheme = () => { const h = document.documentElement; h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark'); localStorage.setItem('theme', h.getAttribute('data-theme')); };
-        window.exportCSV = () => {
-            let csv = "ID,Titulo,Columna,Asignado\n";
-            for(let col in boardData.columns) { boardData.columns[col].forEach(t => csv += `${t.id},"${t.title}",${col},${t.assignedTo}\n`); }
-            const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob); a.download = 'board.csv'; a.click();
-        };
-        window.openStats = () => {
-            let total = 0, done = 0;
-            for(let c in boardData.columns) total += boardData.columns[c].length;
-            done = boardData.columns['done'].length;
-            _id('stats-content').innerHTML = `<p>Total: <b>${total}</b></p><p>Finalizado: <b>${done}</b></p><div class="progress-bar" style="height:20px;"><div class="progress-fill" style="width:${total?(done/total)*100:0}%"></div></div>`;
-            _id('stats-modal').style.display = 'flex';
-        };
-        window.toggleActivity = () => _id('activity-panel').classList.toggle('open');
-        window.renderActivityLog = renderActivityLog; // Expose
-
         // --- UTILS ---
-        window._id = _id;
-        function _val(x) { return document.getElementById(x).value; }
-        window.closeModals = closeModals;
+        const _id = (id) => document.getElementById(id);
+        const _val = (id) => document.getElementById(id).value;
+        window.closeModals = () => document.querySelectorAll('.overlay').forEach(e => { if(e.id!=='auth-screen') e.style.display='none'; });
+        window.toggleTheme = () => { const h=document.documentElement; h.setAttribute('data-theme', h.getAttribute('data-theme')==='dark'?'light':'dark'); };
         window.openShare = () => _id('share-modal').style.display='flex';
         window.shareBoard = async () => { await updateDoc(doc(db,'boards',currentBoardId), {members: arrayUnion(_val('share-email'))}); window.closeModals(); };
-        window.softDeleteBoard = async () => { if(confirm("¿Papelera?")) await updateDoc(doc(db,'boards',currentBoardId), {deleted:true}); };
-        window.openTrash = () => {
-             onSnapshot(query(collection(db,'boards'), where('ownerId','==',currentUser.uid)), snap => {
-                 let h = '';
-                 snap.forEach(d => { if(d.data().deleted) h += `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${d.data().name}</span><button class="btn-primary" onclick="window.restore('${d.id}')">♻️</button></div>`; });
-                 _id('trash-list').innerHTML = h || 'Vacía';
-                 _id('trash-modal').style.display='flex';
-             });
-        };
-        window.restore = async(id) => updateDoc(doc(db,'boards',id), {deleted:false});
-
-        // --- 🎤 VOICE ASSISTANT ---
+        window.softDeleteBoard = async () => { if(confirm("¿Borrar?")) await updateDoc(doc(db,'boards',currentBoardId), {deleted:true}); };
+        
+        // --- 🎤 DICTADO ---
         window.startDictation = (inputId) => {
-            if (!('webkitSpeechRecognition' in window)) return alert("Usa Chrome/Edge para voz.");
+            if (!('webkitSpeechRecognition' in window)) return alert("Usa Chrome.");
             const recognition = new webkitSpeechRecognition();
             recognition.lang = "es-ES";
             const btn = document.getElementById(inputId).parentNode.querySelector('.mic-btn');
             btn.classList.add('mic-active');
-            
-            recognition.onresult = (event) => {
-                document.getElementById(inputId).value = event.results[0][0].transcript;
-                window.updateTask();
-                btn.classList.remove('mic-active');
-            };
+            recognition.onresult = (e) => { _id(inputId).value = e.results[0][0].transcript; window.updateTask(); btn.classList.remove('mic-active'); };
             recognition.onerror = () => btn.classList.remove('mic-active');
             recognition.start();
         };
 
-        // --- 👁️ COMPUTER VISION (MAGNET MODE) ---
-        let camera = null;
-        let isAiActive = false;
-        
+        // --- 👁️ VISIÓN IA (IMÁN) ---
+        let camera = null; let isAiActive = false;
         window.toggleAI = () => {
-            const container = document.getElementById('webcam-container');
-            const cursor = document.getElementById('virtual-cursor');
-            if(isAiActive) { if(camera) camera.stop(); container.style.display = 'none'; cursor.style.display = 'none'; isAiActive = false; return; }
-            container.style.display = 'block'; cursor.style.display = 'block'; isAiActive = true;
-            initHands();
+            const el = _id('webcam-container');
+            if(isAiActive) { if(camera) camera.stop(); el.style.display='none'; isAiActive=false; _id('virtual-cursor').style.display='none'; return; }
+            el.style.display='block'; isAiActive=true; _id('virtual-cursor').style.display='block'; initHands();
         };
 
         async function initHands() {
-            const videoElement = document.getElementById('webcam-feed');
+            const video = _id('webcam-feed');
             const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-            hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.7 });
+            hands.setOptions({maxNumHands:1, minDetectionConfidence:0.7, minTrackingConfidence:0.7});
             hands.onResults(onResults);
-            camera = new Camera(videoElement, { onFrame: async () => { await hands.send({image: videoElement}); }, width: 320, height: 240 });
+            camera = new Camera(video, {onFrame: async()=>{await hands.send({image:video});}, width:160, height:120});
             camera.start();
         }
 
-        // AI GESTURE LOGIC
-        let isPinching = false;
-        let draggingCardId = null; 
-        let draggingSourceCol = null;
-
+        let isPinching=false; let dragId=null; let dragSrc=null;
         function onResults(results) {
-            if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) return;
-            const landmarks = results.multiHandLandmarks[0];
-            const indexTip = landmarks[8];
-            const thumbTip = landmarks[4];
-
-            const x = (1 - indexTip.x) * window.innerWidth;
-            const y = indexTip.y * window.innerHeight;
+            if(!results.multiHandLandmarks || !results.multiHandLandmarks.length) return;
+            const lm = results.multiHandLandmarks[0];
+            const idx = lm[8]; const thb = lm[4];
             
-            const cursor = document.getElementById('virtual-cursor');
-            cursor.style.left = `${x}px`; cursor.style.top = `${y}px`;
+            const x = (1-idx.x)*window.innerWidth; const y = idx.y*window.innerHeight;
+            const cursor = _id('virtual-cursor');
+            cursor.style.left = x+'px'; cursor.style.top = y+'px';
 
-            const distance = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
-            const PINCH_START = 0.03; 
-            const PINCH_RELEASE = 0.06;
-
-            // GRAB
-            if (!isPinching && distance < PINCH_START) {
-                isPinching = true;
-                cursor.classList.add('pinching');
-                const elements = document.elementsFromPoint(x, y);
-                const cardEl = elements.find(el => el.classList.contains('card'));
-                if (cardEl) {
-                    draggingCardId = cardEl.getAttribute('data-task-id');
-                    draggingSourceCol = cardEl.getAttribute('data-col');
-                    const ghost = document.getElementById('ai-ghost-card');
-                    ghost.querySelector('#ghost-title').innerText = cardEl.querySelector('strong').innerText;
+            const dist = Math.hypot(idx.x-thb.x, idx.y-thb.y);
+            
+            // AGARRAR (< 0.05)
+            if(!isPinching && dist < 0.05) {
+                isPinching = true; cursor.classList.add('pinching');
+                const el = document.elementFromPoint(x,y);
+                const card = el ? el.closest('.card') : null;
+                if(card) {
+                    dragId = card.getAttribute('data-task-id');
+                    dragSrc = card.getAttribute('data-col');
+                    const ghost = _id('ai-ghost-card');
+                    ghost.querySelector('strong').innerText = card.querySelector('strong').innerText;
                     ghost.style.display = 'block';
                 }
             }
-
-            // HOLD
-            if (isPinching) {
-                if (draggingCardId) {
-                    const ghost = document.getElementById('ai-ghost-card');
-                    ghost.style.left = (x + 20) + 'px'; ghost.style.top = (y + 20) + 'px';
-                }
+            
+            // MOVER
+            if(isPinching && dragId) {
+                const ghost = _id('ai-ghost-card');
+                ghost.style.left = (x+20)+'px'; ghost.style.top = (y+20)+'px';
             }
 
-            // RELEASE
-            if (isPinching && distance > PINCH_RELEASE) {
-                isPinching = false;
-                cursor.classList.remove('pinching');
-                if (draggingCardId) {
-                    const elements = document.elementsFromPoint(x, y);
-                    const listEl = elements.find(el => el.classList.contains('list'));
-                    if (listEl) {
-                        const targetCol = listEl.id.replace('col-', '');
-                        if (targetCol && targetCol !== draggingSourceCol) {
-                            const idx = boardData.columns[draggingSourceCol].findIndex(t => t.id === draggingCardId);
-                            if(idx > -1) {
-                                const [task] = boardData.columns[draggingSourceCol].splice(idx, 1);
-                                boardData.columns[targetCol].push(task);
+            // SOLTAR (> 0.08)
+            if(isPinching && dist > 0.08) {
+                isPinching = false; cursor.classList.remove('pinching');
+                if(dragId) {
+                    const el = document.elementFromPoint(x,y);
+                    const list = el ? el.closest('.list') : null;
+                    if(list) {
+                        const target = list.id.replace('col-', '');
+                        if(target && target !== dragSrc) {
+                            const idx = boardData.columns[dragSrc].findIndex(t=>t.id===dragId);
+                            if(idx>-1) {
+                                const [t] = boardData.columns[dragSrc].splice(idx,1);
+                                boardData.columns[target].push(t);
                                 save();
                             }
                         }
                     }
-                    document.getElementById('ai-ghost-card').style.display = 'none';
-                    draggingCardId = null; draggingSourceCol = null;
+                    _id('ai-ghost-card').style.display='none'; dragId=null;
                 } else {
-                    const el = document.elementFromPoint(x, y);
+                    const el = document.elementFromPoint(x,y);
                     if(el) el.click();
                 }
             }
