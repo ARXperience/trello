@@ -2,143 +2,118 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Pro-Task Enterprise v9.5 | Stable Cloud System</title>
+    <title>Pro-Task Enterprise v10.0 | Sistema Blindado</title>
     <style>
-        /* CSS MAESTRO - DISEÑO Y FUNCIONALIDAD */
+        /* =========================================
+           ESTILOS (CSS)
+           ========================================= */
         :root {
             --bg-main: #0079bf; --bg-list: #ebecf0; --text-main: #172b4d;
             --card-bg: #ffffff; --accent: #5aac44; --error: #eb5a46; --sidebar: #f4f5f7;
         }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-main); margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text-main); }
 
-        /* Estructura */
-        .main-wrapper { display: flex; width: 100%; height: 100%; }
-        .sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid rgba(0,0,0,0.1); display: flex; flex-direction: column; z-index: 10; transition: 0.3s; }
-        .sidebar-header { padding: 20px; font-weight: bold; border-bottom: 1px solid rgba(0,0,0,0.1); font-size: 0.85rem; color: #5e6c84; letter-spacing: 0.5px; }
+        /* Sidebar */
+        .sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid rgba(0,0,0,0.1); display: flex; flex-direction: column; z-index: 10; }
+        .sidebar-header { padding: 20px; font-weight: bold; border-bottom: 1px solid #ddd; background: rgba(0,0,0,0.02); }
         .folder-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
-        
-        .folder-item { padding: 10px 15px; margin-bottom: 5px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 0.95rem; color: #172b4d; }
-        .folder-item:hover { background: rgba(9,30,66,0.08); }
-        .folder-item.active { background: #e4f0f6; color: #0079bf; font-weight: bold; }
+        .folder-item { padding: 12px; margin-bottom: 5px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; border: 1px solid transparent; }
+        .folder-item:hover { background: #e0e0e0; }
+        .folder-item.active { background: #0079bf; color: white; font-weight: bold; }
 
+        /* Area Principal */
         .content-area { flex-grow: 1; display: flex; flex-direction: column; position: relative; background: white; }
+        header { background: var(--bg-main); padding: 0 20px; height: 60px; display: flex; justify-content: space-between; align-items: center; color: white; }
         
-        /* Header y Kanban */
-        header { background: var(--bg-main); padding: 10px 20px; color: white; display: flex; justify-content: space-between; align-items: center; height: 50px; }
-        .board-canvas { display: flex; padding: 20px; gap: 20px; overflow-x: auto; height: 100%; align-items: flex-start; background: #ffffff; }
-        
-        .list { background: var(--bg-list); width: 300px; min-width: 300px; border-radius: 10px; padding: 12px; max-height: 90%; display: flex; flex-direction: column; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
-        .cards-container { flex-grow: 1; overflow-y: auto; padding-right: 5px; min-height: 20px; }
-        
-        /* Tarjetas */
-        .card { background: var(--card-bg); padding: 12px; margin-bottom: 8px; border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); cursor: grab; border-left: 5px solid #dfe1e6; font-size: 0.95rem; }
-        .card:hover { background: #f4f5f7; }
+        /* Estado de Guardado */
+        #save-status { font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 4px; display: flex; align-items: center; gap: 5px; }
+
+        /* Kanban */
+        .board-canvas { display: flex; padding: 20px; gap: 20px; overflow-x: auto; height: 100%; align-items: flex-start; background: #fff; }
+        .list { background: var(--bg-list); width: 300px; min-width: 300px; border-radius: 8px; padding: 12px; max-height: 90%; display: flex; flex-direction: column; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .cards-container { flex-grow: 1; overflow-y: auto; min-height: 50px; }
+        .card { background: white; padding: 10px; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); cursor: grab; border-left: 5px solid #ccc; }
         .card.high { border-left-color: var(--error); }
         .card.medium { border-left-color: #f2d600; }
         .card.low { border-left-color: var(--success); }
 
-        /* Modal & Scroll */
+        /* Modal */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; padding: 20px; }
-        .modal-content { background: #f4f5f7; margin: auto; width: 100%; max-width: 650px; max-height: 90vh; border-radius: 8px; overflow: hidden; position: relative; color: #333; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-        .modal-body-scroll { padding: 30px; max-height: calc(90vh - 60px); overflow-y: auto; }
-
-        /* Pantallas de Carga/Auth */
+        .modal-content { background: #f4f5f7; margin: auto; width: 100%; max-width: 650px; max-height: 90vh; border-radius: 10px; overflow: hidden; position: relative; color: #333; }
+        .modal-body { padding: 30px; max-height: calc(90vh - 40px); overflow-y: auto; }
+        
+        /* Auth Overlay */
         .auth-overlay { position: fixed; inset: 0; background: var(--bg-main); display: flex; align-items: center; justify-content: center; z-index: 5000; }
-        .auth-card { background: white; padding: 40px; border-radius: 8px; width: 350px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .auth-card { background: white; padding: 40px; border-radius: 8px; width: 350px; text-align: center; }
         .auth-card input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         
         .btn-primary { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%; }
-        .btn-danger { background: var(--error); color: white; border: none; padding: 10px; border-radius: 4px; width: 100%; cursor: pointer; margin-top: 20px; }
-        
-        /* Checklists */
-        .progress-bar { background: #dfe1e6; height: 8px; border-radius: 4px; margin: 10px 0; overflow: hidden; }
-        #progress-fill { background: var(--accent); height: 100%; width: 0%; transition: 0.3s; }
+        .btn-secondary { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="auth-container" class="auth-overlay">
         <div class="auth-card">
-            <h2 style="color:var(--bg-main)">Pro-Task Enterprise</h2>
-            <p>Espacio de Trabajo Seguro</p>
-            <input type="email" id="login-email" placeholder="Email corporativo">
+            <h2 style="color:var(--bg-main)">Pro-Task v10</h2>
+            <p>Sistema de Carpetas Seguras</p>
+            <input type="email" id="login-email" placeholder="Correo electrónico">
             <input type="password" id="login-pass" placeholder="Contraseña">
             <button id="btn-login" class="btn-primary" style="margin-top:10px;">Entrar</button>
-            <button id="btn-signup" style="background:none; border:none; color:var(--bg-main); cursor:pointer; margin-top:15px; text-decoration:underline;">Crear cuenta nueva</button>
+            <button id="btn-signup" style="background:transparent; border:none; color:#0079bf; cursor:pointer; margin-top:15px; text-decoration:underline;">Crear cuenta nueva</button>
+            <p id="auth-msg" style="color:red; font-size:0.8rem; margin-top:10px;"></p>
         </div>
     </div>
 
     <div id="loading-screen" class="auth-overlay" style="display: none; background: rgba(255,255,255,0.95); z-index: 6000;">
         <div class="auth-card" style="box-shadow:none; background:transparent;">
-            <div style="border: 4px solid #f3f3f3; border-top: 4px solid var(--bg-main); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
-            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-            <h3>Cargando proyecto...</h3>
-            <p id="loading-text" style="font-size:0.8rem; color:#666;">Conectando con la nube segura</p>
-            <button onclick="window.forceUnlock()" style="margin-top:20px; font-size:0.8rem; background:#ccc; border:none; padding:5px 10px; cursor:pointer; border-radius:4px;">Cancelar carga</button>
+            <h3 style="color:#333">Conectando con base de datos...</h3>
+            <p>Verificando carpetas de usuario...</p>
         </div>
     </div>
 
     <div id="app-container" class="main-wrapper" style="display: none;">
-        
         <aside class="sidebar">
             <div class="sidebar-header">MIS PROYECTOS</div>
             <div id="user-folders" class="folder-list"></div>
-            
-            <div class="sidebar-header" style="border-top:1px solid #ddd">COMPARTIDOS CONMIGO</div>
-            <div id="shared-folders" class="folder-list"></div>
-            
             <div style="padding:20px;">
-                <button onclick="window.createNewFolder()" class="btn-primary" style="background:var(--bg-main)">+ Nuevo Proyecto</button>
+                <button onclick="window.createFolder()" class="btn-primary">+ Nuevo Proyecto</button>
             </div>
         </aside>
 
         <div class="content-area">
             <header>
                 <div style="display:flex; align-items:center; gap:15px;">
-                    <h2 id="current-folder-name" style="margin:0; font-size:1.2rem;">Selecciona o crea un proyecto</h2>
+                    <h3 id="board-title" style="margin:0;">Selecciona un proyecto</h3>
+                    <div id="save-status" style="opacity:0;">✅ Guardado</div>
                 </div>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <input type="email" id="share-email" placeholder="Invitar usuario..." style="padding:6px; border-radius:4px; border:none;">
-                    <button onclick="window.shareCurrentFolder()" style="background:rgba(255,255,255,0.2); color:white; border:1px solid white; padding:6px 12px; border-radius:4px; cursor:pointer;">Compartir</button>
-                    <button id="btn-logout" style="background:none; color:white; border:1px solid white; cursor:pointer; padding:6px 10px; border-radius:4px;">Salir</button>
+                <div>
+                    <span id="user-email" style="font-size:0.8rem; margin-right:10px;"></span>
+                    <button id="btn-logout" class="btn-secondary">Salir</button>
                 </div>
             </header>
 
-            <main class="board-canvas" id="kanban-board">
-                <div style="padding:50px; text-align:center; color:#888; width:100%;">
-                    <h3>← Selecciona un proyecto en la barra lateral</h3>
-                    <p>O crea uno nuevo para empezar</p>
-                </div>
-            </main>
+            <main class="board-canvas" id="kanban-board"></main>
         </div>
     </div>
 
     <div id="card-modal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="window.closeModal()" style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:24px;">&times;</span>
-            <div class="modal-body-scroll">
-                <input type="text" id="modal-title" style="width:100%; font-size:1.8rem; font-weight:bold; border:none; background:transparent; outline:none; margin-bottom:20px;">
+            <span onclick="document.getElementById('card-modal').style.display='none'" style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:24px;">&times;</span>
+            <div class="modal-body">
+                <input type="text" id="modal-title" style="width:100%; font-size:1.5rem; font-weight:bold; border:none; outline:none; margin-bottom:20px;">
                 
-                <h4 style="margin-top:0;">Prioridad</h4>
-                <select id="modal-priority" onchange="window.updatePriority()" style="width:100%; padding:10px; border-radius:5px; border:1px solid #ddd;">
-                    <option value="low">Baja (Normal)</option>
-                    <option value="medium">Media (Atención)</option>
-                    <option value="high">Alta (Urgente)</option>
+                <h4>Prioridad</h4>
+                <select id="modal-priority" onchange="window.updateCardData()" style="width:100%; padding:8px; margin-bottom:20px;">
+                    <option value="low">Baja</option>
+                    <option value="medium">Media</option>
+                    <option value="high">Alta</option>
                 </select>
 
-                <h4 style="margin-top:20px;">Descripción</h4>
-                <textarea id="modal-desc" style="width:100%; height:100px; padding:10px; border-radius:5px; border:1px solid #ddd; resize:none;"></textarea>
+                <h4>Descripción</h4>
+                <textarea id="modal-desc" style="width:100%; height:100px; margin-bottom:20px;"></textarea>
 
-                <h4 style="margin-top:20px;">Checklist <span id="check-percent" style="float:right; font-size:0.9rem;">0%</span></h4>
-                <div class="progress-bar"><div id="progress-fill"></div></div>
-                <div id="modal-checklist"></div>
-                
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <input type="text" id="new-check-input" placeholder="Nueva sub-tarea..." style="flex:1; padding:8px; border:1px solid #ddd; border-radius:4px;">
-                    <button onclick="window.addChecklistItem()" class="btn-primary" style="width:auto; padding:0 20px;">+</button>
-                </div>
-
-                <button onclick="window.deleteCard()" class="btn-danger">Eliminar Tarea</button>
+                <button onclick="window.deleteCard()" style="background:var(--error); color:white; border:none; padding:10px; width:100%; border-radius:4px; cursor:pointer;">Eliminar Tarea</button>
             </div>
         </div>
     </div>
@@ -146,9 +121,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-        import { getFirestore, collection, query, where, onSnapshot, doc, setDoc, addDoc, updateDoc, collectionGroup } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, addDoc, onSnapshot, updateDoc, getDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-        // CONFIGURACIÓN (Tus Credenciales)
+        // CONFIGURACIÓN (REEMPLAZA SI ES NECESARIO, PERO ESTA ES LA TUYA)
         const firebaseConfig = {
             apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
             authDomain: "trello-d2532.firebaseapp.com",
@@ -163,208 +138,267 @@
         const db = getFirestore(app);
 
         let currentUser = null;
-        let activeFolderId = localStorage.getItem('lastFolderId') || null;
-        let folderData = null;
+        let currentBoardId = localStorage.getItem('lastBoardId');
+        let boardData = null;
         let unsubscribe = null;
-        let isSyncReady = false;
+        let saveTimeout = null;
 
-        // AUTHENTICATION
-        document.getElementById('btn-login').onclick = () => signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value).catch(e => alert("Error: " + e.message));
-        document.getElementById('btn-signup').onclick = () => createUserWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value).catch(e => alert("Error: " + e.message));
-        document.getElementById('btn-logout').onclick = () => { localStorage.clear(); signOut(auth); };
+        // --- 1. AUTENTICACIÓN ---
+        document.getElementById('btn-login').onclick = () => {
+            const e = document.getElementById('login-email').value;
+            const p = document.getElementById('login-pass').value;
+            signInWithEmailAndPassword(auth, e, p).catch(err => alert("Error: " + err.message));
+        };
 
-        onAuthStateChanged(auth, user => {
+        document.getElementById('btn-signup').onclick = () => {
+            const e = document.getElementById('login-email').value;
+            const p = document.getElementById('login-pass').value;
+            createUserWithEmailAndPassword(auth, e, p).catch(err => alert("Error: " + err.message));
+        };
+
+        document.getElementById('btn-logout').onclick = () => {
+            localStorage.clear();
+            signOut(auth);
+        };
+
+        onAuthStateChanged(auth, async user => {
             if (user) {
                 currentUser = user;
                 document.getElementById('auth-container').style.display = 'none';
-                document.getElementById('app-container').style.display = 'flex';
-                loadUserSpace();
-                // Intento de recuperación de sesión
-                if(activeFolderId) openFolder(activeFolderId); 
+                document.getElementById('loading-screen').style.display = 'flex';
+                document.getElementById('user-email').innerText = user.email;
+
+                // PASO CRÍTICO: Asegurar que el documento del usuario existe
+                await ensureUserDoc(user);
+                
+                // Iniciar App
+                initApp();
             } else {
                 document.getElementById('auth-container').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
             }
         });
 
-        // --- SISTEMA DE CARPETAS ---
-        function loadUserSpace() {
-            const foldersRef = collection(db, "users", currentUser.uid, "boards");
-            onSnapshot(foldersRef, snap => {
-                const cont = document.getElementById('user-folders');
-                cont.innerHTML = '';
-                snap.forEach(d => {
-                    const item = document.createElement('div');
-                    item.className = `folder-item ${d.id === activeFolderId ? 'active' : ''}`;
-                    item.innerHTML = `📁 ${d.data().name}`;
-                    item.onclick = () => openFolder(d.id);
-                    cont.appendChild(item);
-                });
-            });
-
-            // Compartidos (Simplified for stability)
-            const sharedQuery = query(collectionGroup(db, "boards"), where("collaborators", "array-contains", currentUser.email.toLowerCase()));
-            onSnapshot(sharedQuery, snap => {
-                const cont = document.getElementById('shared-folders');
-                cont.innerHTML = '';
-                snap.forEach(d => {
-                    const item = document.createElement('div');
-                    item.className = `folder-item ${d.id === activeFolderId ? 'active' : ''}`;
-                    item.innerHTML = `🤝 ${d.data().name}`;
-                    // Para compartidos necesitamos saber quién es el dueño real, aquí lo extraemos de la referencia
-                    const ownerId = d.ref.parent.parent.id; 
-                    item.onclick = () => openFolder(d.id, ownerId); 
-                    cont.appendChild(item);
-                });
-            });
+        // Crea la "Carpeta Madre" del usuario si no existe
+        async function ensureUserDoc(user) {
+            const userRef = doc(db, "users", user.uid);
+            const snap = await getDoc(userRef);
+            if (!snap.exists()) {
+                await setDoc(userRef, { email: user.email, createdAt: new Date() });
+            }
         }
 
-        window.createNewFolder = async () => {
-            const name = prompt("Nombre del Proyecto:");
-            if(!name) return;
-            const newProject = {
-                name: name,
-                owner: currentUser.uid,
-                collaborators: [],
-                data: { todo: [], 'in-progress': [], done: [] }
-            };
-            const docRef = await addDoc(collection(db, "users", currentUser.uid, "boards"), newProject);
-            openFolder(docRef.id);
-        };
-
-        // --- APERTURA DE CARPETA (CON RESCATE DE ERROR) ---
-        function openFolder(boardId, ownerId = currentUser.uid) {
-            if(unsubscribe) unsubscribe();
-            isSyncReady = false;
-            activeFolderId = boardId;
-            localStorage.setItem('lastFolderId', boardId);
-            document.getElementById('loading-screen').style.display = 'flex';
-
-            // TIMER DE SEGURIDAD: Si en 4 segundos no carga, abortar.
-            const safetyTimer = setTimeout(() => {
-                if(!isSyncReady) window.forceUnlock();
-            }, 4000);
-
-            unsubscribe = onSnapshot(doc(db, "users", ownerId, "boards", boardId), snap => {
-                clearTimeout(safetyTimer); // Cancelar timer si cargó bien
-                if(!snap.exists()) {
-                    window.forceUnlock(); // Si el documento no existe (borrado), desbloquear
-                    return;
-                }
-                folderData = snap.data();
-                // Guardamos el ID del dueño actual en el objeto para usarlos al guardar
-                folderData.currentOwnerId = ownerId; 
-                
-                isSyncReady = true;
-                document.getElementById('current-folder-name').innerText = folderData.name;
-                renderKanban();
-                document.getElementById('loading-screen').style.display = 'none';
-                
-                // Actualizar UI de lista activa
-                document.querySelectorAll('.folder-item').forEach(el => el.classList.remove('active'));
-                // Nota: La actualización visual de "active" se hace al repintar la lista en loadUserSpace
-            });
-        }
-
-        // Función para desbloquear si se queda pegado
-        window.forceUnlock = () => {
+        // --- 2. GESTIÓN DE CARPETAS ---
+        function initApp() {
             document.getElementById('loading-screen').style.display = 'none';
-            document.getElementById('kanban-board').innerHTML = '<div style="padding:50px; text-align:center; color:#666;"><h3>No se pudo cargar el proyecto</h3><p>Es posible que haya sido eliminado o no tengas permiso.</p></div>';
-            localStorage.removeItem('lastFolderId');
-            activeFolderId = null;
-        };
+            document.getElementById('app-container').style.display = 'flex';
 
-        // --- KANBAN ---
-        function renderKanban() {
-            const canvas = document.getElementById('kanban-board');
-            canvas.innerHTML = '';
-            ['todo', 'in-progress', 'done'].forEach(col => {
-                const list = document.createElement('div');
-                list.className = 'list';
-                list.innerHTML = `<h3>${col.toUpperCase()}</h3><div class="cards-container"></div>`;
-                const container = list.querySelector('.cards-container');
+            // Escuchar cambios en la sub-colección 'boards' del usuario
+            const boardsRef = collection(db, "users", currentUser.uid, "boards");
+            const q = query(boardsRef, orderBy("createdAt", "desc"));
+            
+            onSnapshot(q, (snap) => {
+                const list = document.getElementById('user-folders');
+                list.innerHTML = '';
                 
-                (folderData.data[col] || []).forEach(card => {
-                    const cEl = document.createElement('div');
-                    cEl.className = `card ${card.priority || 'low'}`;
-                    cEl.innerHTML = `<strong>${card.title}</strong>`;
-                    cEl.onclick = () => openModal(card.id);
-                    container.appendChild(cEl);
+                if (snap.empty) {
+                    list.innerHTML = '<div style="padding:10px; color:#888; font-size:0.8rem;">No tienes proyectos. Crea uno nuevo.</div>';
+                }
+
+                snap.forEach(d => {
+                    const data = d.data();
+                    const el = document.createElement('div');
+                    el.className = `folder-item ${d.id === currentBoardId ? 'active' : ''}`;
+                    el.innerHTML = `📁 ${data.name}`;
+                    el.onclick = () => loadBoard(d.id);
+                    list.appendChild(el);
                 });
 
-                const addBtn = document.createElement('div');
-                addBtn.style.marginTop = "10px";
-                addBtn.innerHTML = `<input type="text" placeholder="+ Tarea" style="width:100%; padding:8px; box-sizing:border-box; border-radius:4px; border:1px solid #ddd; margin-bottom:5px;"><button onclick="window.addTask('${col}', this)" class="btn-primary">Añadir</button>`;
-                list.appendChild(addBtn);
-                canvas.appendChild(list);
+                // Si teníamos un tablero abierto, cargarlo
+                if (currentBoardId) {
+                    // Verificar si aun existe
+                    const exists = snap.docs.find(d => d.id === currentBoardId);
+                    if(exists) loadBoard(currentBoardId);
+                    else {
+                        document.getElementById('kanban-board').innerHTML = '';
+                        document.getElementById('board-title').innerText = "Selecciona un proyecto";
+                    }
+                }
             });
         }
 
-        async function safeUpdate() {
-            if(!isSyncReady || !folderData) return;
-            // Usamos el ID del dueño que guardamos al abrir, o el actual si es propio
-            const targetOwner = folderData.currentOwnerId || currentUser.uid;
-            await updateDoc(doc(db, "users", targetOwner, "boards", activeFolderId), { 
-                data: folderData.data, 
-                collaborators: folderData.collaborators || [] 
-            });
-        }
+        window.createFolder = async () => {
+            const name = prompt("Nombre del proyecto:");
+            if (!name) return;
+            
+            const newBoard = {
+                name: name,
+                createdAt: Date.now(),
+                data: { todo: [], processing: [], done: [] }
+            };
 
-        window.addTask = (col, btn) => {
-            const input = btn.previousElementSibling; if(!input.value) return;
-            folderData.data[col].push({ id: 'c'+Date.now(), title: input.value, priority: 'low', checklist: [], desc: '' });
-            input.value = ''; renderKanban(); safeUpdate();
-        };
-
-        window.shareCurrentFolder = () => {
-            const email = document.getElementById('share-email').value.toLowerCase().trim();
-            if(!email) return;
-            if(!folderData.collaborators) folderData.collaborators = [];
-            if(!folderData.collaborators.includes(email)) {
-                folderData.collaborators.push(email);
-                safeUpdate();
-                alert("Invitación enviada a " + email);
+            try {
+                const docRef = await addDoc(collection(db, "users", currentUser.uid, "boards"), newBoard);
+                loadBoard(docRef.id);
+            } catch (e) {
+                alert("Error creando carpeta: " + e.message);
             }
         };
 
-        // --- MODAL ---
-        let currentEditingId = null;
+        // --- 3. LÓGICA DE TABLERO Y GUARDADO ---
+        function loadBoard(id) {
+            if (unsubscribe) unsubscribe();
+            currentBoardId = id;
+            localStorage.setItem('lastBoardId', id);
+
+            const docRef = doc(db, "users", currentUser.uid, "boards", id);
+            
+            unsubscribe = onSnapshot(docRef, (snap) => {
+                if (!snap.exists()) return;
+                boardData = snap.data();
+                document.getElementById('board-title').innerText = boardData.name;
+                renderKanban();
+            });
+        }
+
+        function renderKanban() {
+            const container = document.getElementById('kanban-board');
+            container.innerHTML = '';
+
+            const cols = [
+                { id: 'todo', title: 'Pendientes' },
+                { id: 'processing', title: 'En Proceso' },
+                { id: 'done', title: 'Finalizado' }
+            ];
+
+            cols.forEach(col => {
+                const colDiv = document.createElement('div');
+                colDiv.className = 'list';
+                colDiv.innerHTML = `<h3>${col.title}</h3><div class="cards-container" id="col-${col.id}"></div>`;
+                
+                const cardCont = colDiv.querySelector('.cards-container');
+                (boardData.data[col.id] || []).forEach(card => {
+                    const c = document.createElement('div');
+                    c.className = `card ${card.priority || 'low'}`;
+                    c.innerText = card.title;
+                    c.draggable = true;
+                    c.onclick = () => openModal(card.id);
+                    // Eventos Drag simple
+                    c.ondragstart = (e) => e.dataTransfer.setData("text", JSON.stringify({id: card.id, src: col.id}));
+                    cardCont.appendChild(c);
+                });
+
+                // Botón añadir
+                const addDiv = document.createElement('div');
+                addDiv.innerHTML = `<input type="text" placeholder="+ Tarea" style="width:100%; padding:5px; margin-top:5px;">`;
+                const input = addDiv.querySelector('input');
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter' && input.value.trim()) {
+                        addTask(col.id, input.value);
+                        input.value = '';
+                    }
+                };
+                colDiv.appendChild(addDiv);
+
+                // Drop Zone
+                colDiv.ondragover = e => e.preventDefault();
+                colDiv.ondrop = (e) => handleDrop(e, col.id);
+
+                container.appendChild(colDiv);
+            });
+        }
+
+        // --- 4. OPERACIONES DE DATOS (CRUD) ---
+        async function saveData() {
+            if (!currentBoardId || !boardData) return;
+            
+            // UI Feedback
+            const statusEl = document.getElementById('save-status');
+            statusEl.innerText = "💾 Guardando...";
+            statusEl.style.opacity = 1;
+
+            try {
+                await updateDoc(doc(db, "users", currentUser.uid, "boards", currentBoardId), {
+                    data: boardData.data
+                });
+                statusEl.innerText = "✅ Guardado";
+                setTimeout(() => statusEl.style.opacity = 0, 2000);
+            } catch (e) {
+                statusEl.innerText = "❌ Error al guardar";
+                alert("Error de conexión: " + e.message);
+            }
+        }
+
+        function addTask(colId, title) {
+            const newCard = {
+                id: 'c' + Date.now(),
+                title: title,
+                priority: 'low',
+                desc: ''
+            };
+            if (!boardData.data[colId]) boardData.data[colId] = [];
+            boardData.data[colId].push(newCard);
+            saveData(); // Save triggering listener -> redraws UI automatically
+        }
+
+        function handleDrop(e, targetCol) {
+            e.preventDefault();
+            const data = JSON.parse(e.dataTransfer.getData("text"));
+            if (data.src === targetCol) return;
+
+            // Mover datos
+            const srcList = boardData.data[data.src];
+            const cardIndex = srcList.findIndex(c => c.id === data.id);
+            if (cardIndex > -1) {
+                const card = srcList.splice(cardIndex, 1)[0];
+                if (!boardData.data[targetCol]) boardData.data[targetCol] = [];
+                boardData.data[targetCol].push(card);
+                saveData();
+            }
+        }
+
+        // --- 5. MODAL ---
+        let editingId = null;
         function openModal(id) {
-            currentEditingId = id; const card = findCard(id);
+            editingId = id;
+            const card = findCard(id);
             document.getElementById('modal-title').value = card.title;
             document.getElementById('modal-desc').value = card.desc || '';
             document.getElementById('modal-priority').value = card.priority || 'low';
-            renderChecklist(card);
             document.getElementById('card-modal').style.display = 'block';
         }
-        function findCard(id) { return [...folderData.data.todo, ...folderData.data['in-progress'], ...folderData.data.done].find(c => c.id === id); }
-        window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
 
-        window.updatePriority = () => { findCard(currentEditingId).priority = document.getElementById('modal-priority').value; renderKanban(); safeUpdate(); };
-        
-        window.addChecklistItem = () => {
-            const card = findCard(currentEditingId); card.checklist = card.checklist || [];
-            card.checklist.push({ text: document.getElementById('new-check-input').value, done: false });
-            document.getElementById('new-check-input').value = ''; renderChecklist(card); safeUpdate();
+        window.updateCardData = () => {
+            const card = findCard(editingId);
+            card.title = document.getElementById('modal-title').value;
+            card.desc = document.getElementById('modal-desc').value;
+            card.priority = document.getElementById('modal-priority').value;
+            saveData();
         };
-        function renderChecklist(card) {
-            const cont = document.getElementById('modal-checklist');
-            cont.innerHTML = (card.checklist || []).map((it, i) => `<div><input type="checkbox" ${it.done ? 'checked' : ''} onchange="window.toggleCheck(${i})"> ${it.text}</div>`).join('');
-            const done = (card.checklist || []).filter(x => x.done).length;
-            const pc = card.checklist?.length ? Math.round((done/card.checklist.length)*100) : 0;
-            document.getElementById('progress-fill').style.width = pc+'%';
-            document.getElementById('check-percent').innerText = pc+'%';
+
+        window.deleteCard = () => {
+            if (confirm("¿Borrar tarea?")) {
+                ['todo', 'processing', 'done'].forEach(col => {
+                    boardData.data[col] = boardData.data[col].filter(c => c.id !== editingId);
+                });
+                document.getElementById('card-modal').style.display = 'none';
+                saveData();
+            }
+        };
+
+        function findCard(id) {
+            let found = null;
+            Object.values(boardData.data).forEach(list => {
+                const c = list.find(x => x.id === id);
+                if (c) found = c;
+            });
+            return found;
         }
-        window.toggleCheck = (i) => { const card = findCard(currentEditingId); card.checklist[i].done = !card.checklist[i].done; renderChecklist(card); safeUpdate(); };
-        
-        window.deleteCard = () => { 
-            if(!confirm("¿Eliminar?")) return; 
-            ['todo','in-progress','done'].forEach(c => folderData.data[c] = folderData.data[c].filter(x => x.id !== currentEditingId)); 
-            window.closeModal(); renderKanban(); safeUpdate(); 
-        };
 
-        document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; renderKanban(); safeUpdate(); };
-        document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; safeUpdate(); };
+        // Auto-save en inputs del modal
+        document.getElementById('modal-title').onblur = window.updateCardData;
+        document.getElementById('modal-desc').onblur = window.updateCardData;
+
     </script>
 </body>
 </html>
