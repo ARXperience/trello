@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v43 | OMNI VERSION</title>
+    <title>Pro-Task v44 | Smart Gestures</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -36,7 +36,7 @@
         .list h4 { margin: 0 0 10px 5px; color: var(--text); font-weight: 700; display:flex; justify-content:space-between; }
         .cards { flex: 1; overflow-y: auto; min-height: 20px; padding-right: 4px; margin-bottom: 10px; }
         
-        /* TARJETA (SISTEMA DE COLORES Y PRIORIDAD) */
+        /* TARJETA */
         .card { background: var(--surface); padding: 10px; margin-bottom: 8px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); border-left: 4px solid #ccc; position: relative; transition: transform 0.1s; }
         .card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         
@@ -55,13 +55,10 @@
         .card-meta { display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; color: var(--text-sub); align-items: center; flex-wrap: wrap; }
         .meta-badge { background: var(--bg); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border); }
         
-        /* Alertas de Vencimiento */
         .meta-badge.overdue { background: #ffe3e3; color: var(--danger); border-color: var(--danger); font-weight: bold; }
         .meta-badge.today { background: #fff8e1; color: var(--warning); border-color: var(--warning); font-weight: bold; }
 
-        /* Avatares */
         .avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; border: 2px solid var(--surface); margin-left: auto; }
-
         .progress-bar { height: 4px; background: #eee; border-radius: 2px; margin-top: 8px; overflow: hidden; width: 100%; }
         .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
 
@@ -111,7 +108,6 @@
         .board-item:hover { background: rgba(0,0,0,0.05); }
         .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: bold; }
         .badge-new { background: var(--danger); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; }
-        
         .bell-count { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px; display: none; }
     </style>
 </head>
@@ -135,8 +131,8 @@
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="text-align:center; color:white;">Pro-Task v43</h2>
-            <p style="text-align:center; color:white; opacity:0.8;">Omni Version</p>
+            <h2 style="text-align:center; color:white;">Pro-Task v44</h2>
+            <p style="text-align:center; color:white; opacity:0.8;">Smart Gestures</p>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button class="btn-primary" style="width:100%; margin-top:10px; background:white; color:var(--primary);" onclick="window.login()">Entrar</button>
@@ -164,11 +160,9 @@
                 <div style="display:flex; gap:10px; align-items:center;">
                     <button class="btn-ghost" onclick="window.exportCSV()">📊 Export</button>
                     <button class="btn-ghost" onclick="window.openStats()">📈 Stats</button>
-                    
                     <div style="position:relative; cursor:pointer;" onclick="window.openUnread()">
                         🔔 <span id="bell-count" class="bell-count">0</span>
                     </div>
-                    
                     <button class="btn-ghost" onclick="window.toggleTheme()">🌓</button>
                     <span id="user-display" style="font-size:0.8rem;"></span>
                     <button class="btn-ghost" onclick="window.logout()">Salir</button>
@@ -190,20 +184,16 @@
     <div id="task-modal" class="overlay" style="display: none;">
         <div class="box modal-lg">
             <span onclick="window.closeModals()" style="align-self:flex-end; cursor:pointer; font-size:1.5rem;">&times;</span>
-            
             <div id="m-cover-preview" style="height:100px; background:#eee; border-radius:4px; margin-bottom:10px; background-size:cover; background-position:center; display:none;"></div>
-
             <div class="mic-wrapper">
                 <input type="text" id="m-title" style="font-size:1.5rem; font-weight:bold; border:none; background:transparent;" onblur="window.updateTask()" placeholder="Título">
                 <div class="mic-btn" onclick="window.startDictation('m-title')">🎤</div>
             </div>
-
             <div class="tabs">
                 <div class="tab active" onclick="window.switchTab('details', this)">Detalles</div>
                 <div class="tab" onclick="window.switchTab('comments', this)">Comentarios</div>
                 <div class="tab" onclick="window.switchTab('files', this)">Adjuntos</div>
             </div>
-
             <div id="tab-details">
                 <div class="task-grid">
                     <div>
@@ -233,13 +223,11 @@
                         </div>
                     </div>
                 </div>
-
                 <label style="font-size:0.8rem; color:var(--text-sub);">Descripción</label>
                 <div class="mic-wrapper" style="align-items:flex-start">
                     <textarea id="m-desc" rows="3" onblur="window.updateTask()"></textarea>
                     <div class="mic-btn" style="top:10px; transform:none;" onclick="window.startDictation('m-desc')">🎤</div>
                 </div>
-
                 <div style="margin-top:15px;">
                     <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
                         <strong>Checklist</strong>
@@ -253,7 +241,6 @@
                     </div>
                 </div>
             </div>
-
             <div id="tab-comments" style="display:none;">
                 <div id="comment-list" style="margin-bottom:10px; max-height:150px; overflow-y:auto;"></div>
                 <div style="display:flex; gap:5px;">
@@ -261,7 +248,6 @@
                     <button class="btn-primary" onclick="window.addComment()">Enviar</button>
                 </div>
             </div>
-
             <div id="tab-files" style="display:none;">
                 <label>Portada (URL)</label>
                 <input id="m-cover-url" placeholder="https://..." onblur="window.updateTask()" style="margin-bottom:10px;">
@@ -272,7 +258,6 @@
                     <button class="btn-ghost" onclick="window.addFile()">+</button>
                 </div>
             </div>
-
             <div style="margin-top:20px; text-align:right; border-top:1px solid var(--border); padding-top:10px;">
                 <button class="btn-danger" style="background:var(--danger); color:white;" onclick="window.deleteTask()">Eliminar Tarea</button>
             </div>
@@ -448,13 +433,11 @@
             
             let html = `<strong>${task.title}</strong>`;
             
-            // TAGS VISUALES
             if(task.tag === 'urgent') html += ` <span class="tag urgent">🔥</span>`;
             if(task.tag === 'bug') html += ` <span class="tag bug">🐛</span>`;
 
             html += `<div class="card-meta">`;
             
-            // ALARMAS
             if(task.due) {
                 const today = new Date().toISOString().split('T')[0];
                 let cls = '';
@@ -472,7 +455,6 @@
             }
             html += `</div>`;
             
-            // PROGRESO VISUAL
             if(task.checklist && task.checklist.length > 0) {
                 const pct = Math.round((task.checklist.filter(c => c.done).length / task.checklist.length) * 100);
                 html += `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
@@ -509,7 +491,6 @@
             _id('m-tag').value = task.tag || 'low';
             _id('m-cover-url').value = task.cover || '';
             
-            // ASIGNACIÓN
             const sel = _id('m-assignee'); sel.innerHTML = '<option value="">Sin Asignar</option>';
             (boardData.members || [currentUser.email]).forEach(m => {
                 sel.innerHTML += `<option value="${m}" ${task.assignedTo===m?'selected':''}>${m}</option>`;
@@ -643,7 +624,7 @@
             recognition.start();
         };
 
-        // --- 👁️ VISIÓN IA MANUAL (FIXED) ---
+        // --- 👁️ VISIÓN IA MANUAL (SMART GESTURES) ---
         let videoElement = null; let canvasElement = null; let canvasCtx = null; let hands = null; let camera = null; let isAiActive = false;
 
         window.toggleAI = () => {
@@ -677,6 +658,12 @@
         }
 
         let isPinching = false; let dragId = null; let dragSrc = null;
+        
+        // Variables para detectar "Clic" vs "Arrastre"
+        let pinchStartTime = 0;
+        let pinchStartX = 0;
+        let pinchStartY = 0;
+        let isDragging = false; 
 
         function onResults(results) {
             const cursor = _id('virtual-cursor');
@@ -693,35 +680,55 @@
             const dist = Math.hypot(idx.x - thb.x, idx.y - thb.y);
             const PINCH_START = 0.05; const PINCH_RELEASE = 0.08;
 
-            // GRAB
+            // 1. INICIO DE PINZA (PINCH START)
             if (!isPinching && dist < PINCH_START) {
-                isPinching = true; cursor.classList.add('pinching');
+                isPinching = true;
+                cursor.classList.add('pinching');
+                
+                // Guardar estado inicial para diferenciar clic de arrastre
+                pinchStartTime = Date.now();
+                pinchStartX = x;
+                pinchStartY = y;
+                isDragging = false; // Asumimos clic hasta que se demuestre movimiento
+
+                // Detectar qué hay debajo
                 const elements = document.elementsFromPoint(x, y);
                 const card = elements.find(el => el.classList.contains('card'));
+                
                 if (card) {
+                    // Preparamos datos por si se convierte en arrastre
                     dragId = card.getAttribute('data-task-id');
                     dragSrc = card.getAttribute('data-col');
                     const ghost = _id('ai-ghost-card');
                     ghost.querySelector('strong').innerText = card.querySelector('strong').innerText;
-                    ghost.style.display = 'block';
-                } else {
-                    const clickable = elements.find(el => el.tagName === 'BUTTON' || el.classList.contains('board-item') || el.onclick);
-                    if(clickable) clickable.click();
+                    // NO MOSTRAR GHOST AÚN
                 }
             }
 
-            // HOLD
+            // 2. MANTENIENDO PINZA (HOLD)
             if (isPinching) {
-                if (dragId) {
+                // Calcular cuánto se ha movido desde que empezó el pellizco
+                const moveDist = Math.hypot(x - pinchStartX, y - pinchStartY);
+                
+                // Si se mueve más de 20px, se convierte en ARRASTRE
+                if (!isDragging && moveDist > 20 && dragId) {
+                    isDragging = true;
+                    _id('ai-ghost-card').style.display = 'block'; // Ahora sí mostramos el fantasma
+                }
+
+                if (isDragging && dragId) {
                     const ghost = _id('ai-ghost-card');
                     ghost.style.left = (x + 20) + 'px'; ghost.style.top = (y + 20) + 'px';
                 }
             }
 
-            // RELEASE
+            // 3. SOLTAR PINZA (RELEASE)
             if (isPinching && dist > PINCH_RELEASE) {
-                isPinching = false; cursor.classList.remove('pinching');
-                if (dragId) {
+                isPinching = false;
+                cursor.classList.remove('pinching');
+
+                if (isDragging && dragId) {
+                    // --- LÓGICA DE SOLTAR (DROP) ---
                     const elements = document.elementsFromPoint(x, y);
                     const list = elements.find(el => el.classList.contains('list'));
                     if (list) {
@@ -735,8 +742,18 @@
                             }
                         }
                     }
-                    _id('ai-ghost-card').style.display = 'none'; dragId = null; dragSrc = null;
+                } else {
+                    // --- LÓGICA DE CLIC (TAP) ---
+                    // Si no fue arrastre, simular clic en el elemento
+                    const el = document.elementFromPoint(x, y);
+                    if(el) el.click();
                 }
+
+                // Limpieza
+                _id('ai-ghost-card').style.display = 'none'; 
+                dragId = null; 
+                dragSrc = null;
+                isDragging = false;
             }
         }
     </script>
