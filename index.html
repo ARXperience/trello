@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Enterprise | V13 FINAL - CONECTADO</title>
+    <title>Pro-Task Enterprise | Conexión Trello-Datos</title>
     <style>
+        /* --- ESTILOS (CSS) --- */
         :root { --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --text: #172b4d; --card: #fff; --error: #eb5a46; --success: #61bd4f; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); }
         
@@ -54,14 +55,14 @@
     <div id="loading-screen" class="overlay" style="display: none; background: rgba(255,255,255,0.95); z-index: 2000;">
         <div class="box" style="box-shadow: none; background: transparent;">
             <div class="loader"></div>
-            <h3 style="color:#333">Conectando a Firebase...</h3>
+            <h3 style="color:#333">Conectando a "trello-datos"...</h3>
         </div>
     </div>
 
     <div id="auth-screen" class="overlay">
         <div class="box">
-            <h2 style="color:var(--primary)">Pro-Task v13</h2>
-            <p>Tus credenciales ya están configuradas</p>
+            <h2 style="color:var(--primary)">Pro-Task v14</h2>
+            <p>Acceso a Base de Datos Dedicada</p>
             <input type="email" id="email" placeholder="Correo electrónico">
             <input type="password" id="password" placeholder="Contraseña">
             <button onclick="login()">Iniciar Sesión</button>
@@ -126,7 +127,7 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, orderBy, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- TUS CREDENCIALES REALES (Ya configuradas) ---
+        // --- TUS CREDENCIALES ---
         const firebaseConfig = {
             apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
             authDomain: "trello-d2532.firebaseapp.com",
@@ -139,7 +140,11 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+        
+        // --- 🔴 AQUÍ ESTÁ EL CAMBIO CLAVE ---
+        // Conectamos a tu base de datos específica "trello-datos"
+        const db = getFirestore(app, "trello-datos");
+        // ------------------------------------
 
         let currentUser = null;
         let currentBoardId = null;
@@ -177,6 +182,7 @@
 
         // 2. GESTIÓN DE TABLEROS
         function loadBoardList() {
+            // Escuchar cambios en "trello-datos"
             const q = query(collection(db, `users/${currentUser.uid}/boards`), orderBy("createdAt", "desc"));
             
             onSnapshot(q, (snapshot) => {
@@ -197,7 +203,7 @@
                 if (lastId && !currentBoardId) {
                     const exists = snapshot.docs.find(d => d.id === lastId);
                     if (exists) openBoard(lastId);
-                    else localStorage.removeItem('lastBoardId'); // Limpiar si ya no existe
+                    else localStorage.removeItem('lastBoardId');
                 }
             });
         }
@@ -213,7 +219,8 @@
                 });
                 openBoard(ref.id);
             } catch (e) {
-                alert("Error: Verifica las reglas de Firebase. " + e.message);
+                alert("Error al guardar en 'trello-datos'. Revisa las Reglas en la consola.");
+                console.error(e);
             }
         };
 
@@ -231,7 +238,7 @@
                 if (!docSnap.exists()) return; 
                 
                 boardData = docSnap.data();
-                dataLoaded = true; // SEGURO ACTIVADO
+                dataLoaded = true; 
                 
                 document.getElementById('header-title').innerText = boardData.name;
                 renderKanban();
@@ -273,9 +280,9 @@
             }
         }
 
-        // 4. GUARDADO BLINDADO
+        // 4. GUARDADO
         async function saveToCloud() {
-            if (!dataLoaded || !currentBoardId) return; // Bloqueo de seguridad
+            if (!dataLoaded || !currentBoardId) return; 
             
             const indicator = document.getElementById('save-indicator');
             indicator.style.display = 'block';
@@ -358,7 +365,7 @@
 
         window.toggleCheck = (i) => {
             editTask.checklist[i].done = !editTask.checklist[i].done;
-            renderChecklist(); // Re-renderizar para ver el tachado visualmente
+            renderChecklist(); 
             saveToCloud();
         };
 
@@ -378,7 +385,7 @@
         };
 
         window.deleteCard = () => {
-            if(!confirm("¿Borrar?")) return;
+            if(!confirm("¿Borrar definitivamente?")) return;
             const list = boardData.columns[editCol];
             const idx = list.findIndex(t => t.id === editTask.id);
             if (idx > -1) list.splice(idx, 1);
@@ -387,7 +394,6 @@
             saveToCloud();
         };
 
-        // Eventos auto-save modal
         document.getElementById('m-title').onblur = updateTaskMeta;
     </script>
 </body>
