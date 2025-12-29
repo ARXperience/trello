@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v38 | Fixed & Stable</title>
+    <title>Pro-Task v40 | Perfect Vision & Features</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
     <style>
-        /* --- ESTILOS BASE --- */
+        /* --- ESTILOS GENERALES --- */
         :root {
             --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --surface: #ffffff;
             --text: #172b4d; --text-sub: #5e6c84; --border: #dfe1e6;
@@ -22,7 +22,7 @@
             --primary: #4a90e2; --bg: #1e1e1e; --sidebar: #252526; --surface: #2d2d30;
             --text: #e1e1e1; --text-sub: #a1a1a1; --border: #3e3e42;
         }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); background: var(--bg); user-select: none; }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); background: var(--bg); user-select: none; }
         
         /* LAYOUT */
         .app-container { display: flex; width: 100%; height: 100%; }
@@ -30,67 +30,88 @@
         .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; overflow: hidden; }
         header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 55px; display: flex; align-items: center; justify-content: space-between; }
         
-        /* KANBAN ROBUSTO */
+        /* KANBAN */
         .kanban { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; }
         .list { background: var(--sidebar); width: 280px; min-width: 280px; border-radius: var(--radius); padding: 10px; max-height: 90%; display: flex; flex-direction: column; border: 1px solid var(--border); }
         .list h4 { margin: 0 0 10px 5px; color: var(--text); font-weight: 700; display:flex; justify-content:space-between; }
         .cards { flex: 1; overflow-y: auto; min-height: 20px; padding-right: 4px; margin-bottom: 10px; }
         
         /* TARJETA */
-        .card { background: var(--surface); padding: 10px; margin-bottom: 8px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); position: relative; }
+        .card { background: var(--surface); padding: 10px; margin-bottom: 8px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); position: relative; transition: transform 0.1s; }
         .card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 5px; }
         .tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; color: white; font-weight: 600; }
         .tag.urgent { background: var(--warning); } .tag.bug { background: var(--danger); }
-        .card-meta { display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; color: var(--text-sub); }
-        
-        /* BOTONES */
+        .card-meta { display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; color: var(--text-sub); align-items: center; flex-wrap: wrap; }
+        .meta-badge { background: var(--bg); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border); }
+        .progress-bar { height: 4px; background: #eee; border-radius: 2px; margin-top: 8px; overflow: hidden; width: 100%; }
+        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
+
+        /* UI ELEMENTS & BUTTONS */
         button { cursor: pointer; border: none; padding: 8px 12px; border-radius: 4px; font-weight: 600; transition: 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
         .btn-ghost:hover { background: rgba(0,0,0,0.05); }
-        .btn-add-task { width: 100%; text-align: left; background: transparent; color: var(--text-sub); border: 1px dashed var(--border); padding: 8px; }
+        .btn-add-task { width: 100%; text-align: left; background: transparent; color: var(--text-sub); border: 1px dashed var(--border); padding: 8px; cursor: pointer; margin-top:5px; }
         .btn-add-task:hover { background: rgba(0,0,0,0.05); color: var(--primary); border-color: var(--primary); }
-
-        /* UI ELEMENTS */
         input, select, textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; }
-        
-        /* VISIÓN IA ELEMENTS */
-        #webcam-container { position: fixed; bottom: 80px; right: 20px; width: 160px; height: 120px; background: black; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary); z-index: 5000; display: none; transform: scaleX(-1); }
+
+        /* --- VISIÓN IA ELEMENTS (CRUCIALES PARA ARRASTRAR) --- */
+        #webcam-container {
+            position: fixed; bottom: 80px; right: 20px; width: 160px; height: 120px;
+            background: black; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary);
+            z-index: 5000; display: none; transform: scaleX(-1);
+        }
         #webcam-feed { width: 100%; height: 100%; object-fit: cover; }
-        #virtual-cursor { position: fixed; top: 0; left: 0; width: 25px; height: 25px; background: rgba(0, 121, 191, 0.5); border: 2px solid white; border-radius: 50%; pointer-events: none; z-index: 9999; display: none; transform: translate(-50%, -50%); transition: background 0.1s; }
-        #virtual-cursor.pinching { background: var(--success); width: 15px; height: 15px; border-color: lime; }
-        #ai-ghost-card { position: fixed; width: 260px; padding: 15px; background: var(--surface); box-shadow: 0 15px 30px rgba(0,0,0,0.4); border-radius: 8px; border: 2px solid var(--success); z-index: 9998; pointer-events: none; opacity: 0.95; display: none; transform: rotate(3deg); }
-        .ai-toggle { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: var(--bg); padding: 12px 24px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 5001; display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer; }
+        
+        #virtual-cursor {
+            position: fixed; top: 0; left: 0; width: 20px; height: 20px;
+            background: rgba(0, 121, 191, 0.6); border: 2px solid white;
+            border-radius: 50%; pointer-events: none; /* CLAVE */
+            z-index: 9999; display: none; transform: translate(-50%, -50%);
+            transition: background 0.1s; box-shadow: 0 0 10px var(--primary);
+        }
+        #virtual-cursor.pinching { background: var(--success); width: 16px; height: 16px; border-color: lime; }
+
+        #ai-ghost-card {
+            position: fixed; width: 260px; padding: 15px; background: var(--surface);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4); border-radius: 8px;
+            border: 2px solid var(--success); z-index: 9998;
+            pointer-events: none; /* CLAVE */
+            opacity: 0.95; display: none; transform: rotate(3deg);
+        }
+
+        .ai-toggle {
+            position: fixed; bottom: 20px; right: 20px; 
+            background: var(--text); color: var(--bg); padding: 12px 24px; border-radius: 30px; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 5001; 
+            display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;
+        }
 
         /* MODAL Y TABS */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(2px); }
-        .box { background: var(--surface); padding: 25px; border-radius: 8px; width: 450px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--border); }
+        .box { background: var(--surface); padding: 25px; border-radius: 8px; width: 500px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--border); }
         .modal-lg { width: 700px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
         .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
         .tab { padding: 10px 15px; cursor: pointer; color: var(--text-sub); border-bottom: 2px solid transparent; }
         .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: bold; }
-        
+        .task-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+
         /* MICROFONO */
         .mic-wrapper { position: relative; display: flex; align-items: center; width: 100%; margin-bottom: 10px; }
         .mic-wrapper input, .mic-wrapper textarea { padding-right: 45px; }
-        .mic-btn { 
-            position: absolute; right: 5px; top: 50%; transform: translateY(-50%); 
-            background: var(--danger); color: white; border-radius: 50%; width: 30px; height: 30px;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1rem;
-            z-index: 10;
-        }
-        .mic-btn:hover { background: red; }
+        .mic-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: var(--danger); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
+        .mic-btn:hover { transform: translateY(-50%) scale(1.1); }
         .mic-active { animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) scale(1.2); } 100% { transform: translateY(-50%) scale(1); } }
 
-        /* UTILIDADES */
-        .board-item { padding: 10px; cursor: pointer; border-radius: 4px; color: var(--text); margin-bottom: 2px; }
-        .board-item:hover { background: rgba(0,0,0,0.05); }
-        .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: bold; }
+        /* EXTRA */
         .checklist-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #eee; }
         #toast { position: fixed; top: 70px; right: 20px; background: #333; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 6000; }
         #toast.show { opacity: 1; pointer-events: auto; }
+        .board-item { padding: 10px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; color: var(--text); }
+        .board-item:hover { background: rgba(0,0,0,0.05); }
+        .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: bold; }
     </style>
 </head>
 <body>
@@ -98,7 +119,7 @@
     <div id="virtual-cursor"></div>
     <div id="ai-ghost-card">
         <strong id="ghost-title">Tarea</strong>
-        <div style="font-size:0.8rem; margin-top:5px; color:var(--text-sub);">Abre la mano para soltar</div>
+        <div style="font-size:0.8rem; margin-top:5px; color:var(--text-sub);">Suelta los dedos para dejar caer</div>
     </div>
     <div id="webcam-container">
         <video id="webcam-feed" autoplay playsinline></video>
@@ -109,12 +130,12 @@
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="text-align:center; color:white;">Pro-Task v38</h2>
+            <h2 style="text-align:center; color:white;">Pro-Task v40</h2>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button class="btn-primary" style="width:100%; margin-top:10px; background:white; color:var(--primary);" onclick="window.login()">Entrar</button>
             <button class="btn-ghost" style="width:100%; margin-top:5px; color:white; border-color:white;" onclick="window.register()">Crear Cuenta</button>
-            <p id="auth-msg" style="color:white; text-align:center; margin-top:10px;"></p>
+            <p id="auth-msg" style="color:white; text-align:center; margin-top:10px; display:none;"></p>
         </div>
     </div>
 
@@ -126,7 +147,8 @@
             <div style="padding:0 10px; font-size:0.7rem; color:var(--text-sub); font-weight:bold;">COMPARTIDOS</div>
             <div id="shared-boards" style="max-height:150px; overflow-y:auto; padding:10px;"></div>
             <div style="padding:15px; border-top:1px solid var(--border);">
-                <button class="btn-primary" style="width:100%;" onclick="window.createBoard()">+ Nuevo Tablero</button>
+                <button class="btn-primary" style="width:100%;" onclick="window.createBoard()">+ Nuevo</button>
+                <div onclick="window.openTrash()" style="margin-top:10px; cursor:pointer; text-align:center; font-size:0.9rem; color:var(--text-sub);">🗑️ Papelera</div>
             </div>
         </div>
 
@@ -156,9 +178,10 @@
         <div class="box modal-lg">
             <span onclick="window.closeModals()" style="align-self:flex-end; cursor:pointer; font-size:1.5rem;">&times;</span>
             
-            <label style="font-size:0.8rem; color:var(--text-sub);">Título</label>
+            <div id="m-cover-preview" style="height:100px; background:#eee; border-radius:4px; margin-bottom:10px; background-size:cover; background-position:center; display:none;"></div>
+
             <div class="mic-wrapper">
-                <input type="text" id="m-title" style="font-size:1.2rem; font-weight:bold;" onblur="window.updateTask()">
+                <input type="text" id="m-title" style="font-size:1.5rem; font-weight:bold; border:none; background:transparent;" onblur="window.updateTask()" placeholder="Título">
                 <div class="mic-btn" onclick="window.startDictation('m-title')">🎤</div>
             </div>
 
@@ -169,7 +192,7 @@
             </div>
 
             <div id="tab-details">
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                <div class="task-grid">
                     <div>
                         <label style="font-size:0.8rem; color:var(--text-sub);">Etiqueta</label>
                         <select id="m-tag" onchange="window.updateTask()">
@@ -182,19 +205,30 @@
                         <label style="font-size:0.8rem; color:var(--text-sub);">Vencimiento</label>
                         <input type="date" id="m-due" onchange="window.updateTask()">
                     </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-sub);">Cronómetro</label>
+                        <div style="display:flex; gap:5px; align-items:center;">
+                            <button id="btn-timer" class="btn-ghost" onclick="window.toggleTimer()">▶️ Play</button>
+                            <span id="m-timer-display" style="font-weight:bold; font-family:monospace; font-size:1.1rem;">00:00:00</span>
+                        </div>
+                    </div>
                 </div>
 
                 <label style="font-size:0.8rem; color:var(--text-sub);">Descripción</label>
-                <div class="mic-wrapper">
+                <div class="mic-wrapper" style="align-items:flex-start">
                     <textarea id="m-desc" rows="3" onblur="window.updateTask()"></textarea>
-                    <div class="mic-btn" onclick="window.startDictation('m-desc')">🎤</div>
+                    <div class="mic-btn" style="top:10px; transform:none;" onclick="window.startDictation('m-desc')">🎤</div>
                 </div>
 
                 <div style="margin-top:15px;">
-                    <strong>Checklist</strong>
-                    <div id="m-checklist" style="margin-top:5px;"></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <strong>Checklist</strong>
+                        <span id="m-progress-text" style="font-size:0.8rem;">0%</span>
+                    </div>
+                    <div class="progress-bar"><div id="m-progress-bar" class="progress-fill"></div></div>
+                    <div id="m-checklist" style="margin-top:10px;"></div>
                     <div style="display:flex; gap:5px; margin-top:5px;">
-                        <input id="m-new-check" placeholder="Nueva subtarea...">
+                        <input id="m-new-check" placeholder="Nueva subtarea..." onkeypress="if(event.key==='Enter') window.addCheck()">
                         <button class="btn-ghost" onclick="window.addCheck()">+</button>
                     </div>
                 </div>
@@ -209,6 +243,8 @@
             </div>
 
             <div id="tab-files" style="display:none;">
+                <label>Portada (URL)</label>
+                <input id="m-cover-url" placeholder="https://..." onblur="window.updateTask()" style="margin-bottom:10px;">
                 <div id="file-list" style="margin-bottom:10px;"></div>
                 <div style="display:flex; gap:5px;">
                     <input id="m-file-name" placeholder="Nombre">
@@ -229,6 +265,14 @@
             <input id="share-email" placeholder="Email">
             <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="window.shareBoard()">Enviar</button>
             <button class="btn-ghost" style="width:100%; margin-top:5px;" onclick="window.closeModals()">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="trash-modal" class="overlay" style="display:none;">
+        <div class="box modal-lg">
+            <h3>Papelera</h3>
+            <div id="trash-list" style="margin-top:10px;"></div>
+            <button class="btn-ghost" style="margin-top:10px;" onclick="window.closeModals()">Cerrar</button>
         </div>
     </div>
 
@@ -255,10 +299,11 @@
         let currentBoardId = null;
         let boardData = null;
         let editTask = null; let editCol = null;
+        window.activeTimers = {};
 
         // --- AUTH ---
-        window.login = () => signInWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => _id('auth-msg').innerText = e.message);
-        window.register = () => createUserWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => _id('auth-msg').innerText = e.message);
+        window.login = () => signInWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => { _id('auth-msg').innerText = e.message; _id('auth-msg').style.display='block'; });
+        window.register = () => createUserWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => { _id('auth-msg').innerText = e.message; _id('auth-msg').style.display='block'; });
         window.logout = () => { signOut(auth); location.reload(); };
 
         onAuthStateChanged(auth, user => {
@@ -271,7 +316,7 @@
             }
         });
 
-        // --- CORE ---
+        // --- DASHBOARD ---
         function initDashboard() {
             onSnapshot(query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid)), snap => {
                 _id('my-boards').innerHTML = '';
@@ -285,7 +330,7 @@
         const renderBoardItem = (id, data, shared) => `<div class="board-item" onclick="window.openBoard('${id}')"><span>${shared?'👥':'📁'} ${data.name}</span></div>`;
 
         window.createBoard = async () => {
-            const name = prompt("Nombre del Tablero:"); if(!name) return;
+            const name = prompt("Nombre:"); if(!name) return;
             const res = await addDoc(collection(db, 'boards'), {
                 name, ownerId: currentUser.uid, members: [currentUser.email],
                 deleted: false, createdAt: serverTimestamp(), columns: { todo: [], doing: [], done: [] }
@@ -296,7 +341,7 @@
         window.openBoard = (id) => {
             currentBoardId = id;
             onSnapshot(doc(db, 'boards', id), snap => {
-                if(!snap.exists() || snap.data().deleted) return _id('kanban').innerHTML = '<p>No disponible</p>';
+                if(!snap.exists() || snap.data().deleted) return _id('kanban').innerHTML = '<p style="padding:20px;">No disponible</p>';
                 boardData = snap.data();
                 _id('header-title').innerText = boardData.name;
                 _id('board-actions').style.display = (boardData.ownerId === currentUser.uid) ? 'block' : 'none';
@@ -304,7 +349,7 @@
             });
         };
 
-        // --- KANBAN RENDERIZADO SEGURO ---
+        // --- KANBAN ---
         function renderKanban() {
             const container = _id('kanban'); container.innerHTML = '';
             const cols = { todo: "Por Hacer", doing: "En Progreso", done: "Hecho" };
@@ -313,20 +358,17 @@
                 const list = document.createElement('div'); list.className = 'list';
                 list.id = `col-${k}`; list.setAttribute('data-col', k);
 
-                // 1. HEADER
                 list.innerHTML = `<h4>${cols[k]} <span>${(boardData.columns[k]||[]).length}</span></h4>`;
                 
-                // 2. CARDS CONTAINER
                 const cardCont = document.createElement('div'); cardCont.className = 'cards';
                 cardCont.ondragover = e => e.preventDefault();
                 cardCont.ondrop = e => handleDrop(e, k);
                 (boardData.columns[k] || []).forEach(task => cardCont.appendChild(createCard(task, k)));
                 list.appendChild(cardCont);
 
-                // 3. BOTÓN AÑADIR (AQUÍ ESTABA EL ERROR, AHORA ES SEGURO)
+                // BOTÓN AÑADIR SEGURO
                 const btn = document.createElement('button');
-                btn.className = 'btn-add-task';
-                btn.innerText = '+ Añadir Tarea';
+                btn.className = 'btn-add-task'; btn.innerText = '+ Añadir Tarea';
                 btn.onclick = () => window.addTask(k);
                 list.appendChild(btn);
 
@@ -341,15 +383,20 @@
             el.onclick = () => window.openTaskModal(task, col);
             
             let html = `<strong>${task.title}</strong>`;
-            if(task.tag) html += `<div class="card-tags"><span class="tag ${task.tag}">${task.tag.toUpperCase()}</span></div>`;
+            html += `<div class="card-meta">`;
+            if(task.due) html += `<span class="meta-badge">📅 ${task.due.slice(5)}</span>`;
+            if(task.checklist && task.checklist.length > 0) {
+                const done = task.checklist.filter(c => c.done).length;
+                html += `<span class="meta-badge">☑ ${done}/${task.checklist.length}</span>`;
+            }
+            html += `</div>`;
             el.innerHTML = html;
             return el;
         };
 
-        // --- LOGIC ---
         window.addTask = (col) => {
-            const t = prompt("Nueva Tarea:"); if(!t) return;
-            const newTask = { id: Date.now().toString(), title: t, desc: '', tag: '', due: '', checklist: [], comments: [], files: [] };
+            const t = prompt("Tarea:"); if(!t) return;
+            const newTask = { id: Date.now().toString(), title: t, desc: '', tag: '', due: '', checklist: [], comments: [], files: [], timeLog: 0 };
             boardData.columns[col].push(newTask); save();
         };
 
@@ -363,25 +410,22 @@
 
         async function save() { await updateDoc(doc(db, 'boards', currentBoardId), { columns: boardData.columns }); }
 
-        // --- MODAL ---
+        // --- SUPER MODAL (FULL FEATURES) ---
         window.openTaskModal = (task, col) => {
             editTask = task; editCol = col;
             _id('task-modal').style.display = 'flex';
+            
             _id('m-title').value = task.title;
             _id('m-desc').value = task.desc || '';
             _id('m-due').value = task.due || '';
             _id('m-tag').value = task.tag || '';
-            renderChecklist(); renderComments(); renderFiles();
-            window.switchTab('details');
-        };
+            _id('m-cover-url').value = task.cover || '';
+            
+            if(task.cover) { _id('m-cover-preview').style.display='block'; _id('m-cover-preview').style.backgroundImage=`url('${task.cover}')`; }
+            else _id('m-cover-preview').style.display='none';
 
-        window.updateTask = () => {
-            if(!editTask) return;
-            editTask.title = _id('m-title').value;
-            editTask.desc = _id('m-desc').value;
-            editTask.due = _id('m-due').value;
-            editTask.tag = _id('m-tag').value;
-            save();
+            updateTimerDisplay(); renderChecklist(); renderComments(); renderFiles();
+            window.switchTab('details'); // Reset tab
         };
 
         window.switchTab = (tab, btn) => {
@@ -389,7 +433,14 @@
             ['details','comments','files'].forEach(t => _id('tab-'+t).style.display = (t===tab?'block':'none'));
         };
 
-        // Sub-funciones
+        window.updateTask = () => {
+            if(!editTask) return;
+            editTask.title = _id('m-title').value; editTask.desc = _id('m-desc').value;
+            editTask.due = _id('m-due').value; editTask.tag = _id('m-tag').value;
+            editTask.cover = _id('m-cover-url').value; save();
+        };
+
+        // --- SUB-FEATURES ---
         window.addCheck = () => {
             const val = _id('m-new-check').value; if(!val) return;
             if(!editTask.checklist) editTask.checklist = [];
@@ -397,8 +448,12 @@
         };
         const renderChecklist = () => {
             _id('m-checklist').innerHTML = (editTask.checklist||[]).map((c, i) => `<div class="checklist-item"><input type="checkbox" ${c.done?'checked':''} onchange="window.toggleCheck(${i})"> <span>${c.text}</span></div>`).join('');
+            const done = editTask.checklist ? editTask.checklist.filter(c=>c.done).length : 0;
+            const total = editTask.checklist ? editTask.checklist.length : 0;
+            const pct = total ? Math.round((done/total)*100) : 0;
+            _id('m-progress-bar').style.width = pct+'%'; _id('m-progress-text').innerText = pct+'%';
         };
-        window.toggleCheck = (i) => { editTask.checklist[i].done = !editTask.checklist[i].done; save(); };
+        window.toggleCheck = (i) => { editTask.checklist[i].done = !editTask.checklist[i].done; renderChecklist(); save(); };
 
         window.addComment = () => {
             const val = _id('m-new-comment').value; if(!val) return;
@@ -418,13 +473,26 @@
             _id('file-list').innerHTML = (editTask.files||[]).map(f => `<a href="${f.url}" target="_blank" style="display:block; padding:5px; background:#eee; margin:5px 0;">📎 ${f.name}</a>`).join('');
         };
 
+        window.toggleTimer = () => {
+            if(window.activeTimers[editTask.id]) {
+                clearInterval(window.activeTimers[editTask.id]); delete window.activeTimers[editTask.id]; _id('btn-timer').innerText = "▶️ Play";
+            } else {
+                window.activeTimers[editTask.id] = setInterval(() => { editTask.timeLog = (editTask.timeLog || 0) + 1; updateTimerDisplay(); }, 1000); _id('btn-timer').innerText = "⏸️ Pause";
+            }
+        };
+        function updateTimerDisplay() {
+            const sec = editTask.timeLog || 0;
+            const h = Math.floor(sec / 3600); const m = Math.floor((sec % 3600) / 60); const s = sec % 60;
+            _id('m-timer-display').innerText = `${h<10?'0'+h:h}:${m<10?'0'+m:m}:${s<10?'0'+s:s}`;
+        }
+
         window.deleteTask = () => {
             if(!confirm("¿Eliminar?")) return;
             boardData.columns[editCol] = boardData.columns[editCol].filter(t => t.id !== editTask.id);
             window.closeModals(); renderKanban(); save();
         };
 
-        // --- UTILS ---
+        // --- UTILS & IA ---
         const _id = (id) => document.getElementById(id);
         const _val = (id) => document.getElementById(id).value;
         window.closeModals = () => document.querySelectorAll('.overlay').forEach(e => { if(e.id!=='auth-screen') e.style.display='none'; });
@@ -432,8 +500,18 @@
         window.openShare = () => _id('share-modal').style.display='flex';
         window.shareBoard = async () => { await updateDoc(doc(db,'boards',currentBoardId), {members: arrayUnion(_val('share-email'))}); window.closeModals(); };
         window.softDeleteBoard = async () => { if(confirm("¿Borrar?")) await updateDoc(doc(db,'boards',currentBoardId), {deleted:true}); };
-        
-        // --- 🎤 DICTADO ---
+        window.openTrash = () => {
+             onSnapshot(query(collection(db,'boards'), where('ownerId','==',currentUser.uid)), snap => {
+                 let h = '';
+                 snap.forEach(d => { if(d.data().deleted) h += `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${d.data().name}</span><button class="btn-primary" onclick="window.restore('${d.id}')">♻️</button></div>`; });
+                 _id('trash-list').innerHTML = h || 'Vacía';
+                 _id('trash-modal').style.display='flex';
+             });
+        };
+        window.restore = async(id) => updateDoc(doc(db,'boards',id), {deleted:false});
+        window.filterCards = (q) => document.querySelectorAll('.card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q.toLowerCase()) ? 'block' : 'none');
+
+        // VOICE
         window.startDictation = (inputId) => {
             if (!('webkitSpeechRecognition' in window)) return alert("Usa Chrome.");
             const recognition = new webkitSpeechRecognition();
@@ -445,7 +523,7 @@
             recognition.start();
         };
 
-        // --- 👁️ VISIÓN IA (IMÁN) ---
+        // VISION (HANDS)
         let camera = null; let isAiActive = false;
         window.toggleAI = () => {
             const el = _id('webcam-container');
@@ -473,9 +551,11 @@
             cursor.style.left = x+'px'; cursor.style.top = y+'px';
 
             const dist = Math.hypot(idx.x-thb.x, idx.y-thb.y);
-            
-            // AGARRAR (< 0.05)
-            if(!isPinching && dist < 0.05) {
+            const PINCH_START = 0.05; // Ajustado
+            const PINCH_RELEASE = 0.08; // Ajustado
+
+            // GRAB
+            if(!isPinching && dist < PINCH_START) {
                 isPinching = true; cursor.classList.add('pinching');
                 const el = document.elementFromPoint(x,y);
                 const card = el ? el.closest('.card') : null;
@@ -488,14 +568,14 @@
                 }
             }
             
-            // MOVER
+            // MOVE
             if(isPinching && dragId) {
                 const ghost = _id('ai-ghost-card');
                 ghost.style.left = (x+20)+'px'; ghost.style.top = (y+20)+'px';
             }
 
-            // SOLTAR (> 0.08)
-            if(isPinching && dist > 0.08) {
+            // RELEASE
+            if(isPinching && dist > PINCH_RELEASE) {
                 isPinching = false; cursor.classList.remove('pinching');
                 if(dragId) {
                     const el = document.elementFromPoint(x,y);
