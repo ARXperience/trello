@@ -1,6 +1,20 @@
-import { db } from './firebase-config.js';
-import { initAuth } from './auth.js';
-import { doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
+    authDomain: "trello-d2532.firebaseapp.com",
+    projectId: "trello-d2532",
+    storageBucket: "trello-d2532.firebasestorage.app",
+    messagingSenderId: "630892154656",
+    appId: "1:630892154656:web:1d0dfce355216a1d879145",
+    measurementId: "G-4L4P7E6TZC"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 const MEMBERS = [
     { id: 'u1', name: 'Juan', initial: 'JP', color: '#e91e63' },
@@ -12,21 +26,12 @@ const MEMBERS = [
 let boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' } };
 let currentEditingId = null;
 
-// --- FUNCIONES GLOBALES PARA EL HTML ---
+// --- GLOBALES ---
 window.handleAddNewCard = function(btn) {
     const input = btn.parentElement.querySelector('.card-input');
     const colId = btn.closest('.list').dataset.id;
     if (!input.value.trim()) return;
-    const newCard = { 
-        id: 'c'+Date.now(), 
-        title: input.value, 
-        desc: '', 
-        tags: [], 
-        members: [], 
-        date: '', 
-        checklist: [],
-        priority: 'low' // Prioridad inicial baja
-    };
+    const newCard = { id: 'c'+Date.now(), title: input.value, desc: '', tags: [], members: [], date: '', checklist: [], priority: 'low' };
     boardData[colId].push(newCard);
     addLog(`Tarea creada: ${newCard.title}`);
     input.value = ''; save();
@@ -46,20 +51,15 @@ window.drop = (e) => {
 };
 
 window.updatePriority = () => {
-    const priority = document.getElementById('modal-priority').value;
     const card = findCard(currentEditingId);
-    card.priority = priority;
-    addLog(`Cambio de prioridad en "${card.title}" a ${priority}`);
+    card.priority = document.getElementById('modal-priority').value;
     renderBoard(); save();
 };
 
 window.addTag = () => {
     const input = document.getElementById('tag-input');
     const card = findCard(currentEditingId);
-    if(input.value && !card.tags.includes(input.value)) { 
-        card.tags.push(input.value); 
-        renderTags(card); renderBoard(); save(); 
-    }
+    if(input.value && !card.tags.includes(input.value)) { card.tags.push(input.value); renderTags(card); renderBoard(); save(); }
     input.value = '';
 };
 
@@ -89,7 +89,7 @@ window.toggleCheck = (i) => {
 window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
 
 window.archiveCardFromModal = () => {
-    if(confirm("¿Estás seguro de eliminar esta tarea permanentemente?")) {
+    if(confirm("¿Eliminar tarea permanentemente?")) {
         ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId));
         window.closeModal(); save();
     }
@@ -99,20 +99,12 @@ window.searchCards = () => {
     const q = document.getElementById('board-search').value.toLowerCase();
     document.querySelectorAll('.card').forEach(el => {
         const c = findCard(el.id);
-        const match = c.title.toLowerCase().includes(q) || 
-                      c.priority.toLowerCase().includes(q) ||
-                      MEMBERS.some(m => c.members.includes(m.id) && m.name.toLowerCase().includes(q));
+        const match = c.title.toLowerCase().includes(q) || c.priority.includes(q) || MEMBERS.some(m => c.members.includes(m.id) && m.name.toLowerCase().includes(q));
         el.style.display = match ? 'block' : 'none';
     });
 };
 
-window.exportToCSV = () => {
-    let csv = "Columna,Tarea,Prioridad,Fecha\n";
-    ['todo','in-progress','done'].forEach(col => boardData[col].forEach(c => csv += `${col},${c.title},${c.priority},${c.date}\n`));
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'tablero_empresa.csv'; a.click();
-};
-
-// --- LÓGICA CORE INTERNA ---
+// --- CORE ---
 async function save() { await setDoc(doc(db, "boards", "master"), boardData); }
 
 function startSync() {
@@ -130,22 +122,19 @@ function renderBoard() {
         const container = document.getElementById(col); container.innerHTML = '';
         (boardData[col] || []).forEach(card => {
             const el = document.createElement('div');
-            el.className = `card ${card.priority}`; // Añade la clase de prioridad
-            el.draggable = true; el.id = card.id;
+            el.className = `card ${card.priority}`; el.draggable = true; el.id = card.id;
             el.onclick = () => openModal(card.id);
             el.ondragstart = (e) => e.dataTransfer.setData("text", card.id);
-            
-            const avatars = (card.members || []).map(mId => {
+            const mIcons = (card.members || []).map(mId => {
                 const m = MEMBERS.find(u => u.id === mId);
                 return `<div class="avatar" style="background:${m.color}">${m.initial}</div>`;
             }).join('');
-
             el.innerHTML = `
                 <div class="card-tags">${(card.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
                 <strong>${card.title}</strong>
                 <div class="card-footer" style="display:flex; justify-content:space-between; align-items:center;">
-                    <small>${card.date ? '📅 '+card.date : ''} ${card.checklist?.length ? '☑️' : ''}</small>
-                    <div class="avatar-stack">${avatars}</div>
+                    <small>${card.date ? '📅 '+card.date : ''}</small>
+                    <div class="avatar-stack">${mIcons}</div>
                 </div>`;
             container.appendChild(el);
         });
@@ -199,15 +188,38 @@ function renderHistory() {
 
 function updateStats() {
     const total = boardData.todo.length + boardData['in-progress'].length + boardData.done.length;
-    document.getElementById('board-stats').innerHTML = `<span>Tareas: ${total}</span> | <span>Completadas: ${boardData.done.length}</span> | <span>Eficiencia: ${total ? Math.round((boardData.done.length/total)*100) : 0}%</span>`;
+    document.getElementById('board-stats').innerHTML = `<span>Tareas: ${total}</span> | <span>Completadas: ${boardData.done.length}</span>`;
 }
 
-// Guardado de textos al salir del foco
+// Auth & Listeners
+document.getElementById('btn-login').onclick = () => {
+    const e = document.getElementById('login-email').value;
+    const p = document.getElementById('login-pass').value;
+    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Credenciales incorrectas"));
+};
+
+document.getElementById('btn-signup').onclick = () => {
+    const e = document.getElementById('login-email').value;
+    const p = document.getElementById('login-pass').value;
+    createUserWithEmailAndPassword(auth, e, p).catch(err => alert(err.message));
+};
+
+onAuthStateChanged(auth, user => {
+    if (user) {
+        document.getElementById('auth-container').style.display = 'none';
+        document.getElementById('app-container').style.display = 'block';
+        document.getElementById('user-display').innerText = user.email;
+        startSync();
+    } else {
+        document.getElementById('auth-container').style.display = 'flex';
+        document.getElementById('app-container').style.display = 'none';
+    }
+});
+
 document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; renderBoard(); save(); };
 document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; save(); };
 document.getElementById('modal-date').onchange = e => { findCard(currentEditingId).date = e.target.value; renderBoard(); save(); };
 document.getElementById('btn-theme').onclick = () => { boardData.settings.theme = boardData.settings.theme === 'light' ? 'dark' : 'light'; save(); };
 document.getElementById('btn-toggle-log').onclick = () => document.getElementById('history-panel').classList.toggle('active');
 document.getElementById('close-history').onclick = () => document.getElementById('history-panel').classList.remove('active');
-
-initAuth(startSync);
+document.getElementById('btn-logout').onclick = () => signOut(auth);
