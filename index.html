@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v19 | Notificaciones Interactivas</title>
+    <title>Pro-Task v19.1 | Stable</title>
     <style>
         :root { --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --text: #172b4d; --success: #61bd4f; --danger: #eb5a46; --warning: #ff9f1a; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); }
@@ -27,7 +27,7 @@
         .main { flex: 1; display: flex; flex-direction: column; background: white; position: relative; }
         header { background: var(--primary); padding: 0 20px; height: 50px; display: flex; align-items: center; justify-content: space-between; color: white; }
         
-        /* Bell Notification (Ahora con cursor pointer y hover) */
+        /* Bell Notification */
         .notification-bell { position: relative; cursor: pointer; padding: 8px; margin-right: 15px; border-radius: 50%; transition: 0.2s; }
         .notification-bell:hover { background: rgba(255,255,255,0.2); }
         .bell-count { position: absolute; top: 0; right: 0; background: var(--danger); color: white; border-radius: 50%; font-size: 0.7rem; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--primary); }
@@ -62,13 +62,13 @@
 
     <div id="toast" onclick="openToastBoard()">
         <strong id="toast-title">Notificación</strong>
-        <span id="toast-subtitle">Haz clic para ver</span>
+        <div id="toast-msg"></div> <span id="toast-subtitle">Haz clic para ver</span>
     </div>
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v19</h2>
-            <p>Con Alertas Interactivas</p>
+            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v19.1</h2>
+            <p>Versión Estable</p>
             <input type="email" id="email" placeholder="Correo electrónico">
             <input type="password" id="password" placeholder="Contraseña">
             <button onclick="login()">Entrar</button>
@@ -173,9 +173,8 @@
         let currentBoardId = null;
         let boardData = null;
         let unsubscribeBoard = null;
-        let pendingToastBoardId = null; // Para guardar el ID de la alerta
+        let pendingToastBoardId = null;
         
-        // SISTEMA DE NOTIFICACIONES (MEMORIA LOCAL)
         let seenBoards = JSON.parse(localStorage.getItem('seenBoards') || '[]');
 
         // AUTH
@@ -197,11 +196,9 @@
         });
 
         function initDashboard() {
-            // 1. MIS PROYECTOS
             const qMy = query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid));
             onSnapshot(qMy, snap => renderList('my-boards', snap));
 
-            // 2. COMPARTIDOS CONMIGO
             const qShared = query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email));
             let isFirstLoad = true;
 
@@ -248,17 +245,10 @@
             if (lastId) openBoard(lastId);
         }
 
-        // FUNCIÓN CLAVE: ABRIR SIGUIENTE NO LEÍDO AL CLICAR CAMPANA
         window.openNextUnread = () => {
-            // Buscamos visualmente el primer elemento con clase 'unread'
             const firstUnread = document.querySelector('.board-item.unread');
-            
-            if (firstUnread) {
-                // Simulamos clic en el elemento
-                firstUnread.click();
-            } else {
-                alert("¡Estás al día! No tienes notificaciones pendientes.");
-            }
+            if (firstUnread) firstUnread.click();
+            else alert("¡Estás al día!");
         };
 
         function updateBell(count) {
@@ -266,9 +256,6 @@
             if (count > 0) {
                 badge.style.display = 'flex';
                 badge.innerText = count;
-                // Animar la campana
-                document.querySelector('.notification-bell').style.transform = "scale(1.1)";
-                setTimeout(()=>document.querySelector('.notification-bell').style.transform = "scale(1)", 200);
             } else {
                 badge.style.display = 'none';
             }
@@ -298,7 +285,6 @@
                 seenBoards.push(id);
                 localStorage.setItem('seenBoards', JSON.stringify(seenBoards));
                 
-                // Actualización visual inmediata para que la campana baje
                 const item = document.querySelector(`.board-item[onclick*="${id}"]`);
                 if(item) {
                     item.classList.remove('unread');
@@ -332,9 +318,8 @@
         function showToast(title, msg, boardId = null) {
             const t = document.getElementById('toast');
             document.getElementById('toast-title').innerText = title;
-            document.getElementById('toast-msg').innerText = msg;
+            document.getElementById('toast-msg').innerText = msg; // AHORA SÍ EXISTE
             
-            // Guardamos el ID para usarlo al hacer click
             pendingToastBoardId = boardId;
             
             if (boardId) {
@@ -349,10 +334,9 @@
             setTimeout(() => t.classList.remove('show'), 5000);
         }
 
-        // Función del onclick del Toast
         window.openToastBoard = () => {
             if (pendingToastBoardId) {
-                openBoard(pendingToastBoardId, true); // true = marcar leído
+                openBoard(pendingToastBoardId, true);
                 document.getElementById('toast').classList.remove('show');
             }
         };
@@ -369,7 +353,6 @@
             } catch (e) { alert("Error: " + e.message); }
         };
 
-        // KANBAN
         function renderKanban() {
             const container = document.getElementById('kanban');
             container.innerHTML = '';
