@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Enterprise v5.5 | Sistema Integral Cloud</title>
+    <title>Pro-Task Enterprise v5.6 | Cloud & Priority System</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="light-theme">
@@ -13,7 +13,7 @@
             <h2>Pro-Task Enterprise</h2>
             <p>Acceso Seguro Cloud</p>
             <input type="email" id="login-email" placeholder="Correo Corporativo">
-            <input type="password" id="login-pass" placeholder="Contraseña (mín. 6 caracteres)">
+            <input type="password" id="login-pass" placeholder="Contraseña">
             <div class="auth-buttons">
                 <button id="btn-login" class="btn-primary">Entrar</button>
                 <button id="btn-signup" class="btn-outline">Registrarse</button>
@@ -30,9 +30,9 @@
                     <span id="user-display">Usuario</span>
                     <button id="btn-logout" class="btn-logout-mini">Salir</button>
                 </div>
-                <h1>Tablero Maestro <span class="v-tag">v5.5 Pro Cloud</span></h1>
+                <h1>Tablero Maestro <span class="v-tag">v5.6 Priority Cloud</span></h1>
                 <div class="header-actions">
-                    <input type="text" id="board-search" placeholder="Buscar tarea o miembro..." onkeyup="window.searchCards()">
+                    <input type="text" id="board-search" placeholder="Filtrar por tarea, miembro o prioridad..." onkeyup="window.searchCards()">
                     <button id="btn-theme" class="btn-icon">🌓 Tema</button>
                     <button onclick="window.exportToCSV()" class="btn-secondary">Exportar CSV</button>
                     <button id="btn-toggle-log" class="btn-secondary">Historial</button>
@@ -50,21 +50,19 @@
                     <button onclick="window.handleAddNewCard(this)" class="btn-add-task">+ Añadir</button>
                 </div>
             </div>
-
             <div class="list" data-id="in-progress" ondrop="window.drop(event)" ondragover="window.allowDrop(event)">
                 <div class="list-header"><h3>En Proceso</h3></div>
                 <div class="cards-container" id="in-progress"></div>
                 <div class="add-card-container">
-                    <input type="text" placeholder="Trabajando en..." class="card-input">
+                    <input type="text" placeholder="Trabajando..." class="card-input">
                     <button onclick="window.handleAddNewCard(this)" class="btn-add-task">+ Añadir</button>
                 </div>
             </div>
-
             <div class="list" data-id="done" ondrop="window.drop(event)" ondragover="window.allowDrop(event)">
                 <div class="list-header"><h3>Finalizado</h3></div>
                 <div class="cards-container" id="done"></div>
                 <div class="add-card-container">
-                    <input type="text" placeholder="Tarea terminada..." class="card-input">
+                    <input type="text" placeholder="Terminada..." class="card-input">
                     <button onclick="window.handleAddNewCard(this)" class="btn-add-task">+ Añadir</button>
                 </div>
             </div>
@@ -83,20 +81,34 @@
             
             <div class="modal-grid">
                 <div class="modal-section">
-                    <h4>Miembros Asignados</h4>
-                    <div id="modal-members" class="avatar-selection-list"></div>
+                    <h4>Nivel de Prioridad</h4>
+                    <select id="modal-priority" class="priority-select" onchange="window.updatePriority()">
+                        <option value="low">Baja (Verde)</option>
+                        <option value="medium">Media (Amarillo)</option>
+                        <option value="high">Alta (Rojo)</option>
+                    </select>
                 </div>
                 <div class="modal-section">
-                    <h4>Etiquetas y Vencimiento</h4>
+                    <h4>Responsables</h4>
+                    <div id="modal-members" class="avatar-selection-list"></div>
+                </div>
+            </div>
+
+            <div class="modal-grid">
+                <div class="modal-section">
+                    <h4>Etiquetas</h4>
                     <div id="modal-tags" class="tags-container"></div>
                     <input type="text" id="tag-input" placeholder="Tag + Enter" onkeydown="if(event.key==='Enter') window.addTag()">
+                </div>
+                <div class="modal-section">
+                    <h4>Fecha de Vencimiento</h4>
                     <input type="date" id="modal-date" class="date-input-modal">
                 </div>
             </div>
 
             <div class="modal-section">
                 <h4>Descripción</h4>
-                <textarea id="modal-desc" placeholder="Añade una descripción detallada..."></textarea>
+                <textarea id="modal-desc" placeholder="Detalles..."></textarea>
             </div>
 
             <div class="modal-section">
@@ -109,9 +121,7 @@
                 </div>
             </div>
             
-            <div class="modal-footer">
-                <button onclick="window.archiveCardFromModal()" class="btn-danger">Eliminar Tarea definitivamente</button>
-            </div>
+            <button onclick="window.archiveCardFromModal()" class="btn-danger">Eliminar Tarea</button>
         </div>
     </div>
 
