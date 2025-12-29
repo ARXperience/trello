@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v18 | Alertas Reales</title>
+    <title>Pro-Task v19 | Notificaciones Interactivas</title>
     <style>
         :root { --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --text: #172b4d; --success: #61bd4f; --danger: #eb5a46; --warning: #ff9f1a; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); }
@@ -27,9 +27,10 @@
         .main { flex: 1; display: flex; flex-direction: column; background: white; position: relative; }
         header { background: var(--primary); padding: 0 20px; height: 50px; display: flex; align-items: center; justify-content: space-between; color: white; }
         
-        /* Bell Notification */
-        .notification-bell { position: relative; cursor: pointer; padding: 5px; margin-right: 15px; }
-        .bell-count { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; border-radius: 50%; font-size: 0.7rem; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--primary); }
+        /* Bell Notification (Ahora con cursor pointer y hover) */
+        .notification-bell { position: relative; cursor: pointer; padding: 8px; margin-right: 15px; border-radius: 50%; transition: 0.2s; }
+        .notification-bell:hover { background: rgba(255,255,255,0.2); }
+        .bell-count { position: absolute; top: 0; right: 0; background: var(--danger); color: white; border-radius: 50%; font-size: 0.7rem; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--primary); }
 
         /* Kanban */
         .kanban { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; background: #fff; }
@@ -50,22 +51,24 @@
         button.secondary { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.4); width: auto; padding: 6px 12px; font-size: 0.9rem; margin: 0; }
         button.danger { background: var(--danger); }
         
-        /* Toast Pop-up */
-        #toast { position: fixed; top: 70px; right: 20px; background: #333; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 5000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 300px; }
+        /* Toast Pop-up Interactivo */
+        #toast { position: fixed; top: 70px; right: 20px; background: #172b4d; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 5000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 300px; cursor: pointer; border-left: 5px solid var(--success); }
+        #toast:hover { transform: scale(1.02); }
         #toast.show { opacity: 1; pointer-events: auto; }
+        #toast-subtitle { font-size: 0.8rem; opacity: 0.8; margin-top: 5px; display: block;}
     </style>
 </head>
 <body>
 
-    <div id="toast">
+    <div id="toast" onclick="openToastBoard()">
         <strong id="toast-title">Notificación</strong>
-        <div id="toast-msg">Mensaje</div>
+        <span id="toast-subtitle">Haz clic para ver</span>
     </div>
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v18</h2>
-            <p>Con Sistema de Alertas</p>
+            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v19</h2>
+            <p>Con Alertas Interactivas</p>
             <input type="email" id="email" placeholder="Correo electrónico">
             <input type="password" id="password" placeholder="Contraseña">
             <button onclick="login()">Entrar</button>
@@ -95,7 +98,7 @@
                 </div>
                 
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <div class="notification-bell">
+                    <div class="notification-bell" onclick="openNextUnread()" title="Ver siguiente notificación">
                         🔔
                         <div id="bell-count" class="bell-count" style="display:none;">0</div>
                     </div>
@@ -109,7 +112,7 @@
             <div id="kanban" class="kanban">
                 <div style="margin: 100px auto; text-align: center; color: #888;">
                     <h3>Bienvenido</h3>
-                    <p>Si tienes notificaciones pendientes, verás la campana roja.</p>
+                    <p>Haz clic en la campana 🔔 para ver tus pendientes.</p>
                 </div>
             </div>
         </div>
@@ -170,6 +173,7 @@
         let currentBoardId = null;
         let boardData = null;
         let unsubscribeBoard = null;
+        let pendingToastBoardId = null; // Para guardar el ID de la alerta
         
         // SISTEMA DE NOTIFICACIONES (MEMORIA LOCAL)
         let seenBoards = JSON.parse(localStorage.getItem('seenBoards') || '[]');
@@ -197,7 +201,7 @@
             const qMy = query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid));
             onSnapshot(qMy, snap => renderList('my-boards', snap));
 
-            // 2. COMPARTIDOS CONMIGO (CON DETECCIÓN DE NUEVOS)
+            // 2. COMPARTIDOS CONMIGO
             const qShared = query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email));
             let isFirstLoad = true;
 
@@ -210,12 +214,11 @@
                     container.innerHTML = '<div style="padding:10px; color:#999; font-size:0.8rem;">Ninguno</div>';
                 }
 
-                // Detección de nuevos cambios para Toast
                 snap.docChanges().forEach(change => {
                     if (change.type === "added" && !isFirstLoad) {
                         const bData = change.doc.data();
-                        if(bData.ownerId !== currentUser.uid) { // No notificar mis propios
-                             showToast("🔔 Nueva Invitación", `Te invitaron a: ${bData.name}`);
+                        if(bData.ownerId !== currentUser.uid) { 
+                             showToast("🔔 Nueva Invitación", `Te invitaron a: ${bData.name}`, change.doc.id);
                         }
                     }
                 });
@@ -224,7 +227,6 @@
                     const data = d.data();
                     if (data.ownerId === currentUser.uid) return;
 
-                    // ¿Está leído?
                     const isUnread = !seenBoards.includes(d.id);
                     if (isUnread) unreadCount++;
 
@@ -234,7 +236,7 @@
                         <span>👥 ${data.name}</span>
                         ${isUnread ? '<span class="badge-new">NUEVO</span>' : ''}
                     `;
-                    div.onclick = () => openBoard(d.id, true); // true = marcar como leído
+                    div.onclick = () => openBoard(d.id, true);
                     container.appendChild(div);
                 });
 
@@ -242,16 +244,31 @@
                 isFirstLoad = false;
             });
 
-            // Restaurar sesión
             const lastId = localStorage.getItem('lastBoard');
             if (lastId) openBoard(lastId);
         }
+
+        // FUNCIÓN CLAVE: ABRIR SIGUIENTE NO LEÍDO AL CLICAR CAMPANA
+        window.openNextUnread = () => {
+            // Buscamos visualmente el primer elemento con clase 'unread'
+            const firstUnread = document.querySelector('.board-item.unread');
+            
+            if (firstUnread) {
+                // Simulamos clic en el elemento
+                firstUnread.click();
+            } else {
+                alert("¡Estás al día! No tienes notificaciones pendientes.");
+            }
+        };
 
         function updateBell(count) {
             const badge = document.getElementById('bell-count');
             if (count > 0) {
                 badge.style.display = 'flex';
                 badge.innerText = count;
+                // Animar la campana
+                document.querySelector('.notification-bell').style.transform = "scale(1.1)";
+                setTimeout(()=>document.querySelector('.notification-bell').style.transform = "scale(1)", 200);
             } else {
                 badge.style.display = 'none';
             }
@@ -277,16 +294,15 @@
         window.openBoard = (id, markAsRead = false) => {
             if (unsubscribeBoard) unsubscribeBoard();
             
-            // Marcar como leído si es necesario
             if (markAsRead && !seenBoards.includes(id)) {
                 seenBoards.push(id);
                 localStorage.setItem('seenBoards', JSON.stringify(seenBoards));
-                // Forzamos actualización visual rápida del item clickeado
+                
+                // Actualización visual inmediata para que la campana baje
                 const item = document.querySelector(`.board-item[onclick*="${id}"]`);
                 if(item) {
                     item.classList.remove('unread');
                     item.querySelector('.badge-new')?.remove();
-                    // Recalcular campana (simple decremento visual)
                     const bell = document.getElementById('bell-count');
                     let c = parseInt(bell.innerText) || 0;
                     if(c > 0) updateBell(c - 1);
@@ -297,8 +313,6 @@
             localStorage.setItem('lastBoard', id);
             
             document.querySelectorAll('.board-item').forEach(el => el.classList.remove('active'));
-            // Resaltar activo
-            // Nota: El re-render del snapshot lo hará oficial, pero esto da feedback instantáneo
             const activeItem = document.querySelector(`.board-item[onclick*="${id}"]`);
             if(activeItem) activeItem.classList.add('active');
 
@@ -314,8 +328,36 @@
             });
         };
 
+        // --- TOAST INTERACTIVO ---
+        function showToast(title, msg, boardId = null) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-msg').innerText = msg;
+            
+            // Guardamos el ID para usarlo al hacer click
+            pendingToastBoardId = boardId;
+            
+            if (boardId) {
+                document.getElementById('toast-subtitle').innerText = "Haz clic para abrir";
+                t.style.cursor = "pointer";
+            } else {
+                document.getElementById('toast-subtitle').innerText = "";
+                t.style.cursor = "default";
+            }
+
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 5000);
+        }
+
+        // Función del onclick del Toast
+        window.openToastBoard = () => {
+            if (pendingToastBoardId) {
+                openBoard(pendingToastBoardId, true); // true = marcar leído
+                document.getElementById('toast').classList.remove('show');
+            }
+        };
+
         window.openShareModal = () => document.getElementById('share-modal').style.display = 'flex';
-        
         window.shareBoard = async () => {
             const email = document.getElementById('share-email').value.trim().toLowerCase();
             if (!email) return;
@@ -327,7 +369,7 @@
             } catch (e) { alert("Error: " + e.message); }
         };
 
-        // KANBAN Y FUNCIONES DE SIEMPRE
+        // KANBAN
         function renderKanban() {
             const container = document.getElementById('kanban');
             container.innerHTML = '';
@@ -363,19 +405,7 @@
         function _val(id) { return document.getElementById(id).value; }
         function _err(msg) { document.getElementById('auth-msg').innerText = msg; }
         
-        // TOAST FUNCTION
-        function showToast(title, msg) {
-            const t = document.getElementById('toast');
-            document.getElementById('toast-title').innerText = title;
-            document.getElementById('toast-msg').innerText = msg;
-            t.classList.add('show');
-            // Sonido de notificación (opcional, visual es suficiente)
-            setTimeout(() => t.classList.remove('show'), 5000);
-        }
-
         function renderList(elementId, snap) {
-             // Esta función es llamada por el snapshot de mis proyectos, 
-             // la lógica de compartidos está incrustada en el snapshot principal para manejar el unread
              const container = document.getElementById(elementId);
              container.innerHTML = '';
              if (snap.empty) { container.innerHTML = '<div style="padding:10px; color:#999; font-size:0.8rem;">Ninguno</div>'; return; }
