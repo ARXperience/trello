@@ -1,137 +1,290 @@
-import { db, auth } from './firebase-config.js';
-import { initAuth } from './auth.js';
-import { doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+/* =========================================
+   IMPORTACIONES (CONECTAMOS LOS MÓDULOS)
+   ========================================= */
+import { monitorAuthState } from './auth.js';
+import { createFolder, listenToUserFolders, updateFolderData, deleteFolder } from './db.js';
 
-let boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' }, collaborators: [] };
-let currentEditingId = null;
+// VARIABLES DE ESTADO (MEMORIA RAM DEL NAVEGADOR)
 let currentUser = null;
-let isDataLoaded = false; // Bandera para evitar que el save() inicial borre datos
+let currentFolder = null; // La carpeta que estás viendo ahora mismo
+let allFolders = [];      // Lista de todas tus carpetas
 
-// --- LÓGICA DE PERSISTENCIA POR USUARIO (CARPETAS) ---
-initAuth((user) => {
+// REFERENCIAS AL HTML
+const myFoldersList = document.getElementById('my-folders-list');
+const btnNewFolder = document.getElementById('btn-new-folder');
+const boardTitle = document.getElementById('board-title');
+const kanbanBoard = document.getElementById('kanban-board');
+const modal = document.getElementById('task-modal');
+
+// ==========================================
+// 1. INICIALIZACIÓN (EL MONITOR)
+// ==========================================
+// Esta función espera a que auth.js diga "¡Ya entró el usuario!"
+monitorAuthState((user) => {
     currentUser = user;
-    document.getElementById('user-display').innerText = user.email;
-    document.getElementById('loading-screen').style.display = 'flex';
-    startSync();
+    
+    // Inmediatamente nos ponemos a escuchar sus carpetas en la base de datos
+    listenToUserFolders(user.uid, (folders) => {
+        allFolders = folders;
+        renderSidebar(); // Pintamos la lista en la izquierda
+        
+        // Si teníamos una carpeta abierta y se actualizó, refrescamos el tablero
+        if (currentFolder) {
+            const found = allFolders.find(f => f.id === currentFolder.id);
+            if (found) {
+                currentFolder = found;
+                renderBoard();
+            }
+        }
+    });
 });
 
-function startSync() {
-    // Apuntamos a una "carpeta" única para este usuario usando su UID
-    const userDocRef = doc(db, "user_boards", currentUser.uid);
-
-    onSnapshot(userDocRef, (snap) => {
-        if (snap.exists()) {
-            boardData = snap.data();
-            isDataLoaded = true; // Confirmamos que ya leímos datos reales
-            renderBoard();
-            renderHistory();
-            document.body.className = (boardData.settings?.theme || 'light') + '-theme';
-        } else {
-            // Si el usuario es nuevo, creamos su carpeta inicial
-            boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' }, collaborators: [currentUser.email] };
-            isDataLoaded = true;
-            save();
-        }
-        document.getElementById('loading-screen').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
+// ==========================================
+// 2. BARRA LATERAL (RENDERIZADO)
+// ==========================================
+function renderSidebar() {
+    myFoldersList.innerHTML = '';
+    
+    allFolders.forEach(folder => {
+        const item = document.createElement('div');
+        // Si es la carpeta actual, le ponemos la clase 'active' para que se vea azul
+        item.className = `folder-item ${currentFolder && currentFolder.id === folder.id ? 'active' : ''}`;
+        item.innerHTML = `📁 ${folder.name}`;
+        
+        item.onclick = () => {
+            currentFolder = folder; // Cambiamos la carpeta actual
+            renderSidebar();        // Actualizamos colores del menú
+            renderBoard();          // Pintamos las tareas
+        };
+        
+        myFoldersList.appendChild(item);
     });
 }
 
-async function save() {
-    // IMPORTANTE: Solo guardamos si hemos cargado datos previamente para no sobreescribir con vacío
-    if (!isDataLoaded || !currentUser) return;
-    await setDoc(doc(db, "user_boards", currentUser.uid), boardData);
-}
-
-// --- FUNCIONES DEL TABLERO ---
-window.handleAddNewCard = (btn) => {
-    const input = btn.parentElement.querySelector('.card-input');
-    const colId = btn.closest('.list').dataset.id;
-    if (!input.value.trim()) return;
-    const newCard = { id: 'c'+Date.now(), title: input.value, desc: '', tags: [], members: [], date: '', checklist: [], priority: 'low' };
-    boardData[colId].push(newCard);
-    addLog(`Nueva tarea: ${newCard.title}`);
-    input.value = ''; save();
+// Botón "Nueva Carpeta"
+btnNewFolder.onclick = () => {
+    const name = prompt("Nombre del nuevo proyecto:");
+    if (name) createFolder(currentUser.uid, name);
 };
 
-window.drop = (e) => {
-    const id = e.dataTransfer.getData("text");
-    const targetCol = e.target.closest('.list').dataset.id;
-    let cardObj;
-    ['todo', 'in-progress', 'done'].forEach(col => {
-        const idx = boardData[col].findIndex(c => c.id === id);
-        if(idx !== -1) cardObj = boardData[col].splice(idx, 1)[0];
-    });
-    if(cardObj) { boardData[targetCol].push(cardObj); addLog(`Movido a ${targetCol}`); save(); }
-};
-
-window.allowDrop = (e) => e.preventDefault();
-
+// ==========================================
+// 3. TABLERO KANBAN (RENDERIZADO)
+// ==========================================
 function renderBoard() {
-    ['todo', 'in-progress', 'done'].forEach(col => {
-        const cont = document.getElementById(col); cont.innerHTML = '';
-        (boardData[col] || []).forEach(card => {
-            const el = document.createElement('div');
-            el.className = `card ${card.priority}`; el.draggable = true;
-            el.id = card.id;
-            el.onclick = () => openModal(card.id);
-            el.ondragstart = (e) => e.dataTransfer.setData("text", card.id);
-            el.innerHTML = `<strong>${card.title}</strong><br><small>${card.date || ''}</small>`;
-            cont.appendChild(el);
+    if (!currentFolder) {
+        boardTitle.innerText = "Selecciona un proyecto";
+        kanbanBoard.innerHTML = '<div class="empty-state">Selecciona una carpeta del menú izquierdo para comenzar.</div>';
+        return;
+    }
+
+    boardTitle.innerText = currentFolder.name;
+    kanbanBoard.innerHTML = '';
+
+    // Definimos las 3 columnas estándar
+    const columns = [
+        { id: 'todo', title: 'Pendientes' },
+        { id: 'doing', title: 'En Proceso' },
+        { id: 'done', title: 'Finalizado' }
+    ];
+
+    columns.forEach(colDef => {
+        // Creamos la columna visualmente
+        const colDiv = document.createElement('div');
+        colDiv.className = 'list';
+        colDiv.innerHTML = `<h3>${colDef.title}</h3><div class="cards-container" id="${colDef.id}"></div>`;
+        
+        const container = colDiv.querySelector('.cards-container');
+        
+        // Obtenemos las tareas de esta columna (si no hay, usamos array vacío)
+        const tasks = currentFolder.columns[colDef.id] || [];
+        
+        tasks.forEach(task => {
+            const card = createCardElement(task, colDef.id);
+            container.appendChild(card);
         });
+
+        // Botón "+ Añadir Tarea" al final de la columna
+        const btnAdd = document.createElement('button');
+        btnAdd.className = 'btn-small';
+        btnAdd.style.width = '100%';
+        btnAdd.style.marginTop = '10px';
+        btnAdd.innerText = '+ Añadir Tarea';
+        btnAdd.onclick = () => addTask(colDef.id);
+        
+        colDiv.appendChild(btnAdd);
+
+        // --- EVENTOS DE DRAG & DROP (SOLTAR) ---
+        colDiv.ondragover = (e) => e.preventDefault(); // Permitir soltar aquí
+        colDiv.ondrop = (e) => handleDrop(e, colDef.id);
+
+        kanbanBoard.appendChild(colDiv);
     });
 }
 
-// --- MODAL Y DETALLES ---
-function openModal(id) {
-    currentEditingId = id; const card = findCard(id);
-    document.getElementById('modal-title').value = card.title;
-    document.getElementById('modal-desc').value = card.desc || '';
-    document.getElementById('modal-priority').value = card.priority || 'low';
-    renderChecklist(card);
-    document.getElementById('card-modal').style.display = 'block';
+// Crea el HTML de una tarjeta individual
+function createCardElement(task, colId) {
+    const div = document.createElement('div');
+    div.className = `kanban-card ${task.priority || 'low'}`; // Color según prioridad
+    div.draggable = true; // Hacemos que sea arrastrable
+    div.innerText = task.title;
+    
+    // Click para editar
+    div.onclick = () => openEditModal(task, colId);
+
+    // Al empezar a arrastrar, guardamos su ID
+    div.ondragstart = (e) => {
+        e.dataTransfer.setData('text/plain', JSON.stringify({
+            taskId: task.id,
+            sourceCol: colId
+        }));
+    };
+
+    return div;
 }
 
-function findCard(id) { return [...boardData.todo, ...boardData['in-progress'], ...boardData.done].find(c => c.id === id); }
+// ==========================================
+// 4. LÓGICA DE TAREAS (AÑADIR Y MOVER)
+// ==========================================
+function addTask(colId) {
+    const title = prompt("Título de la tarea:");
+    if (!title) return;
 
-window.addChecklistItem = () => {
-    const input = document.getElementById('new-check-input');
-    const card = findCard(currentEditingId);
-    if(!card.checklist) card.checklist = [];
-    card.checklist.push({ text: input.value, done: false });
-    input.value = ''; renderChecklist(card); save();
-};
+    const newTask = {
+        id: Date.now().toString(), // ID único basado en el tiempo
+        title: title,
+        desc: '',
+        priority: 'low',
+        checklist: []
+    };
 
-function renderChecklist(card) {
-    const cont = document.getElementById('modal-checklist');
-    cont.innerHTML = (card.checklist || []).map((item, i) => `
-        <div><input type="checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleCheck(${i})"> ${item.text}</div>
-    `).join('');
+    // Actualizamos la memoria local
+    if (!currentFolder.columns[colId]) currentFolder.columns[colId] = [];
+    currentFolder.columns[colId].push(newTask);
+
+    // Guardamos en Firebase (db.js hace el trabajo sucio)
+    saveChanges();
 }
 
-window.toggleCheck = (i) => { const card = findCard(currentEditingId); card.checklist[i].done = !card.checklist[i].done; renderChecklist(card); save(); };
+function handleDrop(e, targetCol) {
+    e.preventDefault();
+    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const { taskId, sourceCol } = data;
 
-window.updatePriority = () => { findCard(currentEditingId).priority = document.getElementById('modal-priority').value; renderBoard(); save(); };
+    if (sourceCol === targetCol) return; // Si soltó en la misma columna, no hacemos nada
 
-window.archiveCardFromModal = () => {
-    if(confirm("¿Eliminar?")) {
-        ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId));
-        window.closeModal(); save();
+    // 1. Buscamos y sacamos la tarea de la columna vieja
+    const sourceList = currentFolder.columns[sourceCol];
+    const taskIndex = sourceList.findIndex(t => t.id === taskId);
+    
+    if (taskIndex > -1) {
+        const [task] = sourceList.splice(taskIndex, 1);
+        
+        // 2. La metemos en la columna nueva
+        if (!currentFolder.columns[targetCol]) currentFolder.columns[targetCol] = [];
+        currentFolder.columns[targetCol].push(task);
+
+        // 3. Guardamos
+        saveChanges();
+    }
+}
+
+// Función auxiliar para guardar y repintar
+function saveChanges() {
+    updateFolderData(currentUser.uid, currentFolder.id, currentFolder.columns);
+    renderBoard(); // Refresca la pantalla al instante
+}
+
+// ==========================================
+// 5. MODAL DE EDICIÓN (DETALLES)
+// ==========================================
+let editingTask = null;
+let editingCol = null;
+
+// Referencias a inputs del modal
+const modalTitle = document.getElementById('modal-title');
+const modalPriority = document.getElementById('modal-priority');
+const modalDesc = document.getElementById('modal-desc');
+const checkContainer = document.getElementById('checklist-container');
+const newCheckInput = document.getElementById('new-check-text');
+const btnAddCheck = document.getElementById('btn-add-check');
+const btnDelete = document.getElementById('btn-delete-card');
+const closeModal = document.querySelector('.close-modal');
+
+function openEditModal(task, colId) {
+    editingTask = task;
+    editingCol = colId;
+
+    // Rellenamos el modal con los datos de la tarea
+    modalTitle.value = task.title;
+    modalPriority.value = task.priority;
+    modalDesc.value = task.desc || '';
+    
+    renderChecklist();
+    modal.style.display = 'flex'; // Mostrar modal
+}
+
+function renderChecklist() {
+    checkContainer.innerHTML = '';
+    (editingTask.checklist || []).forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'row';
+        div.style.alignItems = 'center';
+        div.innerHTML = `
+            <input type="checkbox" ${item.done ? 'checked' : ''}>
+            <span style="${item.done ? 'text-decoration:line-through; color:gray;' : ''}">${item.text}</span>
+            <button class="btn-small" style="background:#eb5a46; color:white; margin-left:auto;">x</button>
+        `;
+        
+        // Checkbox: Tachar/Destachar
+        const checkbox = div.querySelector('input');
+        checkbox.onchange = () => {
+            item.done = checkbox.checked;
+            saveChanges();
+            renderChecklist();
+        };
+
+        // Botón borrar sub-tarea
+        const delBtn = div.querySelector('button');
+        delBtn.onclick = () => {
+            editingTask.checklist.splice(index, 1);
+            saveChanges();
+            renderChecklist();
+        };
+
+        checkContainer.appendChild(div);
+    });
+}
+
+// Guardado automático (Autosave) al salir de los campos
+modalTitle.onblur = () => { if (editingTask) { editingTask.title = modalTitle.value; saveChanges(); } };
+modalDesc.onblur = () => { if (editingTask) { editingTask.desc = modalDesc.value; saveChanges(); } };
+modalPriority.onchange = () => { if (editingTask) { editingTask.priority = modalPriority.value; saveChanges(); } };
+
+// Añadir checklist
+btnAddCheck.onclick = () => {
+    const text = newCheckInput.value;
+    if (text) {
+        if (!editingTask.checklist) editingTask.checklist = [];
+        editingTask.checklist.push({ text, done: false });
+        newCheckInput.value = '';
+        saveChanges();
+        renderChecklist();
     }
 };
 
-window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
+// Eliminar Tarea completa
+btnDelete.onclick = () => {
+    if (confirm("¿Borrar esta tarea?")) {
+        const list = currentFolder.columns[editingCol];
+        const idx = list.findIndex(t => t.id === editingTask.id);
+        if (idx > -1) {
+            list.splice(idx, 1);
+            saveChanges();
+            modal.style.display = 'none';
+        }
+    }
+};
 
-function addLog(msg) {
-    if(!boardData.history) boardData.history = [];
-    boardData.history.unshift({t: new Date().toLocaleTimeString(), m: msg});
-}
-
-function renderHistory() {
-    document.getElementById('history-log').innerHTML = (boardData.history || []).map(h => `<div>${h.t}: ${h.m}</div>`).join('');
-}
-
-// Guardado de campos de texto
-document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; renderBoard(); save(); };
-document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; save(); };
-document.getElementById('btn-theme').onclick = () => { boardData.settings.theme = boardData.settings.theme === 'light' ? 'dark' : 'light'; save(); };
+// Cerrar Modal
+closeModal.onclick = () => { modal.style.display = 'none'; editingTask = null; };
+window.onclick = (e) => { if (e.target == modal) { modal.style.display = 'none'; editingTask = null; } };
