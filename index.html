@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v32 | Hand Magnet & Voice</title>
+    <title>Pro-Task v33 | Stable Gestures</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -35,7 +35,7 @@
         /* KANBAN */
         .kanban { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; }
         .list { background: var(--sidebar); width: 280px; min-width: 280px; border-radius: var(--radius); padding: 10px; max-height: 90%; display: flex; flex-direction: column; border: 1px solid var(--border); transition: 0.2s; }
-        .list.drag-hover { box-shadow: 0 0 15px var(--primary); border: 2px solid var(--primary); transform: scale(1.02); } /* Feedback visual al arrastrar */
+        .list.drag-hover { box-shadow: 0 0 15px var(--primary); border: 2px solid var(--primary); transform: scale(1.02); }
         .list h4 { margin: 0 0 10px 5px; color: var(--text); font-weight: 700; }
         .cards { flex: 1; overflow-y: auto; min-height: 20px; padding-right: 4px; }
         
@@ -66,16 +66,17 @@
             background: rgba(0, 121, 191, 0.5); border: 2px solid white;
             border-radius: 50%; pointer-events: none; z-index: 9999;
             transform: translate(-50%, -50%); display: none;
-            box-shadow: 0 0 15px var(--primary); transition: background 0.1s;
+            box-shadow: 0 0 15px var(--primary); transition: background 0.1s, width 0.1s, height 0.1s;
         }
-        #virtual-cursor.pinching { background: var(--success); width: 20px; height: 20px; border-color: var(--success); }
+        /* Estado agarrando: Verde y más pequeño para precisión */
+        #virtual-cursor.pinching { background: var(--success); width: 15px; height: 15px; border-color: lime; }
 
         /* Ghost Card (La que se arrastra con el dedo) */
         #ai-ghost-card {
-            position: fixed; width: 260px; padding: 10px; background: var(--surface);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3); border-radius: 8px;
-            border: 2px solid var(--primary); z-index: 9998;
-            pointer-events: none; opacity: 0.9; display: none; transform: rotate(3deg);
+            position: fixed; width: 260px; padding: 15px; background: var(--surface);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.4); border-radius: 8px;
+            border: 2px solid var(--success); z-index: 9998;
+            pointer-events: none; opacity: 0.95; display: none; transform: rotate(3deg) scale(1.05);
         }
 
         /* Botón de Activar IA */
@@ -88,15 +89,16 @@
         }
 
         /* MICRÓFONO (ESTILO CORREGIDO) */
-        .mic-wrapper { display: flex; gap: 5px; align-items: center; width: 100%; }
+        .mic-wrapper { display: flex; gap: 5px; align-items: center; width: 100%; position: relative;}
         .mic-btn { 
             background: var(--danger); color: white; border-radius: 50%; 
-            width: 36px; height: 36px; display: flex; align-items: center; 
+            width: 40px; height: 40px; display: flex; align-items: center; 
             justify-content: center; font-size: 1.2rem; cursor: pointer; flex-shrink: 0;
+            transition: 0.2s;
         }
         .mic-btn:hover { transform: scale(1.1); }
-        .mic-active { animation: pulse-red 1s infinite; background: red; }
-        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
+        .mic-active { animation: pulse-red 1s infinite; background: red; box-shadow: 0 0 10px red; }
+        @keyframes pulse-red { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
         /* Modales */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
@@ -116,8 +118,8 @@
 
     <div id="virtual-cursor"></div>
     <div id="ai-ghost-card">
-        <strong>Arrastrando...</strong>
-        <div style="font-size:0.8rem;">Suelta (abre la mano) para dejar caer</div>
+        <strong id="ghost-title">Tarea</strong>
+        <div style="font-size:0.8rem; margin-top:5px; color:var(--text-sub);">Suelda los dedos para dejar caer</div>
     </div>
     
     <div id="webcam-container">
@@ -125,7 +127,7 @@
     </div>
 
     <button class="ai-toggle" onclick="toggleAI()">
-        👁️ Activar Modo Cámara
+        👁️ Activar Cámara
     </button>
 
     <div id="toast" onclick="openToastBoard()">
@@ -135,8 +137,8 @@
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="color:var(--primary); text-align:center;">Pro-Task v32</h2>
-            <p style="text-align:center; color:gray;">Hand Magnet Edition</p>
+            <h2 style="color:var(--primary); text-align:center;">Pro-Task v33</h2>
+            <p style="text-align:center; color:gray;">Stable Gestures Edition</p>
             <input type="email" id="email" placeholder="Correo electrónico">
             <input type="password" id="password" placeholder="Contraseña">
             <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="window.login()">Entrar</button>
@@ -185,7 +187,7 @@
         <div class="box modal-lg">
             <span onclick="window.closeModals()" style="align-self:flex-end; cursor:pointer; font-size:1.5rem;">&times;</span>
             
-            <label style="font-size:0.8rem; color:var(--text-sub);">Título</label>
+            <label style="font-size:0.8rem; color:var(--text-sub);">Título (Presiona el micro para hablar)</label>
             <div class="mic-wrapper">
                 <input type="text" id="m-title" style="font-size:1.5rem; font-weight:bold; border:none; padding:5px 0; background:transparent;" placeholder="Título" onblur="window.updateTask()">
                 <div class="mic-btn" onclick="startDictation('m-title')" title="Dictar título">🎤</div>
@@ -305,7 +307,7 @@
             const cols = { todo: "Por Hacer", doing: "En Progreso", done: "Finalizado" };
             for (let k in cols) {
                 const list = document.createElement('div'); list.className = 'list';
-                list.id = `col-${k}`; // ID para Vision Drag
+                list.id = `col-${k}`;
                 list.setAttribute('data-col', k);
 
                 const cardCont = document.createElement('div'); cardCont.className = 'cards';
@@ -323,7 +325,7 @@
 
         const createCard = (task, col) => {
             const el = document.createElement('div'); el.className = 'card'; el.draggable = true;
-            el.id = `card-${task.id}`; // ID para Vision Drag
+            el.id = `card-${task.id}`;
             el.setAttribute('data-task-id', task.id);
             el.setAttribute('data-col', col);
 
@@ -387,28 +389,54 @@
         };
         window.filterCards = (q) => document.querySelectorAll('.card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q.toLowerCase()) ? 'block' : 'none');
         
-        // --- 🎤 VOICE ASSISTANT ---
+        // --- 🎤 VOICE ASSISTANT (WEB SPEECH API) ---
         window.startDictation = (inputId) => {
-            if (!('webkitSpeechRecognition' in window)) return alert("Navegador no soporta voz.");
+            // Verificación de seguridad: HTTPS o Localhost
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                alert("⚠️ EL MICRÓFONO REQUIERE HTTPS ⚠️\n\nPor seguridad, los navegadores bloquean el micrófono en archivos locales (file://). Debes subir tu proyecto a un hosting seguro (como Firebase) o usar localhost.");
+                return;
+            }
+
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("Tu navegador no soporta reconocimiento de voz (Usa Chrome/Edge).");
+                return;
+            }
+
             const recognition = new webkitSpeechRecognition();
             recognition.lang = "es-ES";
-            // Buscar el botón al lado del input
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            // Visual Feedback
             const wrapper = document.getElementById(inputId).parentNode;
             const btn = wrapper.querySelector('.mic-btn');
             btn.classList.add('mic-active');
             
+            recognition.onstart = () => { console.log("Escuchando..."); };
+
             recognition.onresult = (event) => {
                 const text = event.results[0][0].transcript;
+                console.log("Escuchado:", text);
                 const field = document.getElementById(inputId);
-                field.value = text; // Reemplaza para ser más limpio, o usa += para añadir
+                field.value = text;
                 window.updateTask();
                 btn.classList.remove('mic-active');
             };
-            recognition.onerror = () => btn.classList.remove('mic-active');
+
+            recognition.onerror = (e) => {
+                console.error("Error micro:", e.error);
+                btn.classList.remove('mic-active');
+                if(e.error === 'not-allowed') alert("Permiso de micrófono denegado.");
+            };
+
+            recognition.onend = () => {
+                btn.classList.remove('mic-active');
+            };
+
             recognition.start();
         };
 
-        // --- 👁️ COMPUTER VISION (MAGNET MODE) ---
+        // --- 👁️ COMPUTER VISION (STABLE GESTURES) ---
         let camera = null;
         let isAiActive = false;
         
@@ -418,14 +446,12 @@
             
             if(isAiActive) {
                 if(camera) camera.stop();
-                container.style.display = 'none';
-                cursor.style.display = 'none';
+                container.style.display = 'none'; cursor.style.display = 'none';
                 isAiActive = false;
                 return;
             }
 
-            container.style.display = 'block';
-            cursor.style.display = 'block';
+            container.style.display = 'block'; cursor.style.display = 'block';
             isAiActive = true;
             initHands();
         };
@@ -444,9 +470,9 @@
             camera.start();
         }
 
-        // LOGIC FOR DRAGGING
+        // GESTURE LOGIC: HYSTERESIS & LOCKING
         let isPinching = false;
-        let draggingCardId = null; // ID de la tarea siendo arrastrada por IA
+        let draggingCardId = null; 
         let draggingSourceCol = null;
 
         function onResults(results) {
@@ -456,81 +482,80 @@
             const indexTip = landmarks[8];
             const thumbTip = landmarks[4];
 
-            // 1. Mover Cursor (Espejo)
+            // 1. Move Cursor
             const x = (1 - indexTip.x) * window.innerWidth;
             const y = indexTip.y * window.innerHeight;
             
             const cursor = document.getElementById('virtual-cursor');
             cursor.style.left = `${x}px`; cursor.style.top = `${y}px`;
 
-            // 2. Detectar Pinza
+            // 2. Pinch Logic with Hysteresis
             const distance = Math.hypot(indexTip.x - thumbTip.x, indexTip.y - thumbTip.y);
-            const PINCH_THRESHOLD = 0.05; 
+            
+            // Umbrales separados para evitar "parpadeo"
+            const PINCH_START = 0.03; // Muy cerca para agarrar
+            const PINCH_RELEASE = 0.06; // Abrir claramente para soltar
 
-            if (distance < PINCH_THRESHOLD) {
-                // PINCH START
-                if (!isPinching) {
-                    isPinching = true;
-                    cursor.classList.add('pinching');
-                    
-                    // Raycast: ¿Qué hay debajo?
-                    const elements = document.elementsFromPoint(x, y);
-                    const cardEl = elements.find(el => el.classList.contains('card'));
-
-                    if (cardEl && !draggingCardId) {
-                        // START DRAG
-                        draggingCardId = cardEl.getAttribute('data-task-id');
-                        draggingSourceCol = cardEl.getAttribute('data-col');
-                        
-                        // Visual Ghost
-                        const ghost = document.getElementById('ai-ghost-card');
-                        const title = cardEl.querySelector('strong').innerText;
-                        ghost.querySelector('strong').innerText = title;
-                        ghost.style.display = 'block';
-                    }
-                }
+            // --- STATE: GRABBING ---
+            if (!isPinching && distance < PINCH_START) {
+                isPinching = true;
+                cursor.classList.add('pinching');
                 
-                // DRAGGING STATE
-                if(draggingCardId) {
-                    const ghost = document.getElementById('ai-ghost-card');
-                    ghost.style.left = (x + 15) + 'px';
-                    ghost.style.top = (y + 15) + 'px';
-                }
+                // Try to grab something
+                const elements = document.elementsFromPoint(x, y);
+                const cardEl = elements.find(el => el.classList.contains('card'));
 
-            } else {
-                // PINCH RELEASE
-                if (isPinching) {
-                    isPinching = false;
-                    cursor.classList.remove('pinching');
+                if (cardEl) {
+                    draggingCardId = cardEl.getAttribute('data-task-id');
+                    draggingSourceCol = cardEl.getAttribute('data-col');
                     
-                    if (draggingCardId) {
-                        // DROP LOGIC
-                        const elements = document.elementsFromPoint(x, y);
-                        // Buscar si soltó sobre una lista o tarjeta dentro de una lista
-                        const listEl = elements.find(el => el.classList.contains('list'));
-                        
-                        if (listEl) {
-                            const targetCol = listEl.id.replace('col-', '');
-                            if (targetCol && targetCol !== draggingSourceCol) {
-                                // Execute Logic Move
-                                const idx = boardData.columns[draggingSourceCol].findIndex(t => t.id === draggingCardId);
-                                if(idx > -1) {
-                                    const [task] = boardData.columns[draggingSourceCol].splice(idx, 1);
-                                    boardData.columns[targetCol].push(task);
-                                    save(); // This triggers snapshot -> re-render
-                                }
+                    // Show Ghost
+                    const ghost = document.getElementById('ai-ghost-card');
+                    ghost.querySelector('#ghost-title').innerText = cardEl.querySelector('strong').innerText;
+                    ghost.style.display = 'block';
+                }
+            }
+
+            // --- STATE: HOLDING/DRAGGING ---
+            if (isPinching) {
+                if (draggingCardId) {
+                    const ghost = document.getElementById('ai-ghost-card');
+                    ghost.style.left = (x + 20) + 'px';
+                    ghost.style.top = (y + 20) + 'px';
+                }
+            }
+
+            // --- STATE: RELEASING ---
+            if (isPinching && distance > PINCH_RELEASE) {
+                isPinching = false;
+                cursor.classList.remove('pinching');
+
+                if (draggingCardId) {
+                    // Drop Logic
+                    const elements = document.elementsFromPoint(x, y);
+                    const listEl = elements.find(el => el.classList.contains('list'));
+                    
+                    if (listEl) {
+                        const targetCol = listEl.id.replace('col-', '');
+                        if (targetCol && targetCol !== draggingSourceCol) {
+                            // Valid Move
+                            const idx = boardData.columns[draggingSourceCol].findIndex(t => t.id === draggingCardId);
+                            if(idx > -1) {
+                                const [task] = boardData.columns[draggingSourceCol].splice(idx, 1);
+                                boardData.columns[targetCol].push(task);
+                                save();
                             }
                         }
-
-                        // Reset Ghost
-                        document.getElementById('ai-ghost-card').style.display = 'none';
-                        draggingCardId = null;
-                        draggingSourceCol = null;
-                    } else {
-                        // Regular Click if not dragging
-                        const el = document.elementFromPoint(x, y);
-                        if(el) el.click();
                     }
+
+                    // Reset
+                    document.getElementById('ai-ghost-card').style.display = 'none';
+                    draggingCardId = null;
+                    draggingSourceCol = null;
+                } else {
+                    // Just a click (if not dragging anything)
+                    const el = document.elementFromPoint(x, y);
+                    if(el) el.click();
                 }
             }
         }
