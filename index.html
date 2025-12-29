@@ -3,94 +3,386 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Enterprise v11 | Modular System</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <title>Pro-Task Enterprise v11 | Sistema Anti-Pérdida</title>
+    <style>
+        /* =========================================
+           DISEÑO ROBUSTO (CSS)
+           ========================================= */
+        :root {
+            --primary: #0079bf;
+            --bg-body: #ffffff;
+            --bg-sidebar: #f4f5f7;
+            --list-bg: #ebecf0;
+            --text: #172b4d;
+            --success: #61bd4f;
+            --warning: #f2d600;
+            --danger: #eb5a46;
+        }
+        
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); }
+        * { box-sizing: border-box; }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background: var(--bg-sidebar); border-right: 1px solid #ddd; display: flex; flex-direction: column; z-index: 100; }
+        .sidebar-header { padding: 15px; font-weight: bold; background: rgba(0,0,0,0.03); border-bottom: 1px solid #ddd; font-size: 0.9rem; color: #5e6c84; }
+        .board-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .board-item { padding: 10px; margin-bottom: 5px; cursor: pointer; border-radius: 4px; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+        .board-item:hover { background: rgba(0,0,0,0.05); }
+        .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: bold; }
+
+        /* Contenido Principal */
+        .main-content { flex: 1; display: flex; flex-direction: column; background: white; position: relative; }
+        header { background: var(--primary); color: white; padding: 0 20px; height: 50px; display: flex; justify-content: space-between; align-items: center; }
+        .save-indicator { font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px; display: none; }
+
+        /* Kanban */
+        .board-canvas { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; }
+        .list { background: var(--list-bg); width: 280px; min-width: 280px; border-radius: 8px; padding: 10px; max-height: 90%; display: flex; flex-direction: column; }
+        .cards-area { flex: 1; overflow-y: auto; min-height: 10px; margin-bottom: 10px; }
+        
+        /* Tarjetas */
+        .card { background: white; padding: 10px; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.2); cursor: pointer; border-left: 4px solid #ccc; font-size: 0.9rem; }
+        .card:hover { background: #f8f8f8; }
+        .card.low { border-left-color: var(--success); }
+        .card.medium { border-left-color: var(--warning); }
+        .card.high { border-left-color: var(--danger); }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-box { background: #f4f5f7; width: 600px; max-width: 95%; max-height: 90vh; border-radius: 8px; padding: 20px; overflow-y: auto; position: relative; }
+        
+        /* UI Elements */
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; font-family: inherit; }
+        .btn { padding: 8px 12px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-primary { background: var(--primary); color: white; width: 100%; }
+        .btn-danger { background: var(--danger); color: white; width: 100%; margin-top: 15px; }
+        .btn-ghost { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.5); }
+
+        /* Overlays */
+        #auth-overlay, #loading-overlay { position: fixed; inset: 0; background: var(--primary); z-index: 5000; display: flex; align-items: center; justify-content: center; }
+        .auth-box { background: white; padding: 40px; border-radius: 8px; width: 350px; text-align: center; color: var(--text); }
+    </style>
 </head>
 <body>
 
-    <div id="auth-container" class="overlay">
-        <div class="card auth-card">
-            <h2>Pro-Task Enterprise</h2>
-            <p>Gestión de Proyectos Segura</p>
-            <input type="email" id="login-email" placeholder="Correo corporativo">
-            <input type="password" id="login-pass" placeholder="Contraseña">
-            
-            <div class="btn-group">
-                <button id="btn-login" class="btn-primary">Iniciar Sesión</button>
-                <button id="btn-signup" class="btn-secondary">Registrarse</button>
-            </div>
-            <p id="auth-error" class="error-msg"></p>
+    <div id="auth-overlay">
+        <div class="auth-box">
+            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v11</h2>
+            <p>Tus proyectos seguros en la nube</p>
+            <input type="email" id="email" placeholder="Correo electrónico">
+            <input type="password" id="password" placeholder="Contraseña">
+            <button class="btn btn-primary" onclick="app.login()">Entrar</button>
+            <button class="btn" style="background:none; color:#666; text-decoration:underline; margin-top:10px;" onclick="app.register()">Crear Cuenta</button>
+            <p id="auth-msg" style="color:red; font-size:0.8rem; height:20px;"></p>
         </div>
     </div>
 
-    <div id="loading-screen" class="overlay" style="display: none;">
-        <div class="loader-content">
-            <div class="spinner"></div>
-            <h3 id="loading-text">Conectando...</h3>
-        </div>
+    <div id="loading-overlay" style="display: none; background: rgba(255,255,255,0.9);">
+        <h3 style="color:#333;">Sincronizando tus datos...</h3>
     </div>
 
-    <div id="app-container" class="app-layout" style="display: none;">
+    <div id="main-app" style="display: none; width: 100%; height: 100%;">
         
         <aside class="sidebar">
-            <div class="sidebar-header">MIS CARPETAS</div>
-            <div id="my-folders-list" class="folder-list">
-                </div>
-
-            <div class="sidebar-header">COMPARTIDOS</div>
-            <div id="shared-folders-list" class="folder-list"></div>
-
-            <button id="btn-new-folder" class="btn-new">+ Nueva Carpeta</button>
+            <div class="sidebar-header">MIS TABLEROS</div>
+            <div id="boards-list" class="board-list"></div>
+            <div style="padding: 15px;">
+                <button class="btn btn-primary" onclick="app.createBoard()">+ Nuevo Tablero</button>
+            </div>
         </aside>
 
-        <main class="content">
+        <div class="main-content">
             <header>
-                <h2 id="board-title">Selecciona una carpeta</h2>
-                <div class="header-controls">
-                    <input type="email" id="invite-email" placeholder="Invitar usuario...">
-                    <button id="btn-share" class="btn-small">Compartir</button>
-                    <span id="user-display">Usuario</span>
-                    <button id="btn-logout" class="btn-logout">Salir</button>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <h3 id="board-title" style="margin:0;">Selecciona un tablero</h3>
+                    <div id="save-indicator" class="save-indicator">✅ Guardado</div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <span id="user-display" style="font-size:0.8rem; align-self:center; opacity:0.8;"></span>
+                    <button class="btn btn-ghost" onclick="app.logout()">Salir</button>
                 </div>
             </header>
 
-            <div id="kanban-board" class="kanban-area">
-                <div class="empty-state">
-                    Selecciona o crea una carpeta en el menú izquierdo para comenzar.
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <div id="task-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <div class="modal-body">
-                <input type="text" id="modal-title" placeholder="Título de la tarea">
-                
-                <div class="row">
-                    <select id="modal-priority">
-                        <option value="low">Prioridad Baja</option>
-                        <option value="medium">Prioridad Media</option>
-                        <option value="high">Prioridad Alta</option>
-                    </select>
-                </div>
-
-                <textarea id="modal-desc" placeholder="Descripción detallada..."></textarea>
-
-                <h4>Checklist</h4>
-                <div id="checklist-container"></div>
-                <div class="row">
-                    <input type="text" id="new-check-text" placeholder="Nueva sub-tarea...">
-                    <button id="btn-add-check" class="btn-small">Añadir</button>
-                </div>
-
-                <button id="btn-delete-card" class="btn-danger">Eliminar Tarea</button>
-            </div>
+            <div id="kanban-view" class="board-canvas"></div>
         </div>
     </div>
 
-    <script type="module" src="js/app.js"></script>
+    <div id="task-modal" class="modal">
+        <div class="modal-box">
+            <span onclick="document.getElementById('task-modal').style.display='none'" style="position:absolute; right:15px; top:10px; cursor:pointer; font-size:24px;">&times;</span>
+            
+            <input type="text" id="m-title" style="font-size:1.5rem; font-weight:bold; border:none; padding:0; margin-bottom:20px;">
+            
+            <label><strong>Prioridad:</strong></label>
+            <select id="m-priority" onchange="app.updateTask()">
+                <option value="low">Baja</option>
+                <option value="medium">Media</option>
+                <option value="high">Alta</option>
+            </select>
 
+            <label><strong>Descripción:</strong></label>
+            <textarea id="m-desc" rows="4"></textarea>
+
+            <button class="btn btn-danger" onclick="app.deleteTask()">Eliminar Tarea</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+
+        // --- CONFIGURACIÓN ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
+            authDomain: "trello-d2532.firebaseapp.com",
+            projectId: "trello-d2532",
+            storageBucket: "trello-d2532.firebasestorage.app",
+            messagingSenderId: "630892154656",
+            appId: "1:630892154656:web:1d0dfce355216a1d879145"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- ESTADO GLOBAL ---
+        let currentUser = null;
+        let currentBoardId = localStorage.getItem('lastBoardId'); // PERSISTENCIA: Recordar último tablero
+        let currentBoardData = null;
+        let boardUnsubscribe = null;
+
+        // --- SISTEMA ---
+        window.app = {
+            // 1. AUTH
+            login: async () => {
+                const e = document.getElementById('email').value;
+                const p = document.getElementById('password').value;
+                try { await signInWithEmailAndPassword(auth, e, p); } 
+                catch(err) { document.getElementById('auth-msg').innerText = "Credenciales incorrectas"; }
+            },
+            
+            register: async () => {
+                const e = document.getElementById('email').value;
+                const p = document.getElementById('password').value;
+                try { await createUserWithEmailAndPassword(auth, e, p); alert("Usuario creado. ¡Entrando!"); } 
+                catch(err) { document.getElementById('auth-msg').innerText = err.message; }
+            },
+
+            logout: () => {
+                localStorage.removeItem('lastBoardId'); // Limpiar memoria al salir
+                signOut(auth);
+            },
+
+            // 2. CREAR TABLERO (CARPETA)
+            createBoard: async () => {
+                const name = prompt("Nombre del nuevo tablero:");
+                if(!name) return;
+                
+                try {
+                    // CREAMOS EN LA SUB-COLECCIÓN DEL USUARIO
+                    const docRef = await addDoc(collection(db, `users/${currentUser.uid}/boards`), {
+                        name: name,
+                        createdAt: serverTimestamp(),
+                        columns: { todo: [], doing: [], done: [] }
+                    });
+                    app.loadBoard(docRef.id); // Abrir inmediatamente
+                } catch(err) {
+                    console.error("Error creando tablero:", err);
+                    alert("No se pudo guardar. Revisa tu conexión.");
+                }
+            },
+
+            // 3. CARGAR UN TABLERO ESPECÍFICO
+            loadBoard: (id) => {
+                if(boardUnsubscribe) boardUnsubscribe(); // Dejar de escuchar el anterior
+                
+                document.getElementById('loading-overlay').style.display = 'flex';
+                currentBoardId = id;
+                localStorage.setItem('lastBoardId', id); // GUARDAR EN MEMORIA LOCAL
+
+                // Escuchar cambios en ESTE tablero específico
+                boardUnsubscribe = onSnapshot(doc(db, `users/${currentUser.uid}/boards`, id), (docSnap) => {
+                    document.getElementById('loading-overlay').style.display = 'none';
+                    
+                    if(!docSnap.exists()) {
+                        // Si el tablero fue borrado o no existe
+                        document.getElementById('board-title').innerText = "Tablero no encontrado";
+                        document.getElementById('kanban-view').innerHTML = "";
+                        return;
+                    }
+
+                    currentBoardData = docSnap.data();
+                    document.getElementById('board-title').innerText = currentBoardData.name;
+                    app.renderKanban();
+                    app.highlightActiveBoard(id);
+                });
+            },
+
+            // 4. RENDERIZAR KANBAN
+            renderKanban: () => {
+                const container = document.getElementById('kanban-view');
+                container.innerHTML = '';
+
+                const cols = { todo: 'Pendientes', doing: 'En Proceso', done: 'Finalizado' };
+
+                for(const [key, title] of Object.entries(cols)) {
+                    const colDiv = document.createElement('div');
+                    colDiv.className = 'list';
+                    
+                    // Header Columna
+                    colDiv.innerHTML = `<h3>${title}</h3>`;
+                    
+                    // Área de tarjetas
+                    const cardsArea = document.createElement('div');
+                    cardsArea.className = 'cards-area';
+                    // Eventos Drag & Drop
+                    cardsArea.ondragover = e => e.preventDefault();
+                    cardsArea.ondrop = e => app.handleDrop(e, key);
+
+                    const tasks = currentBoardData.columns[key] || [];
+                    tasks.forEach(task => {
+                        const card = document.createElement('div');
+                        card.className = `card ${task.priority || 'low'}`;
+                        card.innerText = task.title;
+                        card.draggable = true;
+                        card.ondragstart = e => e.dataTransfer.setData('text', JSON.stringify({id: task.id, src: key}));
+                        card.onclick = () => app.openModal(task, key);
+                        cardsArea.appendChild(card);
+                    });
+
+                    colDiv.appendChild(cardsArea);
+
+                    // Input añadir
+                    const addDiv = document.createElement('div');
+                    addDiv.innerHTML = `<input type="text" placeholder="+ Añadir" onkeydown="if(event.key==='Enter') app.addTask('${key}', this)">`;
+                    colDiv.appendChild(addDiv);
+
+                    container.appendChild(colDiv);
+                }
+            },
+
+            // 5. OPERACIONES DE DATOS (CRUD)
+            addTask: async (colKey, input) => {
+                if(!input.value.trim()) return;
+                const newTask = { id: Date.now().toString(), title: input.value, priority: 'low', desc: '' };
+                
+                // Actualización Optimista (UI primero)
+                if(!currentBoardData.columns[colKey]) currentBoardData.columns[colKey] = [];
+                currentBoardData.columns[colKey].push(newTask);
+                
+                await app.saveBoard();
+                input.value = ''; // Limpiar input después de guardar
+            },
+
+            handleDrop: async (e, destCol) => {
+                const data = JSON.parse(e.dataTransfer.getData('text'));
+                if(data.src === destCol) return;
+
+                // Mover datos
+                const sourceList = currentBoardData.columns[data.src];
+                const taskIndex = sourceList.findIndex(t => t.id === data.id);
+                const [task] = sourceList.splice(taskIndex, 1);
+                
+                if(!currentBoardData.columns[destCol]) currentBoardData.columns[destCol] = [];
+                currentBoardData.columns[destCol].push(task);
+
+                await app.saveBoard();
+            },
+
+            saveBoard: async () => {
+                const indicator = document.getElementById('save-indicator');
+                indicator.style.display = 'block';
+                indicator.innerText = "💾 Guardando...";
+                
+                try {
+                    await updateDoc(doc(db, `users/${currentUser.uid}/boards`, currentBoardId), {
+                        columns: currentBoardData.columns
+                    });
+                    indicator.innerText = "✅ Guardado";
+                    setTimeout(() => indicator.style.display = 'none', 2000);
+                } catch(err) {
+                    console.error(err);
+                    indicator.innerText = "❌ Error";
+                }
+            },
+
+            // 6. UTILIDADES VISUALES
+            highlightActiveBoard: (id) => {
+                document.querySelectorAll('.board-item').forEach(el => el.classList.remove('active'));
+                const active = document.getElementById(`board-${id}`);
+                if(active) active.classList.add('active');
+            },
+
+            // 7. MODALES
+            currentEdit: null,
+            openModal: (task, col) => {
+                app.currentEdit = { task, col };
+                document.getElementById('m-title').value = task.title;
+                document.getElementById('m-priority').value = task.priority || 'low';
+                document.getElementById('m-desc').value = task.desc || '';
+                document.getElementById('task-modal').style.display = 'flex';
+            },
+
+            updateTask: async () => {
+                const { task } = app.currentEdit;
+                task.title = document.getElementById('m-title').value;
+                task.priority = document.getElementById('m-priority').value;
+                task.desc = document.getElementById('m-desc').value;
+                await app.saveBoard(); // Guardar cambios en tiempo real
+            },
+
+            deleteTask: async () => {
+                if(!confirm("¿Borrar tarea?")) return;
+                const { task, col } = app.currentEdit;
+                const list = currentBoardData.columns[col];
+                const idx = list.findIndex(t => t.id === task.id);
+                list.splice(idx, 1);
+                
+                document.getElementById('task-modal').style.display = 'none';
+                await app.saveBoard();
+            }
+        };
+
+        // --- INICIADOR DE SESIÓN (MONITOR) ---
+        onAuthStateChanged(auth, user => {
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-overlay').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                document.getElementById('user-display').innerText = user.email;
+
+                // Cargar lista de tableros
+                const q = query(collection(db, `users/${user.uid}/boards`), orderBy("createdAt", "desc"));
+                onSnapshot(q, snap => {
+                    const list = document.getElementById('boards-list');
+                    list.innerHTML = '';
+                    snap.forEach(d => {
+                        const div = document.createElement('div');
+                        div.className = 'board-item';
+                        div.id = `board-${d.id}`;
+                        div.innerText = "📁 " + d.data().name;
+                        div.onclick = () => app.loadBoard(d.id);
+                        list.appendChild(div);
+                    });
+
+                    // Si hay un ID guardado en memoria y existe en la lista, abrirlo
+                    if(currentBoardId && !boardUnsubscribe) {
+                        // Pequeña espera para asegurar que la lista cargó
+                        const exists = snap.docs.find(d => d.id === currentBoardId);
+                        if(exists) app.loadBoard(currentBoardId);
+                    }
+                });
+
+            } else {
+                document.getElementById('auth-overlay').style.display = 'flex';
+                document.getElementById('main-app').style.display = 'none';
+            }
+        });
+
+        // Auto-save del modal al perder foco
+        document.getElementById('m-title').onblur = app.updateTask;
+        document.getElementById('m-desc').onblur = app.updateTask;
+    </script>
 </body>
 </html>
