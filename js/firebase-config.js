@@ -8,8 +8,7 @@ const firebaseConfig = {
     projectId: "trello-d2532",
     storageBucket: "trello-d2532.firebasestorage.app",
     messagingSenderId: "630892154656",
-    appId: "1:630892154656:web:1d0dfce355216a1d879145",
-    measurementId: "G-4L4P7E6TZC"
+    appId: "1:630892154656:web:1d0dfce355216a1d879145"
 };
 
 const app = initializeApp(firebaseConfig);
