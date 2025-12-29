@@ -1,213 +1,306 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Enterprise | Master v21</title>
+    <title>Pro-Task Ultimate v30</title>
     <style>
-        :root { 
-            --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; 
-            --text: #172b4d; --gray: #5e6c84;
-            --success: #61bd4f; --danger: #eb5a46; --warning: #ff9f1a; 
-            --card-shadow: 0 1px 0 rgba(9,30,66,.25);
+        /* --- VARIABLES CSS (THEMING) --- */
+        :root {
+            --primary: #0079bf; --primary-dark: #055a8c;
+            --bg: #ffffff; --sidebar: #f4f5f7; --surface: #ffffff;
+            --text: #172b4d; --text-sub: #5e6c84; --border: #dfe1e6;
+            --success: #61bd4f; --danger: #eb5a46; --warning: #ff9f1a; --info: #00c2e0;
+            --shadow: 0 1px 2px rgba(0,0,0,0.15);
+            --radius: 6px;
         }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); background: var(--bg); }
+
+        [data-theme="dark"] {
+            --primary: #4a90e2; --primary-dark: #357abd;
+            --bg: #1e1e1e; --sidebar: #252526; --surface: #2d2d30;
+            --text: #e1e1e1; --text-sub: #a1a1a1; --border: #3e3e42;
+            --shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+
+        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); background: var(--bg); transition: background 0.3s; }
         
         /* --- LAYOUT --- */
         .app-container { display: flex; width: 100%; height: 100%; }
-        .sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid #dfe1e6; display: flex; flex-direction: column; flex-shrink: 0; }
-        .sidebar-section { padding: 15px 15px 5px; font-size: 0.75rem; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.05em; }
-        .board-list { overflow-y: auto; flex: 1; padding: 0 10px; }
+        .sidebar { width: 260px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: 0.3s; }
+        .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; overflow: hidden; }
         
-        /* Items Sidebar */
-        .board-item { padding: 10px; margin-bottom: 4px; cursor: pointer; border-radius: 4px; display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #172b4d; position: relative; transition: 0.2s; }
-        .board-item:hover { background: rgba(9,30,66,0.08); }
-        .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: 600; }
-        .board-item.unread { background: #fff0f0; border-left: 3px solid var(--danger); }
-        .badge-new { background: var(--danger); color: white; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-left: auto; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        /* HEADER & SEARCH */
+        header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 55px; display: flex; align-items: center; justify-content: space-between; }
+        .search-box { position: relative; width: 250px; }
+        .search-box input { width: 100%; padding: 6px 10px 6px 30px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+        .search-box span { position: absolute; left: 10px; top: 6px; color: var(--text-sub); }
 
-        /* Papelera Botón */
-        .trash-btn { margin-top: auto; padding: 15px; border-top: 1px solid #dfe1e6; display: flex; align-items: center; gap: 8px; cursor: pointer; color: var(--gray); font-size: 0.9rem; transition: background 0.2s; }
-        .trash-btn:hover { background: #eaecef; color: var(--danger); }
-
-        /* Main */
-        .main { flex: 1; display: flex; flex-direction: column; background: white; position: relative; overflow: hidden; }
-        header { background: var(--primary); padding: 0 20px; height: 50px; display: flex; align-items: center; justify-content: space-between; color: white; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        
-        /* Header Elements */
-        .header-actions { display: flex; align-items: center; gap: 10px; }
-        .notification-bell { position: relative; cursor: pointer; padding: 8px; margin-right: 5px; border-radius: 50%; transition: 0.2s; }
-        .notification-bell:hover { background: rgba(255,255,255,0.2); }
-        .bell-count { position: absolute; top: 0; right: 0; background: var(--danger); color: white; border-radius: 50%; font-size: 0.7rem; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid var(--primary); }
-
-        /* Kanban */
-        .kanban { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; background: #fff; }
-        .list { background: #ebecf0; width: 280px; min-width: 280px; border-radius: 8px; padding: 10px; max-height: 90%; display: flex; flex-direction: column; }
-        .list h4 { margin: 0 0 10px 5px; color: #172b4d; font-size: 0.95rem; font-weight: 600; }
+        /* KANBAN */
+        .kanban { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; }
+        .list { background: var(--sidebar); width: 280px; min-width: 280px; border-radius: var(--radius); padding: 10px; max-height: 90%; display: flex; flex-direction: column; border: 1px solid var(--border); }
+        .list h4 { margin: 0 0 10px 5px; color: var(--text); font-weight: 700; display:flex; justify-content:space-between; }
         .cards { flex: 1; overflow-y: auto; min-height: 20px; padding-right: 4px; }
         
-        /* TARJETAS (CARDS) MEJORADAS */
-        .card { background: white; padding: 10px; margin-bottom: 8px; border-radius: 4px; box-shadow: var(--card-shadow); cursor: pointer; border-left: 4px solid #dfe1e6; font-size: 0.9rem; position: relative; transition: transform 0.1s; }
-        .card:hover { background: #f4f5f7; transform: translateY(-1px); }
-        .card.low { border-left-color: var(--success); }
-        .card.medium { border-left-color: #f2d600; }
-        .card.high { border-left-color: var(--danger); }
+        /* TARJETAS AVANZADAS */
+        .card { background: var(--surface); padding: 0; margin-bottom: 10px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); position: relative; transition: transform 0.15s, box-shadow 0.15s; overflow: hidden; }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         
-        .card-meta { display: flex; gap: 10px; margin-top: 8px; font-size: 0.75rem; color: var(--gray); flex-wrap: wrap; }
-        .meta-item { display: flex; align-items: center; gap: 4px; background: #eee; padding: 2px 6px; border-radius: 4px; }
-        .meta-item.overdue { background: #ffe3e3; color: var(--danger); font-weight: bold; }
+        .card-cover { height: 80px; background-size: cover; background-position: center; display: none; }
+        .card-content { padding: 10px; }
+        
+        /* Etiquetas */
+        .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 5px; }
+        .tag { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; color: white; font-weight: 600; }
+        .tag.bug { background: var(--danger); }
+        .tag.design { background: #9b59b6; }
+        .tag.urgent { background: var(--warning); }
+        .tag.feature { background: var(--info); }
+        
+        /* Meta Datos */
+        .card-meta { display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; color: var(--text-sub); align-items: center; }
+        .meta-badge { display: flex; align-items: center; gap: 3px; background: var(--bg); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border); }
+        .meta-badge.overdue { background: #ffe3e3; color: var(--danger); border-color: var(--danger); }
+        .meta-badge.today { background: #fff8e1; color: var(--warning); border-color: var(--warning); }
+        
+        /* Barra Progreso */
+        .progress-bar { height: 4px; background: #eee; border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
+        
+        /* Avatares */
+        .avatars { display: flex; margin-top: 8px; justify-content: flex-end; }
+        .avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; border: 2px solid var(--surface); margin-left: -5px; }
 
-        /* Modales */
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        .box { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .modal-lg { width: 550px; max-height: 90vh; overflow-y: auto; }
-        
-        input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #dfe1e6; border-radius: 4px; box-sizing: border-box; font-family: inherit; }
-        button { padding: 10px; width: 100%; background: var(--primary); color: white; border: none; cursor: pointer; margin-top: 10px; border-radius: 4px; font-weight: 600; transition: background 0.2s; }
-        button:hover { background: #00659e; }
-        button.secondary { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.4); width: auto; padding: 6px 12px; font-size: 0.9rem; margin: 0; }
-        button.secondary:hover { background: rgba(255,255,255,0.1); }
-        button.danger { background: var(--danger); }
-        button.danger:hover { background: #cf513d; }
-        button.ghost { background: transparent; color: var(--gray); border: 1px solid #ccc; width: auto; color: #333; }
-        button.ghost:hover { background: #eee; }
+        /* --- MENÚ CONTEXTUAL --- */
+        #context-menu { position: absolute; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 5px 15px rgba(0,0,0,0.2); border-radius: 4px; width: 150px; display: none; z-index: 5000; overflow: hidden; }
+        .ctx-item { padding: 8px 12px; cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; color: var(--text); }
+        .ctx-item:hover { background: var(--sidebar); }
+        .ctx-danger { color: var(--danger); }
 
-        /* Toast & Papelera UI */
-        #toast { position: fixed; top: 70px; right: 20px; background: #172b4d; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 5000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 320px; cursor: pointer; border-left: 5px solid var(--success); }
-        #toast.show { opacity: 1; pointer-events: auto; }
-        .trash-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #eee; }
+        /* --- MODALES --- */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(2px); }
+        .box { background: var(--surface); padding: 25px; border-radius: 8px; width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); border: 1px solid var(--border); }
+        .modal-lg { width: 700px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; }
         
-        /* Grid para formulario de tarea */
-        .task-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
-        .checklist-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid #eee; }
+        /* Modal Tabs */
+        .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 15px; }
+        .tab { padding: 10px 15px; cursor: pointer; color: var(--text-sub); border-bottom: 2px solid transparent; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: bold; }
+        
+        /* Comentarios */
+        .comment-list { max-height: 200px; overflow-y: auto; background: var(--sidebar); padding: 10px; border-radius: 4px; margin-bottom: 10px; }
+        .comment-item { font-size: 0.85rem; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #ddd; }
+        .comment-header { font-weight: bold; font-size: 0.75rem; color: var(--primary); display: flex; justify-content: space-between; }
+
+        /* Actividad / Log */
+        .activity-panel { position: fixed; right: -300px; top: 55px; bottom: 0; width: 300px; background: var(--surface); border-left: 1px solid var(--border); transition: 0.3s; padding: 20px; overflow-y: auto; z-index: 1000; }
+        .activity-panel.open { right: 0; }
+        .log-item { font-size: 0.8rem; margin-bottom: 10px; color: var(--text-sub); border-left: 2px solid var(--border); padding-left: 8px; }
+
+        /* UI Elements */
+        input, select, textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; }
+        button { cursor: pointer; border: none; padding: 8px 12px; border-radius: 4px; font-weight: 600; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
+        .btn-ghost:hover { background: var(--sidebar); }
+        
+        /* Toast Undo */
+        #toast-undo { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px 20px; border-radius: 4px; display: none; align-items: center; gap: 15px; z-index: 6000; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
     </style>
 </head>
 <body>
 
-    <div id="toast" onclick="openToastBoard()">
-        <strong id="toast-title">Notificación</strong>
-        <div id="toast-msg"></div>
-        <span style="font-size:0.75rem; opacity:0.7; font-style:italic; display:block; margin-top:5px;">Clic para abrir</span>
+    <div id="context-menu">
+        <div class="ctx-item" onclick="duplicateTaskCtx()">📄 Duplicar</div>
+        <div class="ctx-item" onclick="moveTaskCtx('done')">✅ Mover a Hecho</div>
+        <div class="ctx-item ctx-danger" onclick="deleteTaskCtx()">🗑️ Eliminar</div>
+    </div>
+
+    <div id="toast-undo">
+        <span>Acción realizada</span>
+        <button class="btn-primary" style="padding:4px 8px; font-size:0.8rem;" onclick="undoAction()">DESHACER</button>
+    </div>
+
+    <div id="activity-panel" class="activity-panel">
+        <h3>📜 Historial</h3>
+        <div id="activity-list"></div>
     </div>
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v21</h2>
-            <p style="color:#666">Gestión de Proyectos & Tiempos</p>
+            <h2 style="color:var(--primary); text-align:center;">Pro-Task Ultimate</h2>
             <input type="email" id="email" placeholder="Correo electrónico">
             <input type="password" id="password" placeholder="Contraseña">
-            <button onclick="login()">Iniciar Sesión</button>
-            <button onclick="register()" style="background: white; color: var(--primary); border: 1px solid var(--primary);">Crear Cuenta</button>
-            <p id="auth-msg" style="color:red; font-size: 0.8rem; margin-top: 10px; text-align: center;"></p>
+            <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="login()">Entrar</button>
+            <button class="btn-ghost" style="width:100%; margin-top:5px;" onclick="register()">Registrarse</button>
+            <p id="auth-msg" style="color:var(--danger); font-size:0.8rem; text-align:center;"></p>
         </div>
     </div>
 
     <div id="app-screen" class="app-container" style="display: none;">
+        
         <div class="sidebar">
-            <div class="sidebar-section">MIS PROYECTOS</div>
-            <div id="my-boards" class="board-list" style="flex:0 0 auto; max-height: 40%;"></div>
-            
-            <div class="sidebar-section">COMPARTIDOS CONMIGO</div>
-            <div id="shared-boards" class="board-list"></div>
-
-            <div style="padding:15px; border-top: 1px solid #ddd;">
-                <button onclick="createBoard()">+ Nuevo Tablero</button>
+            <div style="padding:15px; font-weight:bold; color:var(--primary); display:flex; align-items:center; gap:10px;">
+                <span>⚡ PRO-TASK</span>
+                <button onclick="toggleTheme()" style="background:none; border:none; font-size:1.2rem;">🌓</button>
             </div>
-
-            <div class="trash-btn" onclick="openTrashModal()">
-                🗑️ Papelera de Reciclaje
+            
+            <div style="padding:0 10px; font-size:0.75rem; color:var(--text-sub); font-weight:bold;">MIS PROYECTOS</div>
+            <div id="my-boards" style="flex:1; overflow-y:auto; padding:10px;"></div>
+            
+            <div style="padding:0 10px; font-size:0.75rem; color:var(--text-sub); font-weight:bold;">COMPARTIDOS</div>
+            <div id="shared-boards" style="max-height:150px; overflow-y:auto; padding:10px;"></div>
+            
+            <div style="padding:15px; border-top:1px solid var(--border);">
+                <button class="btn-primary" style="width:100%;" onclick="createBoard()">+ Nuevo</button>
+                <div onclick="openTrash()" style="margin-top:10px; cursor:pointer; color:var(--text-sub); font-size:0.9rem; display:flex; align-items:center; gap:5px;">
+                    🗑️ Papelera
+                </div>
             </div>
         </div>
 
         <div class="main">
             <header>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <strong id="header-title" style="font-size: 1.1rem;">Panel Principal</strong>
-                    <span id="save-status" style="font-size: 0.75rem; background: rgba(0,0,0,0.2); padding: 3px 8px; border-radius: 4px; display: none;">Guardando...</span>
+                <div class="search-box">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Buscar tarjetas..." onkeyup="filterCards(this.value)">
                 </div>
                 
-                <div class="header-actions">
-                    <div class="notification-bell" onclick="openNextUnread()" title="Notificaciones pendientes">
-                        🔔
-                        <div id="bell-count" class="bell-count" style="display:none;">0</div>
-                    </div>
-
-                    <button id="btn-share" class="secondary" onclick="openShareModal()" style="display:none;">👤 Compartir</button>
-                    <button id="btn-trash" class="secondary" onclick="softDeleteBoard()" style="display:none; background:rgba(235, 90, 70, 0.2); border:1px solid rgba(255,255,255,0.4);">🗑️ Borrar</button>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button class="btn-ghost" onclick="toggleActivity()">📜 Log</button>
+                    <button class="btn-ghost" onclick="exportCSV()">📊 Exportar</button>
+                    <button class="btn-ghost" onclick="openStats()">📈 Stats</button>
                     
-                    <span id="user-display" style="font-size: 0.85rem; opacity: 0.9;"></span>
-                    <button class="secondary" onclick="logout()">Salir</button>
+                    <div style="position:relative; cursor:pointer; margin:0 10px;" onclick="openUnread()">
+                        🔔 <span id="bell-count" style="position:absolute; top:-5px; right:-5px; background:var(--danger); color:white; font-size:0.6rem; padding:2px 4px; border-radius:10px; display:none;">0</span>
+                    </div>
+                    
+                    <span id="user-display" style="font-size:0.8rem; font-weight:bold;"></span>
+                    <button class="btn-ghost" onclick="logout()">Salir</button>
                 </div>
             </header>
 
-            <div id="kanban" class="kanban">
-                <div style="margin: 100px auto; text-align: center; color: #888;">
-                    <h3>Bienvenido</h3>
-                    <p>Selecciona o crea un proyecto para comenzar.</p>
+            <div style="padding:10px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <h2 id="header-title" style="margin:0;">Selecciona un Tablero</h2>
+                <div id="board-actions" style="display:none;">
+                    <button class="btn-ghost" onclick="openShare()">👤 Invitar</button>
+                    <button class="btn-ghost" style="color:var(--danger);" onclick="softDeleteBoard()">🗑️ Borrar Tablero</button>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <div id="share-modal" class="overlay" style="display: none;">
-        <div class="box">
-            <span onclick="closeAllModals()" style="float:right; cursor:pointer;">&times;</span>
-            <h3>Compartir Proyecto</h3>
-            <p style="font-size:0.9rem; color:#666;">Ingresa el correo del colaborador:</p>
-            <input type="email" id="share-email" placeholder="usuario@ejemplo.com">
-            <button onclick="shareBoard()">Enviar Invitación</button>
-        </div>
-    </div>
-
-    <div id="trash-modal" class="overlay" style="display: none;">
-        <div class="box modal-lg">
-            <span onclick="closeAllModals()" style="float:right; cursor:pointer; font-size:1.5rem;">&times;</span>
-            <h3 style="color:var(--danger)">🗑️ Papelera</h3>
-            <div id="trash-list" style="margin-top:20px; max-height:400px; overflow-y:auto; border:1px solid #eee; border-radius:4px;"></div>
-            <button onclick="closeAllModals()" class="ghost" style="margin-top:20px; width:100%;">Cerrar</button>
+            <div id="kanban" class="kanban"></div>
         </div>
     </div>
 
     <div id="task-modal" class="overlay" style="display: none;">
         <div class="box modal-lg">
-            <span onclick="closeAllModals()" style="float:right; cursor:pointer; font-size:1.5rem;">&times;</span>
+            <span onclick="closeModals()" style="align-self:flex-end; cursor:pointer; font-size:1.5rem;">&times;</span>
             
-            <label style="font-size:0.75rem; color:#888; text-transform:uppercase; font-weight:bold;">Título</label>
-            <input type="text" id="m-title" style="font-size:1.2rem; font-weight:bold; padding-left:5px;">
-            
-            <div class="task-meta-grid">
-                <div>
-                    <label style="font-size:0.75rem; color:#888;">Prioridad</label>
-                    <select id="m-priority" onchange="updateTask()">
-                        <option value="low">🟢 Baja</option>
-                        <option value="medium">🟡 Media</option>
-                        <option value="high">🔴 Alta</option>
-                    </select>
+            <div id="m-cover-preview" style="height:100px; background:#eee; border-radius:4px; margin-bottom:10px; background-size:cover; background-position:center; display:none;"></div>
+
+            <input type="text" id="m-title" style="font-size:1.5rem; font-weight:bold; border:none; padding:5px 0; background:transparent;" placeholder="Título de la tarea">
+
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('details')">Detalles</div>
+                <div class="tab" onclick="switchTab('comments')">Comentarios</div>
+                <div class="tab" onclick="switchTab('files')">Adjuntos</div>
+            </div>
+
+            <div id="tab-details">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-sub);">Asignar a</label>
+                        <select id="m-assignee" onchange="updateTask()"></select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-sub);">Etiqueta</label>
+                        <select id="m-tag" onchange="updateTask()">
+                            <option value="">Ninguna</option>
+                            <option value="bug">🐛 Bug</option>
+                            <option value="feature">✨ Feature</option>
+                            <option value="urgent">🔥 Urgente</option>
+                            <option value="design">🎨 Diseño</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-sub);">Vencimiento</label>
+                        <input type="date" id="m-due" onchange="updateTask()">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-sub);">Tiempo (Cronómetro)</label>
+                        <div style="display:flex; gap:5px; align-items:center;">
+                            <button id="btn-timer" class="btn-ghost" onclick="toggleTimer()">▶️</button>
+                            <span id="m-timer-display" style="font-weight:bold;">00:00</span>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <label style="font-size:0.75rem; color:#888;">Fecha Vencimiento</label>
-                    <input type="date" id="m-duedate" onchange="updateTask()">
-                </div>
-                <div>
-                    <label style="font-size:0.75rem; color:#888;">Estimación (Ej: 2h, 3 días)</label>
-                    <input type="text" id="m-estimate" placeholder="Ej: 4h" onblur="updateTask()">
+
+                <label style="font-size:0.8rem; color:var(--text-sub);">Descripción</label>
+                <textarea id="m-desc" rows="3" onblur="updateTask()"></textarea>
+
+                <div style="margin-top:15px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <strong>Checklist</strong>
+                        <span id="m-progress-text" style="font-size:0.8rem;">0%</span>
+                    </div>
+                    <div class="progress-bar"><div id="m-progress-bar" class="progress-fill"></div></div>
+                    <div id="m-checklist" style="margin-top:10px;"></div>
+                    <div style="display:flex; gap:5px; margin-top:5px;">
+                        <input id="m-new-check" placeholder="Nueva subtarea..." onkeypress="if(event.key==='Enter') addCheck()">
+                        <button class="btn-ghost" onclick="addCheck()">+</button>
+                    </div>
                 </div>
             </div>
 
-            <label style="font-size:0.75rem; color:#888;">Descripción</label>
-            <textarea id="m-desc" rows="4" placeholder="Detalles de la tarea..." onblur="updateTask()"></textarea>
-            
-            <h4 style="margin-bottom:5px;">Checklist</h4>
-            <div id="m-checklist"></div>
-            <div style="display:flex; gap:5px; margin-top:10px;">
-                <input id="m-new-check" placeholder="Añadir subtarea..." onkeypress="if(event.key==='Enter') addCheck()">
-                <button onclick="addCheck()" style="width:auto;">+</button>
+            <div id="tab-comments" style="display:none;">
+                <div id="comment-list" class="comment-list"></div>
+                <div style="display:flex; gap:5px;">
+                    <input id="m-new-comment" placeholder="Escribe un comentario...">
+                    <button class="btn-primary" onclick="addComment()">Enviar</button>
+                </div>
             </div>
-            
-            <div style="border-top:1px solid #eee; margin-top:20px; padding-top:10px;">
-                <button onclick="deleteTask()" class="danger" style="width:auto; float:right;">Eliminar Tarea</button>
+
+            <div id="tab-files" style="display:none;">
+                <label>Link de Portada (Imagen)</label>
+                <input id="m-cover-url" placeholder="https://..." onblur="updateTask()">
+                <hr style="margin:10px 0; border:0; border-top:1px solid #eee;">
+                <div id="file-list"></div>
+                <div style="display:flex; gap:5px; margin-top:10px;">
+                    <input id="m-file-name" placeholder="Nombre (ej: Drive)">
+                    <input id="m-file-url" placeholder="URL">
+                    <button class="btn-ghost" onclick="addFile()">+</button>
+                </div>
             </div>
+
+            <div style="margin-top:20px; border-top:1px solid var(--border); padding-top:10px; text-align:right;">
+                <button class="btn-danger" onclick="deleteTask()">Eliminar Tarea</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="share-modal" class="overlay" style="display:none;">
+        <div class="box">
+            <h3>Invitar Miembro</h3>
+            <input id="share-email" placeholder="Email">
+            <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="shareBoard()">Enviar</button>
+            <button class="btn-ghost" style="width:100%; margin-top:5px;" onclick="closeModals()">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="stats-modal" class="overlay" style="display:none;">
+        <div class="box">
+            <h3>Estadísticas</h3>
+            <div id="stats-content"></div>
+            <button class="btn-ghost" style="width:100%; margin-top:10px;" onclick="closeModals()">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="trash-modal" class="overlay" style="display:none;">
+        <div class="box modal-lg">
+            <h3>Papelera</h3>
+            <div id="trash-list"></div>
+            <button class="btn-ghost" onclick="closeModals()">Cerrar</button>
         </div>
     </div>
 
@@ -216,9 +309,8 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // CREDENCIALES
         const firebaseConfig = {
-            apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
+            apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk", // TU API KEY
             authDomain: "trello-d2532.firebaseapp.com",
             projectId: "trello-d2532",
             storageBucket: "trello-d2532.firebasestorage.app",
@@ -230,378 +322,415 @@
         const auth = getAuth(app);
         const db = getFirestore(app, "pro-task-app");
 
-        // ESTADO GLOBAL
         let currentUser = null;
         let currentBoardId = null;
         let boardData = null;
-        let unsubscribeBoard = null;
-        let pendingToastBoardId = null;
-        let seenBoards = JSON.parse(localStorage.getItem('seenBoards') || '[]');
+        let editTask = null;
+        let editCol = null;
+        
+        // Timer Logic
+        let activeTimers = {}; // {taskId: intervalId}
+        
+        // Undo Logic
+        let undoStack = null; 
+        let undoTimeout = null;
 
-        // 1. AUTENTICACIÓN
-        window.login = () => signInWithEmailAndPassword(auth, _val('email').toLowerCase(), _val('password')).catch(e => _err(e.message));
-        window.register = () => createUserWithEmailAndPassword(auth, _val('email').toLowerCase(), _val('password')).catch(e => _err(e.message));
-        window.logout = () => { localStorage.removeItem('lastBoard'); signOut(auth); location.reload(); };
+        // --- AUTH ---
+        window.login = () => signInWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => document.getElementById('auth-msg').innerText = e.message);
+        window.register = () => createUserWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => document.getElementById('auth-msg').innerText = e.message);
+        window.logout = () => { signOut(auth); location.reload(); };
 
         onAuthStateChanged(auth, user => {
-            if (user) {
+            if(user) {
                 currentUser = user;
                 document.getElementById('user-display').innerText = user.email;
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('app-screen').style.display = 'flex';
                 initDashboard();
-            } else {
-                document.getElementById('auth-screen').style.display = 'flex';
-                document.getElementById('app-screen').style.display = 'none';
+                loadTheme();
             }
         });
 
-        // 2. DASHBOARD Y LISTAS
+        // --- DASHBOARD ---
         function initDashboard() {
-            // Mis Proyectos (Dueño)
-            const qMy = query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid));
-            onSnapshot(qMy, snap => renderList('my-boards', snap));
-
-            // Compartidos (Invitado)
-            const qShared = query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email));
-            let isFirstLoad = true;
-
-            onSnapshot(qShared, snap => {
-                let unreadCount = 0;
-                const container = document.getElementById('shared-boards');
-                container.innerHTML = '';
-                if (snap.empty) container.innerHTML = '<div style="padding:10px; color:#999; font-size:0.8rem;">Ninguno</div>';
-
-                // Detectar nuevos para Notificar
-                snap.docChanges().forEach(change => {
-                    if (change.type === "added" && !isFirstLoad) {
-                        const bData = change.doc.data();
-                        if(bData.ownerId !== currentUser.uid && !bData.deleted) {
-                             showToast("🔔 Nueva Invitación", `${bData.ownerEmail} te invitó a: ${bData.name}`, change.doc.id);
-                        }
-                    }
-                });
-
+            // Mis Boards
+            onSnapshot(query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid)), snap => {
+                const div = document.getElementById('my-boards'); div.innerHTML = '';
                 snap.forEach(d => {
-                    const data = d.data();
-                    if (data.ownerId === currentUser.uid || data.deleted) return;
-
-                    const isUnread = !seenBoards.includes(d.id);
-                    if (isUnread) unreadCount++;
-
-                    const div = document.createElement('div');
-                    div.className = `board-item ${currentBoardId === d.id ? 'active' : ''} ${isUnread ? 'unread' : ''}`;
-                    div.innerHTML = `<span>👥 ${data.name}</span>${isUnread ? '<span class="badge-new">NUEVO</span>' : ''}`;
-                    div.onclick = () => openBoard(d.id, true);
-                    container.appendChild(div);
+                    if(!d.data().deleted) div.innerHTML += renderBoardItem(d.id, d.data());
                 });
-                updateBell(unreadCount);
-                isFirstLoad = false;
             });
-
-            // Auto-cargar último
-            const lastId = localStorage.getItem('lastBoard');
-            if (lastId) openBoard(lastId);
+            // Compartidos
+            onSnapshot(query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email)), snap => {
+                const div = document.getElementById('shared-boards'); div.innerHTML = '';
+                snap.forEach(d => {
+                    if(!d.data().deleted && d.data().ownerId !== currentUser.uid) div.innerHTML += renderBoardItem(d.id, d.data(), true);
+                });
+            });
         }
 
-        // 3. GESTIÓN DE TABLEROS (CRUD + PAPELERA)
+        function renderBoardItem(id, data, shared) {
+            return `<div class="board-item" onclick="openBoard('${id}')"><span>${shared?'👥':'📁'} ${data.name}</span></div>`;
+        }
+
+        // --- CORE BOARD LOGIC ---
         window.createBoard = async () => {
-            const name = prompt("Nombre del Proyecto:");
-            if (!name) return;
-            try {
-                const ref = await addDoc(collection(db, 'boards'), {
-                    name: name,
-                    ownerId: currentUser.uid,
-                    ownerEmail: currentUser.email,
-                    members: [currentUser.email],
-                    deleted: false,
-                    createdAt: serverTimestamp(),
-                    columns: { todo: [], doing: [], done: [] }
-                });
-                openBoard(ref.id);
-                showToast("✅ Creado", "Proyecto listo para usar");
-            } catch (e) { alert("Error: " + e.message); }
+            const name = prompt("Nombre:");
+            if(!name) return;
+            const res = await addDoc(collection(db, 'boards'), {
+                name, ownerId: currentUser.uid, members: [currentUser.email],
+                deleted: false, createdAt: serverTimestamp(),
+                columns: { todo: [], doing: [], done: [] },
+                activityLog: []
+            });
+            openBoard(res.id);
         };
 
-        window.openBoard = (id, markAsRead = false) => {
-            if (unsubscribeBoard) unsubscribeBoard();
-
-            // Marcar como leído
-            if (markAsRead && !seenBoards.includes(id)) {
-                seenBoards.push(id);
-                localStorage.setItem('seenBoards', JSON.stringify(seenBoards));
-                // Actualizar UI sin recargar
-                const item = document.querySelector(`.board-item[onclick*="${id}"]`);
-                if(item) {
-                    item.classList.remove('unread');
-                    item.querySelector('.badge-new')?.remove();
-                    const bell = document.getElementById('bell-count');
-                    let c = parseInt(bell.innerText) || 0;
-                    if(c > 0) updateBell(c - 1);
-                }
-            }
-
+        window.openBoard = (id) => {
             currentBoardId = id;
-            localStorage.setItem('lastBoard', id);
-            
-            // Visual active
-            document.querySelectorAll('.board-item').forEach(el => el.classList.remove('active'));
-            const activeItem = document.querySelector(`.board-item[onclick*="${id}"]`);
-            if(activeItem) activeItem.classList.add('active');
-
-            unsubscribeBoard = onSnapshot(doc(db, 'boards', id), (snap) => {
-                if (!snap.exists()) {
-                    document.getElementById('kanban').innerHTML = "<p>Tablero no encontrado.</p>";
-                    hideHeaderButtons();
-                    return;
-                }
+            onSnapshot(doc(db, 'boards', id), snap => {
+                if(!snap.exists() || snap.data().deleted) return document.getElementById('kanban').innerHTML = '<p>No disponible</p>';
                 boardData = snap.data();
-                
-                // Si está en papelera
-                if (boardData.deleted) {
-                    document.getElementById('kanban').innerHTML = "<div style='text-align:center; margin-top:50px; color:#eb5a46;'><h3>🗑️ Este tablero está en la papelera</h3><p>Restáuralo para ver el contenido.</p></div>";
-                    document.getElementById('header-title').innerText = boardData.name + " (Eliminado)";
-                    hideHeaderButtons();
-                    return;
-                }
-
                 document.getElementById('header-title').innerText = boardData.name;
-                
-                // Permisos
-                const isOwner = boardData.ownerId === currentUser.uid;
-                document.getElementById('btn-share').style.display = isOwner ? 'block' : 'none';
-                document.getElementById('btn-trash').style.display = isOwner ? 'block' : 'none';
-                
+                document.getElementById('board-actions').style.display = (boardData.ownerId === currentUser.uid) ? 'block' : 'none';
                 renderKanban();
+                renderActivityLog();
             });
         };
 
-        // --- PAPELERA ---
-        window.openTrashModal = async () => {
-            const qTrash = query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid));
-            onSnapshot(qTrash, (snap) => {
-                const list = document.getElementById('trash-list');
-                list.innerHTML = '';
-                let count = 0;
-                snap.forEach(d => {
-                    const data = d.data();
-                    if (data.deleted === true) {
-                        count++;
-                        const item = document.createElement('div');
-                        item.className = 'trash-item';
-                        item.innerHTML = `<span>${data.name}</span><div><button onclick="restoreBoard('${d.id}')" style="background:var(--success); color:white; margin-right:5px; width:auto; padding:5px 10px;">♻️</button><button onclick="hardDelete('${d.id}')" style="background:var(--danger); color:white; width:auto; padding:5px 10px;">🔥</button></div>`;
-                        list.appendChild(item);
-                    }
-                });
-                if (count === 0) list.innerHTML = '<div style="padding:20px; text-align:center; color:#999;">Papelera vacía</div>';
-                document.getElementById('trash-modal').style.display = 'flex';
-            });
-        };
-
-        window.softDeleteBoard = async () => {
-            if(!confirm("¿Mover a papelera?")) return;
-            await updateDoc(doc(db, 'boards', currentBoardId), { deleted: true });
-        };
-        window.restoreBoard = async (id) => await updateDoc(doc(db, 'boards', id), { deleted: false });
-        window.hardDelete = async (id) => { if(confirm("¿ELIMINAR PARA SIEMPRE?")) await deleteDoc(doc(db, 'boards', id)); };
-
-        // 4. KANBAN Y TAREAS
+        // --- KANBAN RENDER ---
         function renderKanban() {
             const container = document.getElementById('kanban'); container.innerHTML = '';
-            const cols = { todo: "Pendientes", doing: "En Proceso", done: "Hecho" };
+            const cols = { todo: "Por Hacer", doing: "En Progreso", done: "Finalizado" };
             
-            Object.keys(cols).forEach(key => {
+            for (let k in cols) {
                 const list = document.createElement('div'); list.className = 'list';
                 
-                const cardContainer = document.createElement('div');
-                cardContainer.className = 'cards';
-                cardContainer.id = key;
-                cardContainer.ondragover = e => e.preventDefault();
-                cardContainer.ondrop = e => handleDrop(e, key);
+                const cardCont = document.createElement('div'); cardCont.className = 'cards';
+                cardCont.id = k;
+                cardCont.ondragover = e => e.preventDefault();
+                cardCont.ondrop = e => handleDrop(e, k);
 
-                (boardData.columns[key] || []).forEach(task => {
-                    const card = createCardElement(task, key);
-                    cardContainer.appendChild(card);
-                });
+                (boardData.columns[k] || []).forEach(task => cardCont.appendChild(createCard(task, k)));
 
-                list.innerHTML = `<h4>${cols[key]}</h4>`;
-                list.appendChild(cardContainer);
-                list.innerHTML += `<button class="ghost" style="width:100%; margin-top:5px; text-align:left; color:#5e6c84;" onclick="addTask('${key}')">+ Añadir tarjeta</button>`;
+                list.innerHTML = `<h4>${cols[k]} <span>${(boardData.columns[k]||[]).length}</span></h4>`;
+                list.appendChild(cardCont);
+                list.innerHTML += `<button class="btn-ghost" style="width:100%; text-align:left;" onclick="addTask('${k}')">+ Añadir</button>`;
                 container.appendChild(list);
-            });
+            }
         }
 
-        function createCardElement(task, colKey) {
+        function createCard(task, col) {
             const el = document.createElement('div');
-            el.className = `card ${task.priority || 'low'}`;
+            el.className = 'card';
             el.draggable = true;
-            el.ondragstart = e => e.dataTransfer.setData('text', JSON.stringify({id: task.id, src: colKey}));
-            el.onclick = () => openTaskModal(task, colKey);
+            el.ondragstart = e => e.dataTransfer.setData('text', JSON.stringify({id: task.id, src: col}));
+            el.oncontextmenu = e => showContext(e, task, col);
+            el.onclick = () => openTaskModal(task, col);
 
-            // Contenido de la tarjeta
-            let html = `<div>${task.title}</div>`;
+            // Cover
+            let html = '';
+            if(task.cover) html += `<div class="card-cover" style="display:block; background-image:url('${task.cover}')"></div>`;
             
-            // Meta-datos (Checklist, Fechas, Tiempo)
-            let metaHtml = '';
+            html += `<div class="card-content">`;
             
-            // Checklist Badge
-            if (task.checklist && task.checklist.length > 0) {
-                const done = task.checklist.filter(c => c.done).length;
-                metaHtml += `<span class="meta-item">☑ ${done}/${task.checklist.length}</span>`;
-            }
-
-            // Time Estimate Badge
-            if (task.estimate) {
-                metaHtml += `<span class="meta-item">⏱️ ${task.estimate}</span>`;
-            }
-
-            // Due Date Badge (con lógica de vencimiento)
-            if (task.dueDate) {
+            // Tags
+            if(task.tag) html += `<div class="card-tags"><span class="tag ${task.tag}">${task.tag.toUpperCase()}</span></div>`;
+            
+            html += `<strong>${task.title}</strong>`;
+            
+            // Meta Info
+            html += `<div class="card-meta">`;
+            // Due Date Logic
+            if(task.due) {
                 const today = new Date().toISOString().split('T')[0];
-                const isOverdue = task.dueDate < today && colKey !== 'done';
-                metaHtml += `<span class="meta-item ${isOverdue ? 'overdue' : ''}">📅 ${task.dueDate.substring(5)}</span>`;
+                const cls = task.due < today ? 'overdue' : (task.due === today ? 'today' : '');
+                html += `<span class="meta-badge ${cls}">📅 ${task.due.slice(5)}</span>`;
+            }
+            // Checklist
+            if(task.checklist && task.checklist.length > 0) {
+                const done = task.checklist.filter(c => c.done).length;
+                const total = task.checklist.length;
+                html += `<span class="meta-badge">☑ ${done}/${total}</span>`;
+            }
+            // Attachments
+            if(task.files && task.files.length) html += `<span class="meta-badge">📎 ${task.files.length}</span>`;
+            html += `</div>`; // Close meta
+
+            // Avatar
+            if(task.assignedTo) {
+                html += `<div class="avatars"><div class="avatar" title="${task.assignedTo}">${task.assignedTo.substring(0,2).toUpperCase()}</div></div>`;
             }
 
-            if (metaHtml) html += `<div class="card-meta">${metaHtml}</div>`;
-            
+            // Progress Bar visual
+            if(task.checklist && task.checklist.length > 0) {
+                const pct = Math.round((task.checklist.filter(c => c.done).length / task.checklist.length) * 100);
+                html += `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+            }
+
+            html += `</div>`; // Close content
             el.innerHTML = html;
             return el;
         }
 
-        // GUARDADO Y MODIFICACIÓN
-        async function save() {
-            if (!currentBoardId) return;
-            document.getElementById('save-status').style.display = 'block';
-            await updateDoc(doc(db, 'boards', currentBoardId), { columns: boardData.columns });
-            setTimeout(() => document.getElementById('save-status').style.display = 'none', 1000);
-        }
-
+        // --- TASK LOGIC ---
         window.addTask = (col) => {
-            const t = prompt("Título de la tarea:");
+            const t = prompt("Tarea:");
             if(!t) return;
-            boardData.columns[col].push({ 
-                id: Date.now().toString(), 
-                title: t, 
-                priority: 'low', 
-                desc: '', 
-                checklist: [],
-                dueDate: '',
-                estimate: ''
-            });
-            renderKanban(); save();
+            const newTask = { 
+                id: Date.now().toString(), title: t, desc: '', 
+                checklist: [], comments: [], files: [], 
+                tag: '', due: '', assignedTo: '', cover: '', 
+                timeLog: 0, createdBy: currentUser.email 
+            };
+            boardData.columns[col].push(newTask);
+            logActivity(`creó tarea "${t}"`);
+            save();
         };
 
         window.handleDrop = (e, dest) => {
             e.preventDefault();
             const {id, src} = JSON.parse(e.dataTransfer.getData('text'));
             if(src === dest) return;
-            const idx = boardData.columns[src].findIndex(x => x.id === id);
-            const [task] = boardData.columns[src].splice(idx, 1);
+            const task = boardData.columns[src].find(t => t.id === id);
+            boardData.columns[src] = boardData.columns[src].filter(t => t.id !== id);
             boardData.columns[dest].push(task);
-            renderKanban(); save();
+            logActivity(`movió tarea "${task.title}" a ${dest}`);
+            save();
         };
 
-        // --- MODAL DETALLE DE TAREA ---
-        let editT = null;
-        
+        // --- TASK MODAL & TABS ---
         window.openTaskModal = (task, col) => {
-            editT = task;
-            document.getElementById('m-title').value = task.title;
-            document.getElementById('m-priority').value = task.priority || 'low';
-            document.getElementById('m-desc').value = task.desc || '';
-            document.getElementById('m-duedate').value = task.dueDate || '';
-            document.getElementById('m-estimate').value = task.estimate || '';
-            renderChecks();
+            editTask = task; editCol = col;
             document.getElementById('task-modal').style.display = 'flex';
+            
+            // Fill Fields
+            _id('m-title').value = task.title;
+            _id('m-desc').value = task.desc || '';
+            _id('m-due').value = task.due || '';
+            _id('m-tag').value = task.tag || '';
+            _id('m-cover-url').value = task.cover || '';
+            
+            // Assignee Dropdown
+            const sel = _id('m-assignee'); sel.innerHTML = '<option value="">Sin asignar</option>';
+            (boardData.members || [currentUser.email]).forEach(m => {
+                sel.innerHTML += `<option value="${m}" ${task.assignedTo===m?'selected':''}>${m}</option>`;
+            });
+
+            // Cover Preview
+            if(task.cover) { _id('m-cover-preview').style.display='block'; _id('m-cover-preview').style.backgroundImage=`url('${task.cover}')`; }
+            else _id('m-cover-preview').style.display='none';
+
+            // Timer Display
+            updateTimerDisplay();
+
+            // Render Sub-components
+            renderChecklist();
+            renderComments();
+            renderFiles();
+            switchTab('details');
         };
 
+        window.switchTab = (tab) => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            ['details','comments','files'].forEach(t => _id('tab-'+t).style.display = (t===tab?'block':'none'));
+        };
+
+        // --- UPDATE & SAVE ---
         window.updateTask = () => {
-            if(!editT) return;
-            editT.title = _val('m-title');
-            editT.priority = _val('m-priority');
-            editT.desc = _val('m-desc');
-            editT.dueDate = _val('m-duedate');
-            editT.estimate = _val('m-estimate');
-            renderKanban(); save();
+            editTask.title = _id('m-title').value;
+            editTask.desc = _id('m-desc').value;
+            editTask.due = _id('m-due').value;
+            editTask.tag = _id('m-tag').value;
+            editTask.assignedTo = _id('m-assignee').value;
+            editTask.cover = _id('m-cover-url').value;
+            save();
         };
 
-        window.renderChecks = () => {
-            document.getElementById('m-checklist').innerHTML = (editT.checklist||[]).map((c, i) => `
-                <div class="checklist-item">
-                    <input type="checkbox" ${c.done?'checked':''} onchange="toggleCheck(${i})">
-                    <span style="${c.done?'text-decoration:line-through; color:#aaa; flex:1': 'flex:1'}">${c.text}</span>
-                    <span style="color:red; cursor:pointer;" onclick="delCheck(${i})">&times;</span>
-                </div>
-            `).join('');
-        };
+        async function save() {
+            await updateDoc(doc(db, 'boards', currentBoardId), { 
+                columns: boardData.columns,
+                activityLog: boardData.activityLog || []
+            });
+        }
 
+        // --- CHECKLIST ---
         window.addCheck = () => {
-            const v = _val('m-new-check');
-            if(!v) return;
-            if(!editT.checklist) editT.checklist = [];
-            editT.checklist.push({text: v, done: false});
-            document.getElementById('m-new-check').value = '';
-            renderChecks(); save();
+            const val = _id('m-new-check').value;
+            if(!val) return;
+            editTask.checklist.push({text: val, done: false});
+            _id('m-new-check').value = '';
+            renderChecklist(); save();
         };
-
-        window.toggleCheck = (i) => { editT.checklist[i].done = !editT.checklist[i].done; renderChecks(); save(); };
-        window.delCheck = (i) => { editT.checklist.splice(i, 1); renderChecks(); save(); };
-        
-        window.deleteTask = () => {
-            if(!confirm("¿Eliminar esta tarea?")) return;
-            Object.keys(boardData.columns).forEach(k => {
-                boardData.columns[k] = boardData.columns[k].filter(x => x.id !== editT.id);
+        window.toggleCheck = (i) => { editTask.checklist[i].done = !editTask.checklist[i].done; renderChecklist(); save(); };
+        function renderChecklist() {
+            const list = _id('m-checklist'); list.innerHTML = '';
+            let done = 0;
+            (editTask.checklist||[]).forEach((c, i) => {
+                if(c.done) done++;
+                list.innerHTML += `<div style="display:flex; gap:10px; margin-bottom:5px;"><input type="checkbox" ${c.done?'checked':''} onchange="toggleCheck(${i})"> <span>${c.text}</span></div>`;
             });
-            closeAllModals(); renderKanban(); save();
+            // Update Bars
+            const pct = editTask.checklist.length ? Math.round((done/editTask.checklist.length)*100) : 0;
+            _id('m-progress-bar').style.width = pct + '%';
+            _id('m-progress-text').innerText = pct + '%';
+        }
+
+        // --- COMMENTS ---
+        window.addComment = () => {
+            const txt = _id('m-new-comment').value;
+            if(!txt) return;
+            editTask.comments.push({user: currentUser.email, text: txt, date: new Date().toISOString()});
+            _id('m-new-comment').value = '';
+            renderComments(); save();
+        };
+        function renderComments() {
+            const div = _id('comment-list'); div.innerHTML = '';
+            (editTask.comments||[]).forEach(c => {
+                div.innerHTML += `<div class="comment-item"><div class="comment-header"><span>${c.user}</span><span>${c.date.slice(0,10)}</span></div><div>${c.text}</div></div>`;
+            });
+        }
+
+        // --- FILES ---
+        window.addFile = () => {
+            editTask.files.push({name: _id('m-file-name').value||'Link', url: _id('m-file-url').value});
+            renderFiles(); save();
+        };
+        function renderFiles() {
+            _id('file-list').innerHTML = (editTask.files||[]).map(f => `<a href="${f.url}" target="_blank" style="display:block; padding:5px; background:#eee; margin:5px 0; border-radius:4px; text-decoration:none; color:var(--primary);">📎 ${f.name}</a>`).join('');
+        }
+
+        // --- TIMER LOGIC ---
+        window.toggleTimer = () => {
+            if(activeTimers[editTask.id]) {
+                // Stop
+                clearInterval(activeTimers[editTask.id]);
+                delete activeTimers[editTask.id];
+                _id('btn-timer').innerText = "▶️";
+            } else {
+                // Start
+                activeTimers[editTask.id] = setInterval(() => {
+                    editTask.timeLog = (editTask.timeLog || 0) + 1;
+                    updateTimerDisplay();
+                }, 1000);
+                _id('btn-timer').innerText = "⏸️";
+            }
+        };
+        function updateTimerDisplay() {
+            const sec = editTask.timeLog || 0;
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            _id('m-timer-display').innerText = `${h}:${m<10?'0'+m:m}:${s<10?'0'+s:s}`;
+        }
+
+        // --- CONTEXT MENU ---
+        window.showContext = (e, task, col) => {
+            e.preventDefault();
+            editTask = task; editCol = col;
+            const menu = _id('context-menu');
+            menu.style.display = 'block';
+            menu.style.left = e.pageX + 'px';
+            menu.style.top = e.pageY + 'px';
+            return false;
+        };
+        document.onclick = () => _id('context-menu').style.display = 'none';
+
+        window.duplicateTaskCtx = () => {
+            const copy = {...editTask, id: Date.now().toString(), title: editTask.title + ' (Copia)'};
+            boardData.columns[editCol].push(copy);
+            save();
         };
 
-        // --- COMPARTIR ---
-        window.openShareModal = () => document.getElementById('share-modal').style.display = 'flex';
-        window.shareBoard = async () => {
-            const email = _val('share-email').toLowerCase();
-            if (!email) return;
-            try { await updateDoc(doc(db, 'boards', currentBoardId), { members: arrayUnion(email) }); showToast("Enviado", `Invitación para ${email}`); closeAllModals(); document.getElementById('share-email').value=''; } catch (e) { alert(e.message); }
+        window.deleteTaskCtx = () => {
+            // Soft Delete / Undo
+            undoStack = { task: editTask, col: editCol };
+            boardData.columns[editCol] = boardData.columns[editCol].filter(t => t.id !== editTask.id);
+            renderKanban();
+            
+            // Show Undo Toast
+            const t = _id('toast-undo');
+            t.style.display = 'flex';
+            undoTimeout = setTimeout(() => {
+                t.style.display = 'none';
+                save(); // Commit delete
+            }, 5000);
+        };
+        window.undoAction = () => {
+            clearTimeout(undoTimeout);
+            boardData.columns[undoStack.col].push(undoStack.task);
+            renderKanban();
+            _id('toast-undo').style.display = 'none';
         };
 
-        // --- UTILIDADES ---
-        window.closeAllModals = () => {
-            document.querySelectorAll('.overlay').forEach(el => {
-                if(el.id !== 'auth-screen') el.style.display = 'none';
+        // --- EXTRAS: SEARCH, THEME, CSV ---
+        window.filterCards = (q) => {
+            document.querySelectorAll('.card').forEach(c => {
+                c.style.display = c.innerText.toLowerCase().includes(q.toLowerCase()) ? 'block' : 'none';
             });
         };
-        
-        // Render Listas de tableros
-        function renderList(elementId, snap) {
-             const container = document.getElementById(elementId); container.innerHTML = '';
-             if (snap.empty) { container.innerHTML = '<div style="padding:10px; color:#999; font-size:0.8rem;">Ninguno</div>'; return; }
-             snap.forEach(d => {
-                 const data = d.data();
-                 if(data.deleted) return; 
-                 const div = document.createElement('div');
-                 div.className = `board-item ${currentBoardId === d.id ? 'active' : ''}`;
-                 div.innerHTML = `<span>📁 ${data.name}</span>`;
-                 div.onclick = () => openBoard(d.id);
-                 container.appendChild(div);
+
+        window.toggleTheme = () => {
+            const html = document.documentElement;
+            const curr = html.getAttribute('data-theme');
+            html.setAttribute('data-theme', curr === 'dark' ? 'light' : 'dark');
+            localStorage.setItem('theme', html.getAttribute('data-theme'));
+        };
+        window.loadTheme = () => document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+
+        window.exportCSV = () => {
+            let csv = "ID,Titulo,Columna,Asignado\n";
+            for(let col in boardData.columns) {
+                boardData.columns[col].forEach(t => {
+                    csv += `${t.id},"${t.title}",${col},${t.assignedTo}\n`;
+                });
+            }
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'board_data.csv'; a.click();
+        };
+
+        window.openStats = () => {
+            let total = 0, done = 0;
+            for(let c in boardData.columns) total += boardData.columns[c].length;
+            done = boardData.columns['done'].length;
+            _id('stats-content').innerHTML = `
+                <p>Total Tareas: <b>${total}</b></p>
+                <p>Completadas: <b>${done}</b></p>
+                <div class="progress-bar" style="height:20px;"><div class="progress-fill" style="width:${total?(done/total)*100:0}%"></div></div>
+            `;
+            _id('stats-modal').style.display = 'flex';
+        };
+
+        // --- LOGGING ---
+        function logActivity(msg) {
+            if(!boardData.activityLog) boardData.activityLog = [];
+            boardData.activityLog.unshift(`${new Date().toLocaleTimeString()} - ${currentUser.email} ${msg}`);
+            if(boardData.activityLog.length > 50) boardData.activityLog.pop();
+        }
+        window.toggleActivity = () => _id('activity-panel').classList.toggle('open');
+        function renderActivityLog() {
+            _id('activity-list').innerHTML = (boardData.activityLog||[]).map(l => `<div class="log-item">${l}</div>`).join('');
+        }
+
+        // --- UTILS ---
+        function _id(x) { return document.getElementById(x); }
+        function _val(x) { return document.getElementById(x).value; }
+        window.closeModals = () => document.querySelectorAll('.overlay').forEach(e => { if(e.id!=='auth-screen') e.style.display='none'; });
+        window.softDeleteBoard = async () => { if(confirm("¿Mover a papelera?")) await updateDoc(doc(db,'boards',currentBoardId), {deleted:true}); };
+        window.openTrash = () => {
+             // Lógica simplificada de papelera
+             onSnapshot(query(collection(db,'boards'), where('ownerId','==',currentUser.uid)), snap => {
+                 let h = '';
+                 snap.forEach(d => { if(d.data().deleted) h += `<div style="display:flex; justify-content:space-between; margin-bottom:10px;"><span>${d.data().name}</span><button class="btn-primary" onclick="restore('${d.id}')">♻️</button></div>`; });
+                 _id('trash-list').innerHTML = h || 'Vacía';
+                 _id('trash-modal').style.display='flex';
              });
-        }
-
-        // Helpers de UI
-        function _val(id) { return document.getElementById(id).value; }
-        function _err(msg) { document.getElementById('auth-msg').innerText = msg; }
-        function hideHeaderButtons() { document.getElementById('btn-share').style.display = 'none'; document.getElementById('btn-trash').style.display = 'none'; }
-        
-        window.openNextUnread = () => { const f = document.querySelector('.board-item.unread'); if(f) f.click(); else alert("No tienes notificaciones."); };
-        function updateBell(c) { const b = document.getElementById('bell-count'); if(c>0) {b.style.display='flex'; b.innerText=c;} else b.style.display='none'; }
-        
-        function showToast(t, m, bid=null) { 
-            const el=document.getElementById('toast'); document.getElementById('toast-title').innerText=t; document.getElementById('toast-msg').innerText=m; 
-            pendingToastBoardId=bid; el.style.cursor=bid?'pointer':'default'; 
-            el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),6000); 
-        }
-        window.openToastBoard = () => { if(pendingToastBoardId) { openBoard(pendingToastBoardId,true); document.getElementById('toast').classList.remove('show'); }};
-
-        // Bind auto-updates
-        document.getElementById('m-title').onblur = updateTask;
+        };
+        window.restore = async(id) => updateDoc(doc(db,'boards',id), {deleted:false});
+        window.openShare = () => _id('share-modal').style.display='flex';
+        window.shareBoard = async () => { await updateDoc(doc(db,'boards',currentBoardId), {members: arrayUnion(_val('share-email'))}); closeModals(); };
     </script>
 </body>
 </html>
