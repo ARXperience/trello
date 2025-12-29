@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v19.1 | Stable</title>
+    <title>Pro-Task v19.2 | Notificaciones Detalladas</title>
     <style>
         :root { --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --text: #172b4d; --success: #61bd4f; --danger: #eb5a46; --warning: #ff9f1a; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); }
@@ -52,23 +52,24 @@
         button.danger { background: var(--danger); }
         
         /* Toast Pop-up Interactivo */
-        #toast { position: fixed; top: 70px; right: 20px; background: #172b4d; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 5000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 300px; cursor: pointer; border-left: 5px solid var(--success); }
+        #toast { position: fixed; top: 70px; right: 20px; background: #172b4d; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 5000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); max-width: 320px; cursor: pointer; border-left: 5px solid var(--success); font-size: 0.9rem; line-height: 1.4; }
         #toast:hover { transform: scale(1.02); }
         #toast.show { opacity: 1; pointer-events: auto; }
-        #toast-subtitle { font-size: 0.8rem; opacity: 0.8; margin-top: 5px; display: block;}
+        #toast-subtitle { font-size: 0.75rem; opacity: 0.7; margin-top: 8px; display: block; font-style: italic;}
     </style>
 </head>
 <body>
 
     <div id="toast" onclick="openToastBoard()">
         <strong id="toast-title">Notificación</strong>
-        <div id="toast-msg"></div> <span id="toast-subtitle">Haz clic para ver</span>
+        <div id="toast-msg"></div>
+        <span id="toast-subtitle">Haz clic aquí para abrirlo</span>
     </div>
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v19.1</h2>
-            <p>Versión Estable</p>
+            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v19.2</h2>
+            <p>Con Notificaciones Detalladas</p>
             <input type="email" id="email" placeholder="Correo electrónico">
             <input type="password" id="password" placeholder="Contraseña">
             <button onclick="login()">Entrar</button>
@@ -215,7 +216,12 @@
                     if (change.type === "added" && !isFirstLoad) {
                         const bData = change.doc.data();
                         if(bData.ownerId !== currentUser.uid) { 
-                             showToast("🔔 Nueva Invitación", `Te invitaron a: ${bData.name}`, change.doc.id);
+                             // AQUÍ ESTÁ EL CAMBIO DE MENSAJE DETALLADO
+                             showToast(
+                                "🔔 Nueva Invitación", 
+                                `El usuario ${bData.ownerEmail} ha compartido el tablero "${bData.name}" contigo.`, 
+                                change.doc.id
+                             );
                         }
                     }
                 });
@@ -248,7 +254,7 @@
         window.openNextUnread = () => {
             const firstUnread = document.querySelector('.board-item.unread');
             if (firstUnread) firstUnread.click();
-            else alert("¡Estás al día!");
+            else alert("¡Estás al día! No tienes notificaciones pendientes.");
         };
 
         function updateBell(count) {
@@ -314,24 +320,22 @@
             });
         };
 
-        // --- TOAST INTERACTIVO ---
+        // --- TOAST INTERACTIVO (CORREGIDO) ---
         function showToast(title, msg, boardId = null) {
             const t = document.getElementById('toast');
             document.getElementById('toast-title').innerText = title;
-            document.getElementById('toast-msg').innerText = msg; // AHORA SÍ EXISTE
+            document.getElementById('toast-msg').innerText = msg; // Mensaje detallado
             
             pendingToastBoardId = boardId;
             
             if (boardId) {
-                document.getElementById('toast-subtitle').innerText = "Haz clic para abrir";
                 t.style.cursor = "pointer";
             } else {
-                document.getElementById('toast-subtitle').innerText = "";
                 t.style.cursor = "default";
             }
 
             t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 5000);
+            setTimeout(() => t.classList.remove('show'), 6000); // 6 segundos de visibilidad
         }
 
         window.openToastBoard = () => {
