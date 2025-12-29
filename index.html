@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v44 | Smart Gestures</title>
+    <title>Pro-Task v45 | Full Voice & Select</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -54,7 +54,6 @@
 
         .card-meta { display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; color: var(--text-sub); align-items: center; flex-wrap: wrap; }
         .meta-badge { background: var(--bg); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border); }
-        
         .meta-badge.overdue { background: #ffe3e3; color: var(--danger); border-color: var(--danger); font-weight: bold; }
         .meta-badge.today { background: #fff8e1; color: var(--warning); border-color: var(--warning); font-weight: bold; }
 
@@ -131,8 +130,8 @@
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="text-align:center; color:white;">Pro-Task v44</h2>
-            <p style="text-align:center; color:white; opacity:0.8;">Smart Gestures</p>
+            <h2 style="text-align:center; color:white;">Pro-Task v45</h2>
+            <p style="text-align:center; color:white; opacity:0.8;">Full Voice & Select</p>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button class="btn-primary" style="width:100%; margin-top:10px; background:white; color:var(--primary);" onclick="window.login()">Entrar</button>
@@ -236,7 +235,10 @@
                     <div class="progress-bar"><div id="m-progress-bar" class="progress-fill"></div></div>
                     <div id="m-checklist" style="margin-top:10px;"></div>
                     <div style="display:flex; gap:5px; margin-top:5px;">
-                        <input id="m-new-check" placeholder="Nueva subtarea..." onkeypress="if(event.key==='Enter') window.addCheck()">
+                        <div class="mic-wrapper" style="width:100%; margin:0;">
+                            <input id="m-new-check" placeholder="Nueva subtarea..." onkeypress="if(event.key==='Enter') window.addCheck()">
+                            <div class="mic-btn" onclick="window.startDictation('m-new-check')">🎤</div>
+                        </div>
                         <button class="btn-ghost" onclick="window.addCheck()">+</button>
                     </div>
                 </div>
@@ -244,7 +246,10 @@
             <div id="tab-comments" style="display:none;">
                 <div id="comment-list" style="margin-bottom:10px; max-height:150px; overflow-y:auto;"></div>
                 <div style="display:flex; gap:5px;">
-                    <input id="m-new-comment" placeholder="Comentar...">
+                    <div class="mic-wrapper" style="width:100%; margin:0;">
+                        <input id="m-new-comment" placeholder="Comentar...">
+                        <div class="mic-btn" onclick="window.startDictation('m-new-comment')">🎤</div>
+                    </div>
                     <button class="btn-primary" onclick="window.addComment()">Enviar</button>
                 </div>
             </div>
@@ -253,7 +258,10 @@
                 <input id="m-cover-url" placeholder="https://..." onblur="window.updateTask()" style="margin-bottom:10px;">
                 <div id="file-list" style="margin-bottom:10px;"></div>
                 <div style="display:flex; gap:5px;">
-                    <input id="m-file-name" placeholder="Nombre">
+                    <div class="mic-wrapper" style="width:100%; margin:0;">
+                        <input id="m-file-name" placeholder="Nombre">
+                        <div class="mic-btn" onclick="window.startDictation('m-file-name')">🎤</div>
+                    </div>
                     <input id="m-file-url" placeholder="URL">
                     <button class="btn-ghost" onclick="window.addFile()">+</button>
                 </div>
@@ -659,11 +667,7 @@
 
         let isPinching = false; let dragId = null; let dragSrc = null;
         
-        // Variables para detectar "Clic" vs "Arrastre"
-        let pinchStartTime = 0;
-        let pinchStartX = 0;
-        let pinchStartY = 0;
-        let isDragging = false; 
+        let pinchStartTime = 0; let pinchStartX = 0; let pinchStartY = 0; let isDragging = false; 
 
         function onResults(results) {
             const cursor = _id('virtual-cursor');
@@ -680,55 +684,30 @@
             const dist = Math.hypot(idx.x - thb.x, idx.y - thb.y);
             const PINCH_START = 0.05; const PINCH_RELEASE = 0.08;
 
-            // 1. INICIO DE PINZA (PINCH START)
             if (!isPinching && dist < PINCH_START) {
-                isPinching = true;
-                cursor.classList.add('pinching');
-                
-                // Guardar estado inicial para diferenciar clic de arrastre
-                pinchStartTime = Date.now();
-                pinchStartX = x;
-                pinchStartY = y;
-                isDragging = false; // Asumimos clic hasta que se demuestre movimiento
-
-                // Detectar qué hay debajo
+                isPinching = true; cursor.classList.add('pinching');
+                pinchStartTime = Date.now(); pinchStartX = x; pinchStartY = y; isDragging = false;
                 const elements = document.elementsFromPoint(x, y);
                 const card = elements.find(el => el.classList.contains('card'));
-                
                 if (card) {
-                    // Preparamos datos por si se convierte en arrastre
-                    dragId = card.getAttribute('data-task-id');
-                    dragSrc = card.getAttribute('data-col');
+                    dragId = card.getAttribute('data-task-id'); dragSrc = card.getAttribute('data-col');
                     const ghost = _id('ai-ghost-card');
                     ghost.querySelector('strong').innerText = card.querySelector('strong').innerText;
-                    // NO MOSTRAR GHOST AÚN
                 }
             }
 
-            // 2. MANTENIENDO PINZA (HOLD)
             if (isPinching) {
-                // Calcular cuánto se ha movido desde que empezó el pellizco
                 const moveDist = Math.hypot(x - pinchStartX, y - pinchStartY);
-                
-                // Si se mueve más de 20px, se convierte en ARRASTRE
-                if (!isDragging && moveDist > 20 && dragId) {
-                    isDragging = true;
-                    _id('ai-ghost-card').style.display = 'block'; // Ahora sí mostramos el fantasma
-                }
-
+                if (!isDragging && moveDist > 20 && dragId) { isDragging = true; _id('ai-ghost-card').style.display = 'block'; }
                 if (isDragging && dragId) {
                     const ghost = _id('ai-ghost-card');
                     ghost.style.left = (x + 20) + 'px'; ghost.style.top = (y + 20) + 'px';
                 }
             }
 
-            // 3. SOLTAR PINZA (RELEASE)
             if (isPinching && dist > PINCH_RELEASE) {
-                isPinching = false;
-                cursor.classList.remove('pinching');
-
+                isPinching = false; cursor.classList.remove('pinching');
                 if (isDragging && dragId) {
-                    // --- LÓGICA DE SOLTAR (DROP) ---
                     const elements = document.elementsFromPoint(x, y);
                     const list = elements.find(el => el.classList.contains('list'));
                     if (list) {
@@ -743,17 +722,14 @@
                         }
                     }
                 } else {
-                    // --- LÓGICA DE CLIC (TAP) ---
-                    // Si no fue arrastre, simular clic en el elemento
                     const el = document.elementFromPoint(x, y);
-                    if(el) el.click();
+                    if (el) {
+                        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName)) el.focus();
+                        el.click();
+                        if(el.tagName === 'SELECT') { const event = new MouseEvent('mousedown'); el.dispatchEvent(event); }
+                    }
                 }
-
-                // Limpieza
-                _id('ai-ghost-card').style.display = 'none'; 
-                dragId = null; 
-                dragSrc = null;
-                isDragging = false;
+                _id('ai-ghost-card').style.display = 'none'; dragId = null; dragSrc = null; isDragging = false;
             }
         }
     </script>
