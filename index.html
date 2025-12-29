@@ -2,8 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Cloud v6.7 | Hybrid System</title>
+    <title>Pro-Task Cloud v7.0 | Multi-Board System</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="light-theme">
@@ -13,75 +12,56 @@
             <h2>Pro-Task Enterprise</h2>
             <input type="email" id="login-email" placeholder="Email">
             <input type="password" id="login-pass" placeholder="Contraseña">
-            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                <button id="btn-login" class="btn-primary">Entrar</button>
-                <button id="btn-signup" style="background:none; border: 1.5px solid var(--accent); color:var(--accent); cursor:pointer; flex:1; border-radius:4px;">Registro</button>
-            </div>
-            <p id="auth-error" style="color:red; font-size:0.8rem; margin-top:10px;"></p>
+            <button id="btn-login" class="btn-primary" style="margin-top:10px;">Entrar</button>
+            <button id="btn-signup" style="background:none; border:none; color:var(--bg-main); cursor:pointer; margin-top:10px;">Crear cuenta</button>
         </div>
     </div>
 
-    <div id="app-container" style="display: none;">
-        <header>
-            <div class="header-main">
-                <div>
-                    <span id="user-display">Usuario</span>
-                    <button id="btn-logout" style="background:none; color:white; border:1px solid white; cursor:pointer; margin-left:10px; border-radius:3px;">Salir</button>
-                </div>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="email" id="share-email" placeholder="Correo para compartir..." style="padding: 5px; border-radius:3px; border:none;">
-                    <button onclick="window.shareBoard()" class="btn-share">Compartir Tablero</button>
-                </div>
-                <div>
-                    <button id="btn-theme" style="background:none; color:white; border:1px solid white; cursor:pointer; padding:5px; border-radius:3px;">🌓 Tema</button>
-                </div>
+    <div id="app-container" class="main-wrapper" style="display: none;">
+        <aside class="sidebar">
+            <div class="sidebar-header">Mis Proyectos</div>
+            <div id="my-boards" class="board-list"></div>
+            
+            <div class="sidebar-header" style="border-top:1px solid #ddd">Compartidos conmigo</div>
+            <div id="shared-boards" class="board-list"></div>
+            
+            <div style="padding:20px;">
+                <button onclick="window.createNewBoard()" class="btn-primary" style="background:#0079bf">+ Nuevo Tablero</button>
             </div>
-        </header>
+        </aside>
 
-        <main class="board">
-            <div class="list" data-id="todo" ondrop="window.drop(event)" ondragover="window.allowDrop(event)">
-                <div class="list-header"><h3>Pendientes</h3></div>
-                <div class="cards-container" id="todo"></div>
-                <div class="add-card-container">
-                    <input type="text" placeholder="Nueva tarea..." class="card-input" style="width:100%; box-sizing:border-box; padding:8px;">
-                    <button onclick="window.handleAddNewCard(this)" class="btn-primary" style="margin-top:5px;">+ Añadir</button>
+        <div class="content-area">
+            <header>
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <h2 id="current-board-name" style="margin:0;">Selecciona un tablero</h2>
+                    <span id="user-display" style="font-size:0.8rem; opacity:0.7;"></span>
                 </div>
-            </div>
-            <div class="list" data-id="in-progress" ondrop="window.drop(event)" ondragover="window.allowDrop(event)">
-                <div class="list-header"><h3>En Proceso</h3></div>
-                <div class="cards-container" id="in-progress"></div>
-            </div>
-            <div class="list" data-id="done" ondrop="window.drop(event)" ondragover="window.allowDrop(event)">
-                <div class="list-header"><h3>Finalizado</h3></div>
-                <div class="cards-container" id="done"></div>
-            </div>
-        </main>
+                <div style="display:flex; gap:10px;">
+                    <input type="email" id="share-email" placeholder="Invitar correo..." style="border-radius:3px; border:none; padding:5px;">
+                    <button onclick="window.shareBoard()" class="btn-share">Compartir</button>
+                    <button id="btn-logout" class="btn-logout-mini" style="background:none; color:white; border:1px solid white; cursor:pointer;">Salir</button>
+                </div>
+            </header>
+
+            <main class="board" id="kanban-board">
+                </main>
+        </div>
     </div>
 
     <div id="card-modal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="window.closeModal()">&times;</span>
+            <span class="close-modal" onclick="window.closeModal()" style="position:absolute; right:20px; top:15px; cursor:pointer; font-size:20px;">&times;</span>
             <div class="modal-body-scroll">
-                <input type="text" id="modal-title" style="width:100%; font-size:1.5rem; font-weight:bold; border:none; background:transparent;">
-                
+                <input type="text" id="modal-title" style="width:100%; font-size:1.5rem; font-weight:bold; border:none;">
                 <h4>Prioridad</h4>
                 <select id="modal-priority" onchange="window.updatePriority()" style="width:100%; padding:8px;">
-                    <option value="low">Baja (Verde)</option>
-                    <option value="medium">Media (Amarillo)</option>
-                    <option value="high">Alta (Rojo)</option>
+                    <option value="low">Baja</option>
+                    <option value="medium">Media</option>
+                    <option value="high">Alta</option>
                 </select>
-
                 <h4>Descripción</h4>
-                <textarea id="modal-desc" style="width:100%; height:80px;"></textarea>
-
-                <h4>Sub-tareas</h4>
-                <div id="modal-checklist"></div>
-                <div style="display:flex; gap:5px; margin-top:10px;">
-                    <input type="text" id="new-check-input" style="flex:1;">
-                    <button onclick="window.addChecklistItem()" class="btn-primary" style="width:auto; padding:5px 15px;">+</button>
-                </div>
-
-                <button onclick="window.archiveCardFromModal()" class="btn-danger" style="margin-top:30px;">Eliminar Tarea</button>
+                <textarea id="modal-desc" style="width:100%; height:100px; padding:10px;"></textarea>
+                <button onclick="window.archiveCard()" class="btn-danger" style="margin-top:20px;">Eliminar Tarea</button>
             </div>
         </div>
     </div>
@@ -89,127 +69,130 @@
     <script type="module">
         import { auth, db } from './js/firebase-engine.js';
         import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-        import { doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+        import { collection, query, where, onSnapshot, doc, setDoc, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-        let boardData = { todo: [], 'in-progress': [], done: [], history: [], collaborators: [] };
+        let currentBoardId = localStorage.getItem('lastBoardId') || null;
+        let boardData = null;
         let currentUser = null;
-        let currentEditingId = null;
-        let isLoaded = false;
-        let currentBoardOwnerId = null; // Para saber qué carpeta estamos leyendo
+        let unsubscribeBoard = null;
 
-        // --- AUTH ---
-        document.getElementById('btn-login').onclick = () => {
-            signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
-        };
-        document.getElementById('btn-signup').onclick = () => {
-            createUserWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
-        };
-        document.getElementById('btn-logout').onclick = () => signOut(auth);
+        // --- AUTENTICACIÓN ---
+        document.getElementById('btn-login').onclick = () => signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
+        document.getElementById('btn-signup').onclick = () => createUserWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
+        document.getElementById('btn-logout').onclick = () => { localStorage.clear(); signOut(auth); };
 
         onAuthStateChanged(auth, user => {
             if (user) {
                 currentUser = user;
-                currentBoardOwnerId = user.uid; // Por defecto, el tablero propio
-                sync();
+                document.getElementById('user-display').innerText = user.email;
+                document.getElementById('auth-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'flex';
+                loadBoardList();
+                if(currentBoardId) selectBoard(currentBoardId);
             } else {
                 document.getElementById('auth-container').style.display = 'flex';
                 document.getElementById('app-container').style.display = 'none';
             }
         });
 
-        // --- COMPARTIR ---
-        window.shareBoard = async () => {
-            const email = document.getElementById('share-email').value.trim().toLowerCase();
-            if(!email) return alert("Escribe un email");
-            if(!boardData.collaborators) boardData.collaborators = [];
-            boardData.collaborators.push(email);
-            await save();
-            alert("Tablero compartido con " + email);
-        };
+        // --- GESTIÓN DE TABLEROS (LA MEMORIA) ---
+        function loadBoardList() {
+            // Tableros propios
+            const qOwn = query(collection(db, "boards"), where("owner", "==", currentUser.uid));
+            onSnapshot(qOwn, snap => {
+                renderList(snap, 'my-boards');
+            });
 
-        // --- SINCRONIZACIÓN (MEMORIA REAL) ---
-        function sync() {
-            const userRef = doc(db, "user_boards", currentBoardOwnerId);
-            onSnapshot(userRef, (snap) => {
-                if (snap.exists()) {
-                    boardData = snap.data();
-                } else {
-                    boardData = { todo: [], 'in-progress': [], done: [], collaborators: [currentUser.email] };
-                    save();
-                }
-                isLoaded = true;
-                render();
-                document.getElementById('auth-container').style.display = 'none';
-                document.getElementById('app-container').style.display = 'block';
+            // Tableros compartidos
+            const qShared = query(collection(db, "boards"), where("collaborators", "array-contains", currentUser.email.toLowerCase()));
+            onSnapshot(qShared, snap => {
+                renderList(snap, 'shared-boards');
             });
         }
 
-        async function save() {
-            if (!isLoaded || !currentUser) return;
-            await setDoc(doc(db, "user_boards", currentBoardOwnerId), boardData);
+        function renderList(snap, containerId) {
+            const cont = document.getElementById(containerId);
+            cont.innerHTML = '';
+            snap.forEach(doc => {
+                const item = document.createElement('div');
+                item.className = `board-item ${doc.id === currentBoardId ? 'active' : ''}`;
+                item.innerText = doc.data().name;
+                item.onclick = () => selectBoard(doc.id);
+                cont.appendChild(item);
+            });
         }
 
-        // --- FUNCIONES DEL TABLERO ---
-        window.handleAddNewCard = (btn) => {
-            const input = btn.parentElement.querySelector('.card-input');
-            const colId = btn.closest('.list').dataset.id;
-            if (!input.value.trim()) return;
-            boardData[colId].push({ id: 'c'+Date.now(), title: input.value, priority: 'low', members: [], checklist: [] });
-            input.value = ''; render(); save();
+        window.createNewBoard = async () => {
+            const name = prompt("Nombre del nuevo tablero:");
+            if(!name) return;
+            const newBoard = {
+                name: name,
+                owner: currentUser.uid,
+                collaborators: [],
+                data: { todo: [], 'in-progress': [], done: [] }
+            };
+            const docRef = await addDoc(collection(db, "boards"), newBoard);
+            selectBoard(docRef.id);
         };
 
-        window.drop = (e) => {
-            e.preventDefault();
-            const id = e.dataTransfer.getData("text");
-            const targetCol = e.target.closest('.list').dataset.id;
-            let card;
-            ['todo','in-progress','done'].forEach(c => {
-                const idx = boardData[c].findIndex(x => x.id === id);
-                if(idx !== -1) card = boardData[c].splice(idx,1)[0];
+        function selectBoard(id) {
+            if(unsubscribeBoard) unsubscribeBoard();
+            currentBoardId = id;
+            localStorage.setItem('lastBoardId', id);
+            
+            unsubscribeBoard = onSnapshot(doc(db, "boards", id), snap => {
+                if(!snap.exists()) return;
+                boardData = snap.data();
+                document.getElementById('current-board-name').innerText = boardData.name;
+                renderKanban();
             });
-            if(card) { boardData[targetCol].push(card); render(); save(); }
-        };
+        }
 
-        window.allowDrop = (e) => e.preventDefault();
-
-        function render() {
-            ['todo','in-progress','done'].forEach(col => {
-                const cont = document.getElementById(col); cont.innerHTML = '';
-                boardData[col].forEach(c => {
-                    const el = document.createElement('div');
-                    el.className = `card ${c.priority}`; el.draggable = true;
-                    el.onclick = () => openModal(c.id);
-                    el.ondragstart = (e) => e.dataTransfer.setData("text", c.id);
-                    el.innerHTML = `<strong>${c.title}</strong>`;
-                    cont.appendChild(el);
+        // --- LÓGICA KANBAN ---
+        function renderKanban() {
+            const board = document.getElementById('kanban-board');
+            board.innerHTML = '';
+            ['todo', 'in-progress', 'done'].forEach(colId => {
+                const list = document.createElement('div');
+                list.className = 'list';
+                list.dataset.id = colId;
+                list.innerHTML = `<h3>${colId.toUpperCase()}</h3><div class="cards-container"></div>`;
+                
+                const cardsCont = list.querySelector('.cards-container');
+                (boardData.data[colId] || []).forEach(card => {
+                    const cEl = document.createElement('div');
+                    cEl.className = `card ${card.priority}`;
+                    cEl.innerText = card.title;
+                    cEl.onclick = () => openModal(card.id);
+                    cardsCont.appendChild(cEl);
                 });
+
+                // Botón añadir
+                const addBox = document.createElement('div');
+                addBox.innerHTML = `<input type="text" class="card-input" placeholder="+"><button onclick="window.addCard('${colId}', this)">+</button>`;
+                list.appendChild(addBox);
+                board.appendChild(list);
             });
         }
 
-        // --- MODAL ---
-        function openModal(id) {
-            currentEditingId = id; const card = findCard(id);
-            document.getElementById('modal-title').value = card.title;
-            document.getElementById('modal-desc').value = card.desc || '';
-            document.getElementById('modal-priority').value = card.priority || 'low';
-            renderChecklist(card);
-            document.getElementById('card-modal').style.display = 'block';
-        }
-        function findCard(id) { return [...boardData.todo, ...boardData['in-progress'], ...boardData.done].find(c => c.id === id); }
-        window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
-        window.updatePriority = () => { findCard(currentEditingId).priority = document.getElementById('modal-priority').value; render(); save(); };
-        
-        function renderChecklist(card) {
-            document.getElementById('modal-checklist').innerHTML = (card.checklist || []).map((item, i) => `<div><input type="checkbox" ${item.done ? 'checked' : ''} onchange="window.toggleCheck(${i})"> ${item.text}</div>`).join('');
-        }
-        window.toggleCheck = (i) => { const card = findCard(currentEditingId); card.checklist[i].done = !card.checklist[i].done; renderChecklist(card); save(); };
-        window.addChecklistItem = () => {
-            const card = findCard(currentEditingId);
-            if(!card.checklist) card.checklist = [];
-            card.checklist.push({ text: document.getElementById('new-check-input').value, done: false });
-            document.getElementById('new-check-input').value = ''; renderChecklist(card); save();
+        window.addCard = async (col, btn) => {
+            const input = btn.previousElementSibling;
+            if(!input.value) return;
+            const card = { id: 'c'+Date.now(), title: input.value, priority: 'low' };
+            boardData.data[col].push(card);
+            await setDoc(doc(db, "boards", currentBoardId), boardData);
         };
-        window.archiveCardFromModal = () => { if(confirm("¿Eliminar?")) { ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId)); closeModal(); render(); save(); } };
+
+        window.shareBoard = async () => {
+            const email = document.getElementById('share-email').value.toLowerCase();
+            if(!boardData.collaborators.includes(email)) {
+                boardData.collaborators.push(email);
+                await setDoc(doc(db, "boards", currentBoardId), boardData);
+                alert("Compartido con éxito");
+            }
+        };
+
+        window.closeModal = () => document.getElementById('card-modal').style.display='none';
     </script>
 </body>
 </html>
