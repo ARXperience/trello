@@ -3,24 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Cloud | Gestión Corporativa</title>
+    <title>Pro-Task Enterprise Cloud</title>
     <link rel="stylesheet" href="css/styles.css">
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 </head>
 <body class="light-theme">
 
     <div id="auth-container" class="auth-overlay">
         <div class="auth-card">
-            <h2>Bienvenido a Pro-Task</h2>
-            <p>Inicia sesión para acceder al tablero de tu empresa</p>
-            <input type="email" id="login-email" placeholder="Email corporativo">
-            <input type="password" id="login-pass" placeholder="Contraseña">
-            <div class="auth-buttons">
-                <button onclick="handleLogin()" class="btn-primary">Iniciar Sesión</button>
-                <button onclick="handleSignup()" class="btn-outline">Registrarse</button>
+            <div class="auth-header">
+                <h2>Pro-Task Enterprise</h2>
+                <p>Gestión de proyectos en tiempo real</p>
             </div>
+            <input type="email" id="login-email" placeholder="Correo Corporativo">
+            <input type="password" id="login-pass" placeholder="Contraseña">
+            
+            <div class="auth-buttons">
+                <button id="btn-login" class="btn-primary">Entrar</button>
+                <button id="btn-signup" class="btn-outline">Registrarse</button>
+            </div>
+            <button id="btn-reset" class="btn-link">¿Olvidaste tu contraseña?</button>
             <p id="auth-error" class="error-text"></p>
         </div>
     </div>
@@ -28,86 +29,87 @@
     <div id="app-container" style="display: none;">
         <header>
             <div class="header-main">
-                <div class="user-info">
-                    <span id="user-display-name">Usuario</span>
-                    <button onclick="handleLogout()" class="btn-logout">Cerrar Sesión</button>
+                <div class="user-meta">
+                    <span id="user-display">Cargando...</span>
+                    <button id="btn-logout" class="btn-logout-mini">Cerrar Sesión</button>
                 </div>
-                <h1>Pro-Task Cloud <span class="v-tag">v4.0</span></h1>
+                <h1>Tablero Maestro <span class="v-tag">v4.5 Cloud</span></h1>
                 <div class="header-actions">
-                    <input type="text" id="board-search" placeholder="Filtrar..." onkeyup="searchCards()">
-                    <button onclick="toggleTheme()" class="btn-icon">🌓</button>
-                    <button onclick="exportToCSV()" class="btn-secondary">CSV</button>
-                    <button onclick="toggleHistory()" class="btn-secondary">Logs</button>
+                    <input type="text" id="board-search" placeholder="Buscar tarea o miembro...">
+                    <button id="btn-theme" class="btn-icon">🌓</button>
+                    <button id="btn-export" class="btn-secondary">Excel</button>
+                    <button id="btn-toggle-log" class="btn-secondary">Logs</button>
                 </div>
             </div>
             <div id="board-stats" class="stats-bar"></div>
         </header>
 
         <main class="board">
-            <div class="list" data-id="todo" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <div class="list" data-id="todo">
                 <div class="list-header"><h3>Pendientes</h3></div>
                 <div class="cards-container" id="todo"></div>
                 <div class="add-card-container">
                     <input type="text" placeholder="Nueva tarea..." class="card-input">
-                    <button onclick="addNewCard(this)">+ Añadir</button>
+                    <button class="btn-add-task">+ Añadir</button>
                 </div>
             </div>
-            <div class="list" data-id="in-progress" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <div class="list" data-id="in-progress">
                 <div class="list-header"><h3>En Proceso</h3></div>
                 <div class="cards-container" id="in-progress"></div>
                 <div class="add-card-container">
-                    <input type="text" placeholder="En proceso..." class="card-input">
-                    <button onclick="addNewCard(this)">+ Añadir</button>
+                    <input type="text" placeholder="Tarea actual..." class="card-input">
+                    <button class="btn-add-task">+ Añadir</button>
                 </div>
             </div>
-            <div class="list" data-id="done" ondrop="drop(event)" ondragover="allowDrop(event)">
+            <div class="list" data-id="done">
                 <div class="list-header"><h3>Finalizado</h3></div>
                 <div class="cards-container" id="done"></div>
                 <div class="add-card-container">
-                    <input type="text" placeholder="Terminada..." class="card-input">
-                    <button onclick="addNewCard(this)">+ Añadir</button>
+                    <input type="text" placeholder="Completada..." class="card-input">
+                    <button class="btn-add-task">+ Añadir</button>
                 </div>
             </div>
         </main>
     </div>
 
     <aside id="history-panel" class="side-panel">
-        <div class="panel-header"><h3>Actividad</h3><button onclick="toggleHistory()">×</button></div>
+        <div class="panel-header"><h3>Actividad</h3><button id="close-history">×</button></div>
         <div id="history-log" class="panel-content"></div>
     </aside>
 
     <div id="card-modal" class="modal">
         <div class="modal-content">
-            <span class="close-modal" onclick="closeModal()">&times;</span>
-            <input type="text" id="modal-card-title" class="editable-title" onblur="updateCardFromModal()">
+            <span class="close-modal">&times;</span>
+            <input type="text" id="modal-title" class="editable-title">
             <div class="modal-grid">
                 <div class="modal-section">
                     <h4>Responsables</h4>
-                    <div id="modal-member-list" class="avatar-selection-list"></div>
+                    <div id="modal-members" class="avatar-selection-list"></div>
                 </div>
                 <div class="modal-section">
-                    <h4>Tags & Fecha</h4>
+                    <h4>Tags y Fecha</h4>
                     <div id="modal-tags" class="tags-container"></div>
-                    <input type="text" id="tag-input" placeholder="Tag + Enter" onkeydown="if(event.key==='Enter') addTag()">
-                    <input type="date" id="modal-date" class="date-input-modal" onchange="updateCardFromModal()">
+                    <input type="text" id="tag-input" placeholder="Tag + Enter">
+                    <input type="date" id="modal-date" class="date-input-modal">
                 </div>
             </div>
             <div class="modal-section">
                 <h4>Descripción</h4>
-                <textarea id="modal-desc" onblur="updateCardFromModal()"></textarea>
+                <textarea id="modal-desc"></textarea>
             </div>
             <div class="modal-section">
-                <h4>Sub-tareas <span id="checklist-progress">0%</span></h4>
+                <h4>Sub-tareas <span id="check-percent">0%</span></h4>
                 <div class="progress-bar"><div id="progress-fill"></div></div>
-                <div id="modal-checklist-items"></div>
-                <div class="add-check-item"><input type="text" id="new-check-input"><button onclick="addChecklistItem()">+</button></div>
+                <div id="modal-checklist"></div>
+                <div class="add-check-item">
+                    <input type="text" id="new-check-input">
+                    <button id="add-check-btn">+</button>
+                </div>
             </div>
-            <button onclick="archiveCardFromModal()" class="btn-danger">Archivar Tarea</button>
+            <button id="btn-archive" class="btn-danger">Archivar Tarea</button>
         </div>
     </div>
 
-    <script src="js/firebase-config.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/app.js"></script>
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
