@@ -5,21 +5,50 @@ import { doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/12.7
 const MEMBERS = [
     { id: 'u1', name: 'Juan', initial: 'JP', color: '#e91e63' },
     { id: 'u2', name: 'Maria', initial: 'ML', color: '#9c27b0' },
-    { id: 'u3', name: 'Carlos', initial: 'CR', color: '#2196f3' }
+    { id: 'u3', name: 'Carlos', initial: 'CR', color: '#2196f3' },
+    { id: 'u4', name: 'Ana', initial: 'AV', color: '#4caf50' }
 ];
 
 let boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' } };
 let currentEditingId = null;
 
-// --- EXPORTAR FUNCIONES AL NAVEGADOR ---
-window.handleAddNewCard = function(btn) {
+// --- EXPOSICIÓN GLOBAL PARA HTML ---
+window.handleAddNewCard = (btn) => {
     const input = btn.parentElement.querySelector('.card-input');
     const colId = btn.closest('.list').dataset.id;
     if (!input.value.trim()) return;
     const newCard = { id: 'c'+Date.now(), title: input.value, desc: '', tags: [], members: [], date: '', checklist: [] };
     boardData[colId].push(newCard);
-    addLog(`Tarea creada: ${newCard.title}`);
+    addLog(`Nueva tarea: ${newCard.title}`);
     input.value = ''; save();
+};
+
+window.allowDrop = (e) => e.preventDefault();
+window.drop = (e) => {
+    e.preventDefault();
+    const id = e.dataTransfer.getData("text");
+    const targetCol = e.target.closest('.list').dataset.id;
+    let cardObj, oldCol;
+    ['todo','in-progress','done'].forEach(c => {
+        const idx = boardData[c].findIndex(x => x.id === id);
+        if(idx !== -1) { oldCol = c; cardObj = boardData[c].splice(idx,1)[0]; }
+    });
+    if(cardObj) { boardData[targetCol].push(cardObj); addLog(`Movido: "${cardObj.title}" a ${targetCol}`); save(); }
+};
+
+window.addTag = () => {
+    const input = document.getElementById('tag-input');
+    const card = findCard(currentEditingId);
+    if(input.value && !card.tags.includes(input.value)) { card.tags.push(input.value); renderTags(card); renderBoard(); save(); }
+    input.value = '';
+};
+
+window.toggleMember = (mId) => {
+    const card = findCard(currentEditingId);
+    if(!card.members) card.members = [];
+    const idx = card.members.indexOf(mId);
+    idx === -1 ? card.members.push(mId) : card.members.splice(idx, 1);
+    renderMembers(card); renderBoard(); save();
 };
 
 window.addChecklistItem = () => {
@@ -37,28 +66,10 @@ window.toggleCheck = (i) => {
     renderChecklist(card); renderBoard(); save();
 };
 
-window.toggleMember = (mId) => {
-    const card = findCard(currentEditingId);
-    if(!card.members) card.members = [];
-    const idx = card.members.indexOf(mId);
-    idx === -1 ? card.members.push(mId) : card.members.splice(idx, 1);
-    renderMembers(card); renderBoard(); save();
-};
-
-window.addTag = () => {
-    const input = document.getElementById('tag-input');
-    const card = findCard(currentEditingId);
-    if(input.value && !card.tags.includes(input.value)) { 
-        card.tags.push(input.value); 
-        renderTags(card); renderBoard(); save(); 
-    }
-    input.value = '';
-};
-
 window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
 
 window.archiveCardFromModal = () => {
-    if(confirm("¿Eliminar definitivamente?")) {
+    if(confirm("¿Eliminar tarea definitivamente?")) {
         ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId));
         window.closeModal(); save();
     }
@@ -74,9 +85,9 @@ window.searchCards = () => {
 };
 
 window.exportToCSV = () => {
-    let csv = "Estado,Tarea,Vencimiento\n";
-    ['todo','in-progress','done'].forEach(col => boardData[col].forEach(c => csv += `${col},${c.title},${c.date}\n`));
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'board.csv'; a.click();
+    let csv = "Columna,Tarea,Fecha,Tags\n";
+    ['todo','in-progress','done'].forEach(col => boardData[col].forEach(c => csv += `${col},${c.title},${c.date},${c.tags.join('|')}\n`));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'board_report.csv'; a.click();
 };
 
 // --- LÓGICA DE SINCRONIZACIÓN ---
@@ -97,7 +108,7 @@ function renderBoard() {
         const container = document.getElementById(col); container.innerHTML = '';
         (boardData[col] || []).forEach(card => {
             const el = document.createElement('div');
-            el.className = 'card'; el.draggable = true;
+            el.className = 'card'; el.draggable = true; el.id = card.id;
             el.onclick = () => openModal(card.id);
             el.ondragstart = (e) => e.dataTransfer.setData("text", card.id);
             
@@ -109,8 +120,8 @@ function renderBoard() {
             el.innerHTML = `
                 <div class="card-tags">${(card.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
                 <strong>${card.title}</strong>
-                <div class="card-footer" style="display:flex; justify-content:space-between; margin-top:10px;">
-                    <small>${card.date ? '📅 '+card.date : ''}</small>
+                <div class="card-footer" style="display:flex; justify-content:space-between;">
+                    <small>${card.date ? '📅 '+card.date : ''} ${card.checklist?.length ? '☑️' : ''}</small>
                     <div class="avatar-stack">${avatars}</div>
                 </div>`;
             container.appendChild(el);
@@ -155,7 +166,7 @@ function renderChecklist(card) {
 function addLog(action) {
     if(!boardData.history) boardData.history = [];
     boardData.history.unshift({ time: new Date().toLocaleTimeString(), action });
-    if(boardData.history.length > 15) boardData.history.pop();
+    if(boardData.history.length > 20) boardData.history.pop();
 }
 
 function renderHistory() {
@@ -164,31 +175,15 @@ function renderHistory() {
 
 function updateStats() {
     const total = boardData.todo.length + boardData['in-progress'].length + boardData.done.length;
-    document.getElementById('board-stats').innerHTML = `<span>Tareas: ${total}</span> | <span>Finalizadas: ${boardData.done.length}</span>`;
+    document.getElementById('board-stats').innerHTML = `<span>Tareas: ${total}</span> | <span>Completadas: ${boardData.done.length}</span> | <span>Eficiencia: ${total ? Math.round((boardData.done.length/total)*100) : 0}%</span>`;
 }
 
-// --- DRAG & DROP ---
-document.querySelectorAll('.list').forEach(list => {
-    list.ondragover = e => e.preventDefault();
-    list.ondrop = e => {
-        const id = e.dataTransfer.getData("text");
-        const targetCol = list.dataset.id;
-        let cardObj, oldCol;
-        ['todo','in-progress','done'].forEach(c => {
-            const idx = boardData[c].findIndex(x => x.id === id);
-            if(idx !== -1) { oldCol = c; cardObj = boardData[c].splice(idx,1)[0]; }
-        });
-        if(cardObj) { boardData[targetCol].push(cardObj); addLog(`Movido a ${targetCol}`); save(); }
-    };
-});
-
-// Guardado de textos
-document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; save(); };
+// Guardado de campos de texto en el modal
+document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; renderBoard(); save(); };
 document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; save(); };
-document.getElementById('modal-date').onchange = e => { findCard(currentEditingId).date = e.target.value; save(); };
+document.getElementById('modal-date').onchange = e => { findCard(currentEditingId).date = e.target.value; renderBoard(); save(); };
 document.getElementById('btn-theme').onclick = () => { boardData.settings.theme = boardData.settings.theme === 'light' ? 'dark' : 'light'; save(); };
 document.getElementById('btn-toggle-log').onclick = () => document.getElementById('history-panel').classList.toggle('active');
 document.getElementById('close-history').onclick = () => document.getElementById('history-panel').classList.remove('active');
 
-// INICIALIZAR TODO
 initAuth(startSync);
