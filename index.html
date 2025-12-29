@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task Enterprise | V12 FINAL</title>
+    <title>Pro-Task Enterprise | V13 FINAL - CONECTADO</title>
     <style>
-        /* --- ESTILOS (NO TOCAR) --- */
         :root { --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --text: #172b4d; --card: #fff; --error: #eb5a46; --success: #61bd4f; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); }
         
@@ -24,7 +23,6 @@
         /* Kanban */
         .kanban { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; background: #fff; }
         .list { background: #ebecf0; width: 280px; min-width: 280px; border-radius: 8px; padding: 10px; max-height: 90%; display: flex; flex-direction: column; }
-        .list h4 { margin: 0 0 10px 5px; text-transform: uppercase; font-size: 0.8rem; color: #555; }
         .cards { flex: 1; overflow-y: auto; min-height: 20px; }
         .card { background: white; padding: 10px; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 1px 2px #00000030; cursor: pointer; border-left: 4px solid #ccc; font-size: 0.9rem; position: relative; }
         .card:hover { background: #f8f8f8; }
@@ -41,8 +39,8 @@
         button.danger { background: var(--error); }
         
         /* Modal Detalle */
-        #modal-overlay { background: rgba(0,0,0,0.6); display: none; }
-        .modal-box { width: 500px; max-height: 90vh; overflow-y: auto; text-align: left; position: relative; }
+        #modal-overlay { background: rgba(0,0,0,0.6); display: none; position: fixed; inset: 0; z-index: 3000; justify-content: center; align-items: center;}
+        .modal-box { background: #f4f5f7; width: 500px; max-height: 90vh; overflow-y: auto; text-align: left; position: relative; padding: 20px; border-radius: 8px; }
         .close-btn { position: absolute; right: 15px; top: 10px; font-size: 24px; cursor: pointer; color: #888; }
         
         /* Utils */
@@ -56,14 +54,14 @@
     <div id="loading-screen" class="overlay" style="display: none; background: rgba(255,255,255,0.95); z-index: 2000;">
         <div class="box" style="box-shadow: none; background: transparent;">
             <div class="loader"></div>
-            <h3 style="color:#333">Sincronizando...</h3>
+            <h3 style="color:#333">Conectando a Firebase...</h3>
         </div>
     </div>
 
     <div id="auth-screen" class="overlay">
         <div class="box">
-            <h2 style="color:var(--primary)">Pro-Task Cloud</h2>
-            <p>Acceso Seguro</p>
+            <h2 style="color:var(--primary)">Pro-Task v13</h2>
+            <p>Tus credenciales ya están configuradas</p>
             <input type="email" id="email" placeholder="Correo electrónico">
             <input type="password" id="password" placeholder="Contraseña">
             <button onclick="login()">Iniciar Sesión</button>
@@ -91,16 +89,16 @@
             </header>
             <div id="kanban" class="kanban">
                 <div style="margin: 50px auto; text-align: center; color: #888;">
-                    <p>← Selecciona un proyecto del menú para empezar.</p>
+                    <p>← Crea o selecciona un proyecto del menú.</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-overlay" class="overlay">
-        <div class="box modal-box">
+    <div id="modal-overlay">
+        <div class="modal-box">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <input type="text" id="m-title" style="font-size:1.4rem; font-weight:bold; border:none; padding-left:0;">
+            <input type="text" id="m-title" style="font-size:1.4rem; font-weight:bold; border:none; padding-left:0; width: 100%;">
             
             <label style="font-size:0.8rem; color:#666;">Prioridad</label>
             <select id="m-priority" onchange="updateTaskMeta()">
@@ -110,7 +108,7 @@
             </select>
             
             <label style="font-size:0.8rem; color:#666;">Descripción</label>
-            <textarea id="m-desc" rows="4" placeholder="Detalles de la tarea..." onblur="updateTaskMeta()"></textarea>
+            <textarea id="m-desc" rows="4" placeholder="Detalles..." onblur="updateTaskMeta()"></textarea>
             
             <label style="font-size:0.8rem; color:#666;">Checklist</label>
             <div id="m-checklist"></div>
@@ -128,7 +126,7 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, orderBy, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // --- 🔴 TUS CREDENCIALES CONFIGURADAS ---
+        // --- TUS CREDENCIALES REALES (Ya configuradas) ---
         const firebaseConfig = {
             apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
             authDomain: "trello-d2532.firebaseapp.com",
@@ -143,18 +141,17 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        // Variables Globales
         let currentUser = null;
         let currentBoardId = null;
-        let boardData = null; // Datos en memoria
+        let boardData = null;
         let unsubscribeBoard = null;
-        let dataLoaded = false; // 🔒 EL CANDADO DE SEGURIDAD
+        let dataLoaded = false; 
 
         // 1. AUTH
         window.login = () => {
             const e = document.getElementById('email').value;
             const p = document.getElementById('password').value;
-            signInWithEmailAndPassword(auth, e, p).catch(err => document.getElementById('auth-msg').innerText = "Credenciales incorrectas");
+            signInWithEmailAndPassword(auth, e, p).catch(err => document.getElementById('auth-msg').innerText = err.message);
         };
 
         window.register = () => {
@@ -163,11 +160,7 @@
             createUserWithEmailAndPassword(auth, e, p).catch(err => document.getElementById('auth-msg').innerText = err.message);
         };
 
-        window.logout = () => {
-            localStorage.removeItem('lastBoardId'); // Limpiar memoria local
-            signOut(auth);
-            location.reload();
-        };
+        window.logout = () => { localStorage.clear(); signOut(auth); location.reload(); };
 
         onAuthStateChanged(auth, user => {
             if (user) {
@@ -175,7 +168,7 @@
                 document.getElementById('user-display').innerText = user.email;
                 document.getElementById('auth-screen').style.display = 'none';
                 document.getElementById('app-screen').style.display = 'flex';
-                loadBoardList(); // Cargar barra lateral
+                loadBoardList(); 
             } else {
                 document.getElementById('auth-screen').style.display = 'flex';
                 document.getElementById('app-screen').style.display = 'none';
@@ -184,7 +177,6 @@
 
         // 2. GESTIÓN DE TABLEROS
         function loadBoardList() {
-            // Escuchar cambios en la colección privada del usuario
             const q = query(collection(db, `users/${currentUser.uid}/boards`), orderBy("createdAt", "desc"));
             
             onSnapshot(q, (snapshot) => {
@@ -200,11 +192,12 @@
                     list.appendChild(div);
                 });
 
-                // Auto-cargar último tablero (Rescate de sesión)
+                // Auto-cargar (Rescate de sesión)
                 const lastId = localStorage.getItem('lastBoardId');
                 if (lastId && !currentBoardId) {
                     const exists = snapshot.docs.find(d => d.id === lastId);
                     if (exists) openBoard(lastId);
+                    else localStorage.removeItem('lastBoardId'); // Limpiar si ya no existe
                 }
             });
         }
@@ -220,13 +213,13 @@
                 });
                 openBoard(ref.id);
             } catch (e) {
-                alert("Error al crear. Revisa tu conexión.");
+                alert("Error: Verifica las reglas de Firebase. " + e.message);
             }
         };
 
         function openBoard(id) {
             if (unsubscribeBoard) unsubscribeBoard();
-            dataLoaded = false; // 🔒 BLOQUEAR GUARDADO
+            dataLoaded = false; 
             currentBoardId = id;
             localStorage.setItem('lastBoardId', id);
             
@@ -235,21 +228,19 @@
             unsubscribeBoard = onSnapshot(doc(db, `users/${currentUser.uid}/boards`, id), (docSnap) => {
                 document.getElementById('loading-screen').style.display = 'none';
                 
-                if (!docSnap.exists()) return; // Si fue borrado
+                if (!docSnap.exists()) return; 
                 
                 boardData = docSnap.data();
-                dataLoaded = true; // 🔓 DESBLOQUEAR GUARDADO
+                dataLoaded = true; // SEGURO ACTIVADO
                 
                 document.getElementById('header-title').innerText = boardData.name;
                 renderKanban();
                 
-                // Actualizar visual del sidebar
                 document.querySelectorAll('.board-item').forEach(el => el.classList.remove('active'));
-                // (Se actualizará solo con el snapshot de la lista, pero por si acaso)
             });
         }
 
-        // 3. RENDERIZADO DEL TABLERO
+        // 3. RENDERIZADO
         function renderKanban() {
             const container = document.getElementById('kanban');
             container.innerHTML = '';
@@ -260,20 +251,17 @@
                 const list = document.createElement('div');
                 list.className = 'list';
                 
-                // Botón añadir
                 const addBtn = `<button onclick="window.addTask('${key}')" style="background:transparent; color:#666; border:1px dashed #ccc; margin-bottom:10px;">+ Añadir</button>`;
                 
                 list.innerHTML = `<h4>${title}</h4><div class="cards" id="col-${key}"></div>${addBtn}`;
                 
                 const cardArea = list.querySelector('.cards');
-                
-                // Drag & Drop
                 cardArea.ondragover = e => e.preventDefault();
                 cardArea.ondrop = e => handleDrop(e, key);
 
                 (boardData.columns[key] || []).forEach(task => {
                     const card = document.createElement('div');
-                    card.className = `card ${task.priority || 'low'}`;
+                    card.className = `card ${task.priority}`;
                     card.innerText = task.title;
                     card.draggable = true;
                     card.ondragstart = e => e.dataTransfer.setData('text', JSON.stringify({ id: task.id, src: key }));
@@ -285,14 +273,10 @@
             }
         }
 
-        // 4. GUARDADO SEGURO
+        // 4. GUARDADO BLINDADO
         async function saveToCloud() {
-            // EL FILTRO DE SEGURIDAD:
-            if (!dataLoaded || !currentBoardId) {
-                console.warn("Intento de guardado bloqueado: Datos no cargados.");
-                return;
-            }
-
+            if (!dataLoaded || !currentBoardId) return; // Bloqueo de seguridad
+            
             const indicator = document.getElementById('save-indicator');
             indicator.style.display = 'block';
             indicator.innerText = "Guardando...";
@@ -311,19 +295,11 @@
 
         // 5. OPERACIONES
         window.addTask = (col) => {
-            const title = prompt("Nueva tarea:");
+            const title = prompt("Tarea:");
             if (!title) return;
             if (!boardData.columns[col]) boardData.columns[col] = [];
             
-            boardData.columns[col].push({ 
-                id: Date.now().toString(), 
-                title, 
-                priority: 'low', 
-                desc: '', 
-                checklist: [] 
-            });
-            
-            // Actualización optimista (primero en pantalla, luego guarda)
+            boardData.columns[col].push({ id: Date.now().toString(), title, priority: 'low', desc: '', checklist: [] });
             renderKanban();
             saveToCloud();
         };
@@ -335,7 +311,7 @@
 
             const srcList = boardData.columns[data.src];
             const idx = srcList.findIndex(t => t.id === data.id);
-            if (idx > -1) {
+            if(idx > -1) {
                 const [task] = srcList.splice(idx, 1);
                 if (!boardData.columns[destCol]) boardData.columns[destCol] = [];
                 boardData.columns[destCol].push(task);
@@ -382,7 +358,7 @@
 
         window.toggleCheck = (i) => {
             editTask.checklist[i].done = !editTask.checklist[i].done;
-            renderChecklist();
+            renderChecklist(); // Re-renderizar para ver el tachado visualmente
             saveToCloud();
         };
 
@@ -397,12 +373,12 @@
             editTask.title = document.getElementById('m-title').value;
             editTask.priority = document.getElementById('m-priority').value;
             editTask.desc = document.getElementById('m-desc').value;
-            renderKanban(); // Para actualizar color/titulo en el fondo
+            renderKanban(); 
             saveToCloud();
         };
 
         window.deleteCard = () => {
-            if(!confirm("¿Borrar definitivamente?")) return;
+            if(!confirm("¿Borrar?")) return;
             const list = boardData.columns[editCol];
             const idx = list.findIndex(t => t.id === editTask.id);
             if (idx > -1) list.splice(idx, 1);
@@ -411,9 +387,8 @@
             saveToCloud();
         };
 
-        // Escuchar cambios en el título del modal también
+        // Eventos auto-save modal
         document.getElementById('m-title').onblur = updateTaskMeta;
-
     </script>
 </body>
 </html>
