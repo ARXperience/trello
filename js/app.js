@@ -12,14 +12,23 @@ const MEMBERS = [
 let boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' } };
 let currentEditingId = null;
 
-// --- EXPOSICIÓN GLOBAL PARA HTML ---
-window.handleAddNewCard = (btn) => {
+// --- FUNCIONES GLOBALES PARA EL HTML ---
+window.handleAddNewCard = function(btn) {
     const input = btn.parentElement.querySelector('.card-input');
     const colId = btn.closest('.list').dataset.id;
     if (!input.value.trim()) return;
-    const newCard = { id: 'c'+Date.now(), title: input.value, desc: '', tags: [], members: [], date: '', checklist: [] };
+    const newCard = { 
+        id: 'c'+Date.now(), 
+        title: input.value, 
+        desc: '', 
+        tags: [], 
+        members: [], 
+        date: '', 
+        checklist: [],
+        priority: 'low' // Prioridad inicial baja
+    };
     boardData[colId].push(newCard);
-    addLog(`Nueva tarea: ${newCard.title}`);
+    addLog(`Tarea creada: ${newCard.title}`);
     input.value = ''; save();
 };
 
@@ -36,10 +45,21 @@ window.drop = (e) => {
     if(cardObj) { boardData[targetCol].push(cardObj); addLog(`Movido: "${cardObj.title}" a ${targetCol}`); save(); }
 };
 
+window.updatePriority = () => {
+    const priority = document.getElementById('modal-priority').value;
+    const card = findCard(currentEditingId);
+    card.priority = priority;
+    addLog(`Cambio de prioridad en "${card.title}" a ${priority}`);
+    renderBoard(); save();
+};
+
 window.addTag = () => {
     const input = document.getElementById('tag-input');
     const card = findCard(currentEditingId);
-    if(input.value && !card.tags.includes(input.value)) { card.tags.push(input.value); renderTags(card); renderBoard(); save(); }
+    if(input.value && !card.tags.includes(input.value)) { 
+        card.tags.push(input.value); 
+        renderTags(card); renderBoard(); save(); 
+    }
     input.value = '';
 };
 
@@ -69,7 +89,7 @@ window.toggleCheck = (i) => {
 window.closeModal = () => document.getElementById('card-modal').style.display = 'none';
 
 window.archiveCardFromModal = () => {
-    if(confirm("¿Eliminar tarea definitivamente?")) {
+    if(confirm("¿Estás seguro de eliminar esta tarea permanentemente?")) {
         ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId));
         window.closeModal(); save();
     }
@@ -79,18 +99,20 @@ window.searchCards = () => {
     const q = document.getElementById('board-search').value.toLowerCase();
     document.querySelectorAll('.card').forEach(el => {
         const c = findCard(el.id);
-        const match = c.title.toLowerCase().includes(q) || MEMBERS.some(m => c.members.includes(m.id) && m.name.toLowerCase().includes(q));
+        const match = c.title.toLowerCase().includes(q) || 
+                      c.priority.toLowerCase().includes(q) ||
+                      MEMBERS.some(m => c.members.includes(m.id) && m.name.toLowerCase().includes(q));
         el.style.display = match ? 'block' : 'none';
     });
 };
 
 window.exportToCSV = () => {
-    let csv = "Columna,Tarea,Fecha,Tags\n";
-    ['todo','in-progress','done'].forEach(col => boardData[col].forEach(c => csv += `${col},${c.title},${c.date},${c.tags.join('|')}\n`));
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'board_report.csv'; a.click();
+    let csv = "Columna,Tarea,Prioridad,Fecha\n";
+    ['todo','in-progress','done'].forEach(col => boardData[col].forEach(c => csv += `${col},${c.title},${c.priority},${c.date}\n`));
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'tablero_empresa.csv'; a.click();
 };
 
-// --- LÓGICA DE SINCRONIZACIÓN ---
+// --- LÓGICA CORE INTERNA ---
 async function save() { await setDoc(doc(db, "boards", "master"), boardData); }
 
 function startSync() {
@@ -108,7 +130,8 @@ function renderBoard() {
         const container = document.getElementById(col); container.innerHTML = '';
         (boardData[col] || []).forEach(card => {
             const el = document.createElement('div');
-            el.className = 'card'; el.draggable = true; el.id = card.id;
+            el.className = `card ${card.priority}`; // Añade la clase de prioridad
+            el.draggable = true; el.id = card.id;
             el.onclick = () => openModal(card.id);
             el.ondragstart = (e) => e.dataTransfer.setData("text", card.id);
             
@@ -120,7 +143,7 @@ function renderBoard() {
             el.innerHTML = `
                 <div class="card-tags">${(card.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
                 <strong>${card.title}</strong>
-                <div class="card-footer" style="display:flex; justify-content:space-between;">
+                <div class="card-footer" style="display:flex; justify-content:space-between; align-items:center;">
                     <small>${card.date ? '📅 '+card.date : ''} ${card.checklist?.length ? '☑️' : ''}</small>
                     <div class="avatar-stack">${avatars}</div>
                 </div>`;
@@ -136,6 +159,7 @@ function openModal(id) {
     document.getElementById('modal-title').value = card.title;
     document.getElementById('modal-desc').value = card.desc || '';
     document.getElementById('modal-date').value = card.date || '';
+    document.getElementById('modal-priority').value = card.priority || 'low';
     renderMembers(card); renderTags(card); renderChecklist(card);
     document.getElementById('card-modal').style.display = 'block';
 }
@@ -178,7 +202,7 @@ function updateStats() {
     document.getElementById('board-stats').innerHTML = `<span>Tareas: ${total}</span> | <span>Completadas: ${boardData.done.length}</span> | <span>Eficiencia: ${total ? Math.round((boardData.done.length/total)*100) : 0}%</span>`;
 }
 
-// Guardado de campos de texto en el modal
+// Guardado de textos al salir del foco
 document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; renderBoard(); save(); };
 document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; save(); };
 document.getElementById('modal-date').onchange = e => { findCard(currentEditingId).date = e.target.value; renderBoard(); save(); };
