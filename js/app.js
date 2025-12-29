@@ -1,16 +1,7 @@
-/* =========================================
-   IMPORTACIONES DE FIREBASE (MODULAR SDK)
-   ========================================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { 
-    getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
-    onAuthStateChanged, signOut, sendPasswordResetEmail 
-} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { 
-    getFirestore, doc, onSnapshot, setDoc 
-} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-// --- TU CONFIGURACIÓN DE FIREBASE (PROPORCIONADA) ---
 const firebaseConfig = {
     apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
     authDomain: "trello-d2532.firebaseapp.com",
@@ -21,352 +12,125 @@ const firebaseConfig = {
     measurementId: "G-4L4P7E6TZC"
 };
 
-// Inicialización de Servicios
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* =========================================
-   ESTADO GLOBAL Y CONFIGURACIÓN DE EQUIPO
-   ========================================= */
 const COMPANY_MEMBERS = [
     { id: 'u1', name: 'Juan', initial: 'JP', color: '#e91e63' },
     { id: 'u2', name: 'Maria', initial: 'ML', color: '#9c27b0' },
-    { id: 'u3', name: 'Carlos', initial: 'CR', color: '#2196f3' },
-    { id: 'u4', name: 'Ana', initial: 'AV', color: '#4caf50' }
+    { id: 'u3', name: 'Carlos', initial: 'CR', color: '#2196f3' }
 ];
 
-let boardData = { 
-    todo: [], 'in-progress': [], done: [], 
-    history: [], 
-    settings: { theme: 'light' } 
-};
-
+let boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' } };
 let currentEditingId = null;
 
-/* =========================================
-   SISTEMA DE AUTENTICACIÓN
-   ========================================= */
-const btnLogin = document.getElementById('btn-login');
-const btnSignup = document.getElementById('btn-signup');
-const btnLogout = document.getElementById('btn-logout');
-const btnReset = document.getElementById('btn-reset');
-const errorDiv = document.getElementById('auth-error');
-
-// Iniciar Sesión
-btnLogin.onclick = async () => {
-    const email = document.getElementById('login-email').value;
-    const pass = document.getElementById('login-pass').value;
-    try {
-        await signInWithEmailAndPassword(auth, email, pass);
-    } catch (e) { errorDiv.innerText = "Error: Credenciales inválidas"; }
+// --- LOGIN ---
+document.getElementById('btn-login').onclick = () => {
+    const e = document.getElementById('login-email').value;
+    const p = document.getElementById('login-pass').value;
+    signInWithEmailAndPassword(auth, e, p).catch(err => alert("Error: " + err.message));
 };
 
-// Registro
-btnSignup.onclick = async () => {
-    const email = document.getElementById('login-email').value;
-    const pass = document.getElementById('login-pass').value;
-    if(pass.length < 6) { errorDiv.innerText = "Mínimo 6 caracteres"; return; }
-    try {
-        await createUserWithEmailAndPassword(auth, email, pass);
-    } catch (e) { errorDiv.innerText = "Error: " + e.message; }
+document.getElementById('btn-signup').onclick = () => {
+    const e = document.getElementById('login-email').value;
+    const p = document.getElementById('login-pass').value;
+    createUserWithEmailAndPassword(auth, e, p).catch(err => alert("Error: " + err.message));
 };
 
-// Cerrar Sesión
-btnLogout.onclick = () => signOut(auth);
+document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-// Recuperar Contraseña
-btnReset.onclick = async () => {
-    const email = document.getElementById('login-email').value;
-    if(!email) { alert("Ingresa tu correo primero"); return; }
-    try {
-        await sendPasswordResetEmail(auth, email);
-        alert("Enlace de recuperación enviado al correo.");
-    } catch (e) { alert("Error: " + e.message); }
-};
-
-// Monitor de Sesión
+// --- MONITOR DE SESIÓN ---
 onAuthStateChanged(auth, user => {
     if (user) {
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         document.getElementById('user-display').innerText = user.email;
-        startRealtimeSync();
+        startSync();
     } else {
         document.getElementById('auth-container').style.display = 'flex';
         document.getElementById('app-container').style.display = 'none';
     }
 });
 
-/* =========================================
-   SINCRONIZACIÓN CLOUD (TIEMPO REAL)
-   ========================================= */
-function startRealtimeSync() {
-    onSnapshot(doc(db, "boards", "master-data"), (snap) => {
+// --- SINCRONIZACIÓN ---
+function startSync() {
+    onSnapshot(doc(db, "boards", "master"), (snap) => {
         if (snap.exists()) {
             boardData = snap.data();
             renderBoard();
-            renderHistory();
-            document.body.className = (boardData.settings?.theme || 'light') + '-theme';
+        } else {
+            // Inicializar base de datos si está vacía
+            save();
         }
     });
 }
 
 async function save() {
-    try {
-        await setDoc(doc(db, "boards", "master-data"), boardData);
-    } catch (e) { console.error("Error al guardar:", e); }
+    await setDoc(doc(db, "boards", "master"), boardData);
 }
 
-/* =========================================
-   LÓGICA DEL TABLERO (RENDERING)
-   ========================================= */
+// --- RENDERIZADO ---
 function renderBoard() {
-    const cols = ['todo', 'in-progress', 'done'];
-    cols.forEach(col => {
+    ['todo', 'in-progress', 'done'].forEach(col => {
         const container = document.getElementById(col);
         container.innerHTML = '';
         (boardData[col] || []).forEach(card => {
-            const cardEl = document.createElement('div');
-            cardEl.className = 'card';
-            cardEl.id = card.id;
-            cardEl.draggable = true;
-            cardEl.onclick = () => openModal(card.id);
-            
-            // Eventos Drag nativos
-            cardEl.ondragstart = (e) => e.dataTransfer.setData("text", card.id);
-
-            const mIcons = (card.members || []).map(mId => {
-                const m = COMPANY_MEMBERS.find(u => u.id === mId);
-                return `<div class="avatar" style="background:${m.color}">${m.initial}</div>`;
-            }).join('');
-
-            cardEl.innerHTML = `
-                <div class="card-tags">${(card.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
-                <strong>${card.title}</strong>
-                <div class="card-footer">
-                    <small>${card.date ? '📅 ' + card.date : ''}</small>
-                    <div class="avatar-stack">${mIcons}</div>
-                </div>
-            `;
-            container.appendChild(cardEl);
+            const el = document.createElement('div');
+            el.className = 'card';
+            el.innerHTML = `<strong>${card.title}</strong>`;
+            el.onclick = () => openModal(card.id);
+            container.appendChild(el);
         });
     });
-    updateStats();
 }
 
-// Añadir Nueva Tarjeta
-document.querySelectorAll('.btn-add-task').forEach(btn => {
-    btn.onclick = () => {
-        const input = btn.parentElement.querySelector('.card-input');
-        const colId = btn.closest('.list').dataset.id;
-        if (!input.value.trim()) return;
+// --- FUNCIÓN PARA AÑADIR (CORREGIDA) ---
+window.handleAddNewCard = function(btn) {
+    const container = btn.parentElement;
+    const input = container.querySelector('.card-input');
+    const colId = btn.closest('.list').dataset.id;
+    
+    if (!input.value.trim()) return;
 
-        const newCard = {
-            id: 'c' + Date.now(),
-            title: input.value,
-            desc: '',
-            tags: [],
-            members: [],
-            date: '',
-            checklist: []
-        };
-
-        boardData[colId].push(newCard);
-        addLog(`Nueva tarea: ${newCard.title}`);
-        input.value = '';
-        save();
+    const newCard = {
+        id: 'c' + Date.now(),
+        title: input.value,
+        desc: '',
+        tags: [],
+        members: [],
+        date: '',
+        checklist: []
     };
-});
 
-/* =========================================
-   DRAG & DROP (MANEJO DE COLUMNAS)
-   ========================================= */
-document.querySelectorAll('.list').forEach(list => {
-    list.ondragover = e => e.preventDefault();
-    list.ondrop = e => {
-        const cardId = e.dataTransfer.getData("text");
-        const targetCol = list.dataset.id;
-        let cardObj, oldCol;
+    if (!boardData[colId]) boardData[colId] = [];
+    boardData[colId].push(newCard);
+    
+    console.log("Añadiendo tarea:", newCard);
+    
+    input.value = '';
+    save(); // Guardar en Firebase
+};
 
-        ['todo', 'in-progress', 'done'].forEach(col => {
-            const idx = boardData[col].findIndex(c => c.id === cardId);
-            if(idx !== -1) { 
-                oldCol = col;
-                cardObj = boardData[col].splice(idx, 1)[0]; 
-            }
-        });
-
-        if (cardObj && oldCol !== targetCol) {
-            boardData[targetCol].push(cardObj);
-            addLog(`Movido "${cardObj.title}" a ${targetCol}`);
-            save();
-        }
-    };
-});
-
-/* =========================================
-   MODAL DE EDICIÓN Y DETALLES
-   ========================================= */
-const modal = document.getElementById('card-modal');
-const closeModalBtn = document.querySelector('.close-modal');
-
+// --- MODAL ---
 function openModal(id) {
     currentEditingId = id;
     const card = findCard(id);
     document.getElementById('modal-title').value = card.title;
-    document.getElementById('modal-desc').value = card.desc;
-    document.getElementById('modal-date').value = card.date;
-    
-    renderModalMembers(card);
-    renderModalTags(card);
-    renderChecklist(card);
-    modal.style.display = 'block';
+    document.getElementById('card-modal').style.display = 'block';
 }
 
-closeModalBtn.onclick = () => modal.style.display = 'none';
-
-// Guardado automático en Modal
-document.getElementById('modal-title').onblur = (e) => { findCard(currentEditingId).title = e.target.value; save(); };
-document.getElementById('modal-desc').onblur = (e) => { findCard(currentEditingId).desc = e.target.value; save(); };
-document.getElementById('modal-date').onchange = (e) => { findCard(currentEditingId).date = e.target.value; save(); };
-
-// Gestión de Miembros en Modal
-function renderModalMembers(card) {
-    const cont = document.getElementById('modal-members');
-    cont.innerHTML = COMPANY_MEMBERS.map(m => `
-        <div class="avatar avatar-selectable ${card.members.includes(m.id) ? 'selected' : ''}" 
-             style="background:${m.color}" onclick="toggleMemberAssignment('${m.id}')">${m.initial}</div>
-    `).join('');
-}
-
-window.toggleMemberAssignment = (mId) => {
-    const card = findCard(currentEditingId);
-    const idx = card.members.indexOf(mId);
-    idx === -1 ? card.members.push(mId) : card.members.splice(idx, 1);
-    renderModalMembers(card);
-    save();
-};
-
-// Checklist
-function renderChecklist(card) {
-    const cont = document.getElementById('modal-checklist');
-    cont.innerHTML = (card.checklist || []).map((item, i) => `
-        <div style="display:flex; align-items:center; gap:10px; margin-bottom:5px;">
-            <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleCheck(${i})">
-            <span>${item.text}</span>
-        </div>
-    `).join('');
-    
-    const done = card.checklist.filter(x => x.done).length;
-    const pc = card.checklist.length ? Math.round((done/card.checklist.length)*100) : 0;
-    document.getElementById('progress-fill').style.width = pc + '%';
-    document.getElementById('check-percent').innerText = pc + '%';
-}
-
-window.toggleCheck = (i) => {
-    const card = findCard(currentEditingId);
-    card.checklist[i].done = !card.checklist[i].done;
-    renderChecklist(card);
-    save();
-};
-
-document.getElementById('add-check-btn').onclick = () => {
-    const input = document.getElementById('new-check-input');
-    if(!input.value) return;
-    findCard(currentEditingId).checklist.push({ text: input.value, done: false });
-    input.value = '';
-    renderChecklist(findCard(currentEditingId));
-    save();
-};
-
-// Tags
-document.getElementById('tag-input').onkeydown = (e) => {
-    if(e.key === 'Enter') {
-        const val = e.target.value.trim();
-        const card = findCard(currentEditingId);
-        if(val && !card.tags.includes(val)) {
-            card.tags.push(val);
-            e.target.value = '';
-            renderModalTags(card);
-            save();
-        }
-    }
-};
-
-function renderModalTags(card) {
-    document.getElementById('modal-tags').innerHTML = (card.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
-}
-
-/* =========================================
-   UTILIDADES (LOGS, BUSQUEDA, EXPORTAR)
-   ========================================= */
 function findCard(id) {
     return [...boardData.todo, ...boardData['in-progress'], ...boardData.done].find(c => c.id === id);
 }
 
-function addLog(action) {
-    boardData.history.unshift({ time: new Date().toLocaleTimeString(), action });
-    if(boardData.history.length > 25) boardData.history.pop();
-}
-
-function renderHistory() {
-    document.getElementById('history-log').innerHTML = boardData.history.map(h => `
-        <div class="log-entry"><b>${h.time}</b>: ${h.action}</div>
-    `).join('');
-}
-
-function updateStats() {
-    const total = boardData.todo.length + boardData['in-progress'].length + boardData.done.length;
-    document.getElementById('board-stats').innerHTML = `
-        <span>Tareas: ${total}</span> | <span>Completadas: ${boardData.done.length}</span>
-    `;
-}
-
-// Búsqueda
-document.getElementById('board-search').onkeyup = (e) => {
-    const q = e.target.value.toLowerCase();
-    document.querySelectorAll('.card').forEach(el => {
-        const c = findCard(el.id);
-        const match = c.title.toLowerCase().includes(q) || 
-                      COMPANY_MEMBERS.some(m => c.members.includes(m.id) && m.name.toLowerCase().includes(q));
-        el.style.display = match ? 'block' : 'none';
-    });
+document.querySelector('.close-modal').onclick = () => {
+    document.getElementById('card-modal').style.display = 'none';
 };
 
-// Temas y Panel de Logs
-document.getElementById('btn-theme').onclick = () => {
-    boardData.settings.theme = boardData.settings.theme === 'light' ? 'dark' : 'light';
-    save();
-};
-
-document.getElementById('btn-toggle-log').onclick = () => document.getElementById('history-panel').classList.toggle('active');
-document.getElementById('close-history').onclick = () => document.getElementById('history-panel').classList.remove('active');
-
-// Exportar CSV
-document.getElementById('btn-export').onclick = () => {
-    let csv = "Columna,Tarea,Fecha,Miembros\n";
-    ['todo','in-progress','done'].forEach(col => {
-        boardData[col].forEach(c => {
-            const ms = c.members.map(mId => COMPANY_MEMBERS.find(u => u.id === mId).name).join('|');
-            csv += `${col},${c.title},${c.date},${ms}\n`;
-        });
-    });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'Reporte_Empresa.csv';
-    a.click();
-};
-
-// Archivar
-document.getElementById('btn-archive').onclick = () => {
-    if(confirm("¿Eliminar tarea definitivamente?")) {
-        ['todo','in-progress','done'].forEach(col => {
-            boardData[col] = boardData[col].filter(c => c.id !== currentEditingId);
-        });
-        modal.style.display = 'none';
-        addLog("Tarea eliminada");
-        save();
+// Cerrar al hacer clic fuera
+window.onclick = (e) => {
+    if (e.target == document.getElementById('card-modal')) {
+        document.getElementById('card-modal').style.display = 'none';
     }
 };
