@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v40 | Perfect Vision & Features</title>
+    <title>Pro-Task v41 | Vision Engine Fixed</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -11,7 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
     <style>
-        /* --- ESTILOS GENERALES --- */
+        /* --- ESTILOS BASE --- */
         :root {
             --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --surface: #ffffff;
             --text: #172b4d; --text-sub: #5e6c84; --border: #dfe1e6;
@@ -37,7 +37,7 @@
         .cards { flex: 1; overflow-y: auto; min-height: 20px; padding-right: 4px; margin-bottom: 10px; }
         
         /* TARJETA */
-        .card { background: var(--surface); padding: 10px; margin-bottom: 8px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); position: relative; transition: transform 0.1s; }
+        .card { background: var(--surface); padding: 10px; margin-bottom: 8px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); position: relative; }
         .card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
         .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 5px; }
         .tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; color: white; font-weight: 600; }
@@ -47,7 +47,7 @@
         .progress-bar { height: 4px; background: #eee; border-radius: 2px; margin-top: 8px; overflow: hidden; width: 100%; }
         .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
 
-        /* UI ELEMENTS & BUTTONS */
+        /* UI ELEMENTS */
         button { cursor: pointer; border: none; padding: 8px 12px; border-radius: 4px; font-weight: 600; transition: 0.2s; }
         .btn-primary { background: var(--primary); color: white; }
         .btn-ghost { background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
@@ -56,29 +56,41 @@
         .btn-add-task:hover { background: rgba(0,0,0,0.05); color: var(--primary); border-color: var(--primary); }
         input, select, textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; }
 
-        /* --- VISIÓN IA ELEMENTS (CRUCIALES PARA ARRASTRAR) --- */
+        /* --- VISIÓN IA ELEMENTS (FIXED) --- */
         #webcam-container {
-            position: fixed; bottom: 80px; right: 20px; width: 160px; height: 120px;
-            background: black; border-radius: 10px; overflow: hidden; border: 2px solid var(--primary);
+            position: fixed; bottom: 80px; right: 20px; width: 200px; height: 150px;
+            background: black; border-radius: 10px; overflow: hidden; border: 3px solid var(--primary);
             z-index: 5000; display: none; transform: scaleX(-1);
         }
         #webcam-feed { width: 100%; height: 100%; object-fit: cover; }
-        
-        #virtual-cursor {
-            position: fixed; top: 0; left: 0; width: 20px; height: 20px;
-            background: rgba(0, 121, 191, 0.6); border: 2px solid white;
-            border-radius: 50%; pointer-events: none; /* CLAVE */
-            z-index: 9999; display: none; transform: translate(-50%, -50%);
-            transition: background 0.1s; box-shadow: 0 0 10px var(--primary);
+        #camera-status {
+            position: absolute; bottom: 5px; left: 0; width: 100%; text-align: center;
+            color: white; font-size: 0.7rem; background: rgba(0,0,0,0.5); pointer-events: none;
         }
-        #virtual-cursor.pinching { background: var(--success); width: 16px; height: 16px; border-color: lime; }
+        
+        /* CURSOR ALTA VISIBILIDAD */
+        #virtual-cursor {
+            position: fixed; top: 0; left: 0; width: 30px; height: 30px;
+            background: rgba(0, 194, 224, 0.6); /* Azul cian */
+            border: 3px solid white;
+            border-radius: 50%; pointer-events: none; /* CRUCIAL */
+            z-index: 9999; display: none; transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px var(--info);
+            transition: width 0.1s, height 0.1s, background 0.1s;
+        }
+        #virtual-cursor.pinching { 
+            background: var(--success); /* Verde al agarrar */
+            width: 20px; height: 20px; 
+            border-color: lime;
+            box-shadow: 0 0 20px lime;
+        }
 
         #ai-ghost-card {
             position: fixed; width: 260px; padding: 15px; background: var(--surface);
-            box-shadow: 0 15px 30px rgba(0,0,0,0.4); border-radius: 8px;
-            border: 2px solid var(--success); z-index: 9998;
-            pointer-events: none; /* CLAVE */
-            opacity: 0.95; display: none; transform: rotate(3deg);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-radius: 8px;
+            border: 3px solid var(--success); z-index: 9998;
+            pointer-events: none; /* CRUCIAL */
+            opacity: 0.9; display: none; transform: rotate(5deg) scale(1.1);
         }
 
         .ai-toggle {
@@ -100,12 +112,16 @@
         /* MICROFONO */
         .mic-wrapper { position: relative; display: flex; align-items: center; width: 100%; margin-bottom: 10px; }
         .mic-wrapper input, .mic-wrapper textarea { padding-right: 45px; }
-        .mic-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: var(--danger); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
+        .mic-btn { 
+            position: absolute; right: 5px; top: 50%; transform: translateY(-50%); 
+            background: var(--danger); color: white; border-radius: 50%; width: 30px; height: 30px; 
+            display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;
+        }
         .mic-btn:hover { transform: translateY(-50%) scale(1.1); }
-        .mic-active { animation: pulse 1s infinite; }
+        .mic-active { animation: pulse 1s infinite; background: red; }
         @keyframes pulse { 0% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) scale(1.2); } 100% { transform: translateY(-50%) scale(1); } }
 
-        /* EXTRA */
+        /* UTILIDADES */
         .checklist-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #eee; }
         #toast { position: fixed; top: 70px; right: 20px; background: #333; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 6000; }
         #toast.show { opacity: 1; pointer-events: auto; }
@@ -121,16 +137,20 @@
         <strong id="ghost-title">Tarea</strong>
         <div style="font-size:0.8rem; margin-top:5px; color:var(--text-sub);">Suelta los dedos para dejar caer</div>
     </div>
+    
     <div id="webcam-container">
         <video id="webcam-feed" autoplay playsinline></video>
+        <div id="camera-status">Iniciando...</div>
     </div>
+    
     <div id="toast"><strong id="toast-title"></strong><div id="toast-msg"></div></div>
 
     <button class="ai-toggle" onclick="window.toggleAI()">👁️ Activar Cámara</button>
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="text-align:center; color:white;">Pro-Task v40</h2>
+            <h2 style="text-align:center; color:white;">Pro-Task v41</h2>
+            <p style="text-align:center; color:white; opacity:0.8;">Vision Engine Fixed</p>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button class="btn-primary" style="width:100%; margin-top:10px; background:white; color:var(--primary);" onclick="window.login()">Entrar</button>
@@ -147,7 +167,7 @@
             <div style="padding:0 10px; font-size:0.7rem; color:var(--text-sub); font-weight:bold;">COMPARTIDOS</div>
             <div id="shared-boards" style="max-height:150px; overflow-y:auto; padding:10px;"></div>
             <div style="padding:15px; border-top:1px solid var(--border);">
-                <button class="btn-primary" style="width:100%;" onclick="window.createBoard()">+ Nuevo</button>
+                <button class="btn-primary" style="width:100%;" onclick="window.createBoard()">+ Nuevo Tablero</button>
                 <div onclick="window.openTrash()" style="margin-top:10px; cursor:pointer; text-align:center; font-size:0.9rem; color:var(--text-sub);">🗑️ Papelera</div>
             </div>
         </div>
@@ -302,8 +322,8 @@
         window.activeTimers = {};
 
         // --- AUTH ---
-        window.login = () => signInWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => { _id('auth-msg').innerText = e.message; _id('auth-msg').style.display='block'; });
-        window.register = () => createUserWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => { _id('auth-msg').innerText = e.message; _id('auth-msg').style.display='block'; });
+        window.login = () => signInWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => _id('auth-msg').innerText = e.message);
+        window.register = () => createUserWithEmailAndPassword(auth, _val('email'), _val('password')).catch(e => _id('auth-msg').innerText = e.message);
         window.logout = () => { signOut(auth); location.reload(); };
 
         onAuthStateChanged(auth, user => {
@@ -316,7 +336,7 @@
             }
         });
 
-        // --- DASHBOARD ---
+        // --- CORE ---
         function initDashboard() {
             onSnapshot(query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid)), snap => {
                 _id('my-boards').innerHTML = '';
@@ -330,7 +350,7 @@
         const renderBoardItem = (id, data, shared) => `<div class="board-item" onclick="window.openBoard('${id}')"><span>${shared?'👥':'📁'} ${data.name}</span></div>`;
 
         window.createBoard = async () => {
-            const name = prompt("Nombre:"); if(!name) return;
+            const name = prompt("Nombre del Tablero:"); if(!name) return;
             const res = await addDoc(collection(db, 'boards'), {
                 name, ownerId: currentUser.uid, members: [currentUser.email],
                 deleted: false, createdAt: serverTimestamp(), columns: { todo: [], doing: [], done: [] }
@@ -341,7 +361,7 @@
         window.openBoard = (id) => {
             currentBoardId = id;
             onSnapshot(doc(db, 'boards', id), snap => {
-                if(!snap.exists() || snap.data().deleted) return _id('kanban').innerHTML = '<p style="padding:20px;">No disponible</p>';
+                if(!snap.exists() || snap.data().deleted) return _id('kanban').innerHTML = '<p>No disponible</p>';
                 boardData = snap.data();
                 _id('header-title').innerText = boardData.name;
                 _id('board-actions').style.display = (boardData.ownerId === currentUser.uid) ? 'block' : 'none';
@@ -389,13 +409,18 @@
                 const done = task.checklist.filter(c => c.done).length;
                 html += `<span class="meta-badge">☑ ${done}/${task.checklist.length}</span>`;
             }
+            if(task.timeLog) {
+                const h = Math.floor(task.timeLog / 3600);
+                html += `<span class="meta-badge">⏱️ ${h}h</span>`;
+            }
             html += `</div>`;
             el.innerHTML = html;
             return el;
         };
 
+        // --- LOGIC ---
         window.addTask = (col) => {
-            const t = prompt("Tarea:"); if(!t) return;
+            const t = prompt("Nueva Tarea:"); if(!t) return;
             const newTask = { id: Date.now().toString(), title: t, desc: '', tag: '', due: '', checklist: [], comments: [], files: [], timeLog: 0 };
             boardData.columns[col].push(newTask); save();
         };
@@ -410,7 +435,7 @@
 
         async function save() { await updateDoc(doc(db, 'boards', currentBoardId), { columns: boardData.columns }); }
 
-        // --- SUPER MODAL (FULL FEATURES) ---
+        // --- MODAL ---
         window.openTaskModal = (task, col) => {
             editTask = task; editCol = col;
             _id('task-modal').style.display = 'flex';
@@ -425,7 +450,16 @@
             else _id('m-cover-preview').style.display='none';
 
             updateTimerDisplay(); renderChecklist(); renderComments(); renderFiles();
-            window.switchTab('details'); // Reset tab
+            window.switchTab('details');
+        };
+
+        window.updateTask = () => {
+            if(!editTask) return;
+            editTask.title = _id('m-title').value;
+            editTask.desc = _id('m-desc').value;
+            editTask.due = _id('m-due').value;
+            editTask.tag = _id('m-tag').value;
+            editTask.cover = _id('m-cover-url').value; save();
         };
 
         window.switchTab = (tab, btn) => {
@@ -433,14 +467,7 @@
             ['details','comments','files'].forEach(t => _id('tab-'+t).style.display = (t===tab?'block':'none'));
         };
 
-        window.updateTask = () => {
-            if(!editTask) return;
-            editTask.title = _id('m-title').value; editTask.desc = _id('m-desc').value;
-            editTask.due = _id('m-due').value; editTask.tag = _id('m-tag').value;
-            editTask.cover = _id('m-cover-url').value; save();
-        };
-
-        // --- SUB-FEATURES ---
+        // SUB-FUNCIONES DEL MODAL
         window.addCheck = () => {
             const val = _id('m-new-check').value; if(!val) return;
             if(!editTask.checklist) editTask.checklist = [];
@@ -492,7 +519,7 @@
             window.closeModals(); renderKanban(); save();
         };
 
-        // --- UTILS & IA ---
+        // --- UTILS ---
         const _id = (id) => document.getElementById(id);
         const _val = (id) => document.getElementById(id).value;
         window.closeModals = () => document.querySelectorAll('.overlay').forEach(e => { if(e.id!=='auth-screen') e.style.display='none'; });
@@ -500,6 +527,8 @@
         window.openShare = () => _id('share-modal').style.display='flex';
         window.shareBoard = async () => { await updateDoc(doc(db,'boards',currentBoardId), {members: arrayUnion(_val('share-email'))}); window.closeModals(); };
         window.softDeleteBoard = async () => { if(confirm("¿Borrar?")) await updateDoc(doc(db,'boards',currentBoardId), {deleted:true}); };
+        window.filterCards = (q) => document.querySelectorAll('.card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q.toLowerCase()) ? 'block' : 'none');
+        
         window.openTrash = () => {
              onSnapshot(query(collection(db,'boards'), where('ownerId','==',currentUser.uid)), snap => {
                  let h = '';
@@ -509,9 +538,8 @@
              });
         };
         window.restore = async(id) => updateDoc(doc(db,'boards',id), {deleted:false});
-        window.filterCards = (q) => document.querySelectorAll('.card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q.toLowerCase()) ? 'block' : 'none');
 
-        // VOICE
+        // --- 🎤 DICTADO ---
         window.startDictation = (inputId) => {
             if (!('webkitSpeechRecognition' in window)) return alert("Usa Chrome.");
             const recognition = new webkitSpeechRecognition();
@@ -523,78 +551,161 @@
             recognition.start();
         };
 
-        // VISION (HANDS)
-        let camera = null; let isAiActive = false;
+        // --- 👁️ VISIÓN IA MANUAL (FIXED ENGINE) ---
+        let videoElement = null;
+        let canvasElement = null;
+        let canvasCtx = null;
+        let hands = null;
+        let camera = null;
+        let isAiActive = false;
+
         window.toggleAI = () => {
-            const el = _id('webcam-container');
-            if(isAiActive) { if(camera) camera.stop(); el.style.display='none'; isAiActive=false; _id('virtual-cursor').style.display='none'; return; }
-            el.style.display='block'; isAiActive=true; _id('virtual-cursor').style.display='block'; initHands();
+            const container = _id('webcam-container');
+            const cursor = _id('virtual-cursor');
+            
+            if (isAiActive) {
+                // STOP
+                if (videoElement && videoElement.srcObject) {
+                    videoElement.srcObject.getTracks().forEach(track => track.stop());
+                }
+                container.style.display = 'none';
+                cursor.style.display = 'none';
+                isAiActive = false;
+                return;
+            }
+
+            // START
+            container.style.display = 'block';
+            cursor.style.display = 'block';
+            isAiActive = true;
+            _id('camera-status').innerText = "Cargando modelo...";
+            startVision();
         };
 
-        async function initHands() {
-            const video = _id('webcam-feed');
-            const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-            hands.setOptions({maxNumHands:1, minDetectionConfidence:0.7, minTrackingConfidence:0.7});
+        async function startVision() {
+            videoElement = _id('webcam-feed');
+            
+            hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.6,
+                minTrackingConfidence: 0.6
+            });
             hands.onResults(onResults);
-            camera = new Camera(video, {onFrame: async()=>{await hands.send({image:video});}, width:160, height:120});
-            camera.start();
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+                videoElement.srcObject = stream;
+                videoElement.onloadedmetadata = () => {
+                    _id('camera-status').innerText = "Cámara lista";
+                    requestAnimationFrame(predictWebcam);
+                };
+            } catch (err) {
+                alert("Error de cámara: " + err);
+                isAiActive = false;
+            }
         }
 
-        let isPinching=false; let dragId=null; let dragSrc=null;
+        async function predictWebcam() {
+            if (!isAiActive) return;
+            if (videoElement.readyState === 4) {
+                await hands.send({image: videoElement});
+            }
+            requestAnimationFrame(predictWebcam);
+        }
+
+        // LOGICA DE GESTOS
+        let isPinching = false;
+        let dragId = null;
+        let dragSrc = null;
+
         function onResults(results) {
-            if(!results.multiHandLandmarks || !results.multiHandLandmarks.length) return;
-            const lm = results.multiHandLandmarks[0];
-            const idx = lm[8]; const thb = lm[4];
-            
-            const x = (1-idx.x)*window.innerWidth; const y = idx.y*window.innerHeight;
             const cursor = _id('virtual-cursor');
-            cursor.style.left = x+'px'; cursor.style.top = y+'px';
+            
+            if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
+                _id('camera-status').innerText = "Esperando mano...";
+                cursor.style.display = 'none';
+                return;
+            }
+            
+            _id('camera-status').innerText = "Mano detectada";
+            cursor.style.display = 'block';
 
-            const dist = Math.hypot(idx.x-thb.x, idx.y-thb.y);
-            const PINCH_START = 0.05; // Ajustado
-            const PINCH_RELEASE = 0.08; // Ajustado
+            const lm = results.multiHandLandmarks[0];
+            const idx = lm[8]; // Punta Índice
+            const thb = lm[4]; // Punta Pulgar
 
-            // GRAB
-            if(!isPinching && dist < PINCH_START) {
-                isPinching = true; cursor.classList.add('pinching');
-                const el = document.elementFromPoint(x,y);
-                const card = el ? el.closest('.card') : null;
-                if(card) {
+            // Coordenadas
+            const x = (1 - idx.x) * window.innerWidth;
+            const y = idx.y * window.innerHeight;
+
+            cursor.style.left = x + 'px';
+            cursor.style.top = y + 'px';
+
+            // Distancia Pinza
+            const dist = Math.hypot(idx.x - thb.x, idx.y - thb.y);
+            
+            // UMBRALES
+            const PINCH_START = 0.05; 
+            const PINCH_RELEASE = 0.08;
+
+            // 1. AGARRAR (PINCH START)
+            if (!isPinching && dist < PINCH_START) {
+                isPinching = true;
+                cursor.classList.add('pinching');
+                
+                // Raycast
+                const elements = document.elementsFromPoint(x, y);
+                // Buscar tarjeta
+                const card = elements.find(el => el.classList.contains('card'));
+                
+                if (card) {
                     dragId = card.getAttribute('data-task-id');
                     dragSrc = card.getAttribute('data-col');
+                    
                     const ghost = _id('ai-ghost-card');
                     ghost.querySelector('strong').innerText = card.querySelector('strong').innerText;
                     ghost.style.display = 'block';
+                } else {
+                    // Click normal si no es tarjeta
+                    const clickable = elements.find(el => el.tagName === 'BUTTON' || el.classList.contains('board-item') || el.onclick);
+                    if(clickable) clickable.click();
                 }
             }
-            
-            // MOVE
-            if(isPinching && dragId) {
-                const ghost = _id('ai-ghost-card');
-                ghost.style.left = (x+20)+'px'; ghost.style.top = (y+20)+'px';
+
+            // 2. ARRASTRAR (HOLD)
+            if (isPinching) {
+                if (dragId) {
+                    const ghost = _id('ai-ghost-card');
+                    ghost.style.left = (x + 20) + 'px';
+                    ghost.style.top = (y + 20) + 'px';
+                }
             }
 
-            // RELEASE
-            if(isPinching && dist > PINCH_RELEASE) {
-                isPinching = false; cursor.classList.remove('pinching');
-                if(dragId) {
-                    const el = document.elementFromPoint(x,y);
-                    const list = el ? el.closest('.list') : null;
-                    if(list) {
+            // 3. SOLTAR (RELEASE)
+            if (isPinching && dist > PINCH_RELEASE) {
+                isPinching = false;
+                cursor.classList.remove('pinching');
+
+                if (dragId) {
+                    const elements = document.elementsFromPoint(x, y);
+                    const list = elements.find(el => el.classList.contains('list'));
+                    
+                    if (list) {
                         const target = list.id.replace('col-', '');
-                        if(target && target !== dragSrc) {
-                            const idx = boardData.columns[dragSrc].findIndex(t=>t.id===dragId);
-                            if(idx>-1) {
-                                const [t] = boardData.columns[dragSrc].splice(idx,1);
+                        if (target && target !== dragSrc) {
+                            const idx = boardData.columns[dragSrc].findIndex(t => t.id === dragId);
+                            if (idx > -1) {
+                                const [t] = boardData.columns[dragSrc].splice(idx, 1);
                                 boardData.columns[target].push(t);
                                 save();
                             }
                         }
                     }
-                    _id('ai-ghost-card').style.display='none'; dragId=null;
-                } else {
-                    const el = document.elementFromPoint(x,y);
-                    if(el) el.click();
+                    _id('ai-ghost-card').style.display = 'none';
+                    dragId = null;
+                    dragSrc = null;
                 }
             }
         }
