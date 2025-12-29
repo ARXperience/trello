@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v42 | Vision + Alarms</title>
+    <title>Pro-Task v43 | OMNI VERSION</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -15,7 +15,7 @@
         :root {
             --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --surface: #ffffff;
             --text: #172b4d; --text-sub: #5e6c84; --border: #dfe1e6;
-            --success: #61bd4f; --danger: #eb5a46; --warning: #ff9f1a;
+            --success: #61bd4f; --danger: #eb5a46; --warning: #ff9f1a; --info: #00c2e0;
             --shadow: 0 1px 3px rgba(0,0,0,0.12); --radius: 6px;
         }
         [data-theme="dark"] {
@@ -30,28 +30,38 @@
         .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; overflow: hidden; }
         header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 55px; display: flex; align-items: center; justify-content: space-between; }
         
-        /* ALARMAS Y ESTADOS (NUEVO) */
-        .meta-badge.overdue { background: #ffe3e3; color: var(--danger); border-color: var(--danger); font-weight: bold; }
-        .meta-badge.today { background: #fff8e1; color: var(--warning); border-color: var(--warning); font-weight: bold; }
-        
-        /* NOTIFICACIONES (BELL) */
-        .bell-container { position: relative; cursor: pointer; margin-right: 15px; }
-        .bell-count { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px; display: none; }
-
         /* KANBAN */
         .kanban { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; }
         .list { background: var(--sidebar); width: 280px; min-width: 280px; border-radius: var(--radius); padding: 10px; max-height: 90%; display: flex; flex-direction: column; border: 1px solid var(--border); }
         .list h4 { margin: 0 0 10px 5px; color: var(--text); font-weight: 700; display:flex; justify-content:space-between; }
         .cards { flex: 1; overflow-y: auto; min-height: 20px; padding-right: 4px; margin-bottom: 10px; }
         
-        /* TARJETA */
-        .card { background: var(--surface); padding: 10px; margin-bottom: 8px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); position: relative; }
+        /* TARJETA (SISTEMA DE COLORES Y PRIORIDAD) */
+        .card { background: var(--surface); padding: 10px; margin-bottom: 8px; border-radius: var(--radius); box-shadow: var(--shadow); cursor: pointer; border: 1px solid var(--border); border-left: 4px solid #ccc; position: relative; transition: transform 0.1s; }
         .card:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
+        /* Prioridades Visuales */
+        .card.urgent, .card.high { border-left-color: var(--danger); }
+        .card.medium { border-left-color: var(--warning); }
+        .card.low { border-left-color: var(--success); }
+        .card.feature { border-left-color: var(--info); }
+
         .card-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 5px; }
         .tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; color: white; font-weight: 600; }
-        .tag.urgent { background: var(--warning); } .tag.bug { background: var(--danger); }
+        .tag.urgent { background: var(--danger); } 
+        .tag.feature { background: var(--info); }
+        .tag.bug { background: #E91E63; }
+
         .card-meta { display: flex; gap: 8px; margin-top: 8px; font-size: 0.75rem; color: var(--text-sub); align-items: center; flex-wrap: wrap; }
         .meta-badge { background: var(--bg); padding: 2px 5px; border-radius: 4px; border: 1px solid var(--border); }
+        
+        /* Alertas de Vencimiento */
+        .meta-badge.overdue { background: #ffe3e3; color: var(--danger); border-color: var(--danger); font-weight: bold; }
+        .meta-badge.today { background: #fff8e1; color: var(--warning); border-color: var(--warning); font-weight: bold; }
+
+        /* Avatares */
+        .avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; border: 2px solid var(--surface); margin-left: auto; }
+
         .progress-bar { height: 4px; background: #eee; border-radius: 2px; margin-top: 8px; overflow: hidden; width: 100%; }
         .progress-fill { height: 100%; background: var(--success); width: 0%; transition: width 0.3s; }
 
@@ -65,35 +75,16 @@
         input, select, textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; }
 
         /* VISIÓN IA ELEMENTS */
-        #webcam-container {
-            position: fixed; bottom: 80px; right: 20px; width: 200px; height: 150px;
-            background: black; border-radius: 10px; overflow: hidden; border: 3px solid var(--primary);
-            z-index: 5000; display: none; transform: scaleX(-1);
-        }
+        #webcam-container { position: fixed; bottom: 80px; right: 20px; width: 200px; height: 150px; background: black; border-radius: 10px; overflow: hidden; border: 3px solid var(--primary); z-index: 5000; display: none; transform: scaleX(-1); }
         #webcam-feed { width: 100%; height: 100%; object-fit: cover; }
-        #camera-status {
-            position: absolute; bottom: 5px; left: 0; width: 100%; text-align: center;
-            color: white; font-size: 0.7rem; background: rgba(0,0,0,0.5); pointer-events: none;
-        }
+        #camera-status { position: absolute; bottom: 5px; left: 0; width: 100%; text-align: center; color: white; font-size: 0.7rem; background: rgba(0,0,0,0.5); pointer-events: none; }
         
-        #virtual-cursor {
-            position: fixed; top: 0; left: 0; width: 30px; height: 30px;
-            background: rgba(0, 194, 224, 0.6); border: 3px solid white;
-            border-radius: 50%; pointer-events: none; z-index: 9999; display: none; transform: translate(-50%, -50%);
-            box-shadow: 0 0 20px var(--info); transition: width 0.1s, height 0.1s, background 0.1s;
-        }
+        #virtual-cursor { position: fixed; top: 0; left: 0; width: 30px; height: 30px; background: rgba(0, 194, 224, 0.6); border: 3px solid white; border-radius: 50%; pointer-events: none; z-index: 9999; display: none; transform: translate(-50%, -50%); box-shadow: 0 0 20px var(--info); transition: width 0.1s, height 0.1s, background 0.1s; }
         #virtual-cursor.pinching { background: var(--success); width: 20px; height: 20px; border-color: lime; }
 
-        #ai-ghost-card {
-            position: fixed; width: 260px; padding: 15px; background: var(--surface);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-radius: 8px;
-            border: 3px solid var(--success); z-index: 9998;
-            pointer-events: none; opacity: 0.9; display: none; transform: rotate(5deg) scale(1.1);
-        }
+        #ai-ghost-card { position: fixed; width: 260px; padding: 15px; background: var(--surface); box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-radius: 8px; border: 3px solid var(--success); z-index: 9998; pointer-events: none; opacity: 0.9; display: none; transform: rotate(5deg) scale(1.1); }
 
-        .ai-toggle {
-            position: fixed; bottom: 20px; right: 20px; background: var(--text); color: var(--bg); padding: 12px 24px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 5001; display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;
-        }
+        .ai-toggle { position: fixed; bottom: 20px; right: 20px; background: var(--text); color: var(--bg); padding: 12px 24px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 5001; display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer; }
 
         /* MODAL Y TABS */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(2px); }
@@ -120,6 +111,8 @@
         .board-item:hover { background: rgba(0,0,0,0.05); }
         .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: bold; }
         .badge-new { background: var(--danger); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; }
+        
+        .bell-count { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px; display: none; }
     </style>
 </head>
 <body>
@@ -129,24 +122,21 @@
         <strong id="ghost-title">Tarea</strong>
         <div style="font-size:0.8rem; margin-top:5px; color:var(--text-sub);">Suelta los dedos para dejar caer</div>
     </div>
-    
     <div id="webcam-container">
         <video id="webcam-feed" autoplay playsinline></video>
         <div id="camera-status">Iniciando...</div>
     </div>
-    
     <div id="toast" onclick="openToastBoard()">
         <strong id="toast-title">Notificación</strong>
         <div id="toast-msg"></div>
-        <div style="font-size:0.7rem; opacity:0.8; margin-top:5px;">Clic para abrir</div>
     </div>
 
     <button class="ai-toggle" onclick="window.toggleAI()">👁️ Activar Cámara</button>
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="text-align:center; color:white;">Pro-Task v42</h2>
-            <p style="text-align:center; color:white; opacity:0.8;">Vision + Alarms</p>
+            <h2 style="text-align:center; color:white;">Pro-Task v43</h2>
+            <p style="text-align:center; color:white; opacity:0.8;">Omni Version</p>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button class="btn-primary" style="width:100%; margin-top:10px; background:white; color:var(--primary);" onclick="window.login()">Entrar</button>
@@ -172,9 +162,13 @@
             <header>
                 <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar..." onkeyup="window.filterCards(this.value)"></div>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <div class="bell-container" onclick="window.openUnread()">
+                    <button class="btn-ghost" onclick="window.exportCSV()">📊 Export</button>
+                    <button class="btn-ghost" onclick="window.openStats()">📈 Stats</button>
+                    
+                    <div style="position:relative; cursor:pointer;" onclick="window.openUnread()">
                         🔔 <span id="bell-count" class="bell-count">0</span>
                     </div>
+                    
                     <button class="btn-ghost" onclick="window.toggleTheme()">🌓</button>
                     <span id="user-display" style="font-size:0.8rem;"></span>
                     <button class="btn-ghost" onclick="window.logout()">Salir</button>
@@ -213,16 +207,23 @@
             <div id="tab-details">
                 <div class="task-grid">
                     <div>
-                        <label style="font-size:0.8rem; color:var(--text-sub);">Etiqueta</label>
+                        <label style="font-size:0.8rem; color:var(--text-sub);">Prioridad/Etiqueta</label>
                         <select id="m-tag" onchange="window.updateTask()">
-                            <option value="">Ninguna</option>
-                            <option value="urgent">🔥 Urgente</option>
+                            <option value="low">🟢 Baja</option>
+                            <option value="medium">🟡 Media</option>
+                            <option value="high">🔴 Alta</option>
+                            <option value="urgent">🔥 URGENTE</option>
                             <option value="bug">🐛 Bug</option>
+                            <option value="feature">✨ Feature</option>
                         </select>
                     </div>
                     <div>
                         <label style="font-size:0.8rem; color:var(--text-sub);">Vencimiento</label>
                         <input type="date" id="m-due" onchange="window.updateTask()">
+                    </div>
+                    <div>
+                        <label style="font-size:0.8rem; color:var(--text-sub);">Asignar a</label>
+                        <select id="m-assignee" onchange="window.updateTask()"></select>
                     </div>
                     <div>
                         <label style="font-size:0.8rem; color:var(--text-sub);">Cronómetro</label>
@@ -287,6 +288,14 @@
         </div>
     </div>
 
+    <div id="stats-modal" class="overlay" style="display:none;">
+        <div class="box">
+            <h3>Estadísticas</h3>
+            <div id="stats-content"></div>
+            <button class="btn-ghost" style="width:100%; margin-top:10px;" onclick="window.closeModals()">Cerrar</button>
+        </div>
+    </div>
+
     <div id="trash-modal" class="overlay" style="display:none;">
         <div class="box modal-lg">
             <h3>Papelera</h3>
@@ -300,7 +309,6 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, where, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // CREDENCIALES
         const firebaseConfig = {
             apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
             authDomain: "trello-d2532.firebaseapp.com",
@@ -339,13 +347,11 @@
 
         // --- CORE & NOTIFICATIONS ---
         function initDashboard() {
-            // Mis Proyectos
             onSnapshot(query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid)), snap => {
                 _id('my-boards').innerHTML = '';
                 snap.forEach(d => { if(!d.data().deleted) _id('my-boards').innerHTML += renderBoardItem(d.id, d.data()); });
             });
 
-            // Compartidos (CON ALERTAS RESTAURADAS)
             const qShared = query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email));
             let isFirstLoad = true;
 
@@ -354,7 +360,6 @@
                 container.innerHTML = '';
                 let unreadCount = 0;
 
-                // Detectar Nuevas Invitaciones (Toast)
                 snap.docChanges().forEach(change => {
                     if (change.type === "added" && !isFirstLoad) {
                         const bData = change.doc.data();
@@ -373,14 +378,8 @@
                     }
                 });
 
-                // Actualizar Campana
                 const bell = _id('bell-count');
-                if (unreadCount > 0) {
-                    bell.style.display = 'block';
-                    bell.innerText = unreadCount;
-                } else {
-                    bell.style.display = 'none';
-                }
+                if (unreadCount > 0) { bell.style.display = 'block'; bell.innerText = unreadCount; } else { bell.style.display = 'none'; }
                 isFirstLoad = false;
             });
         }
@@ -392,7 +391,6 @@
             </div>`;
         };
 
-        // --- BOARD LOGIC ---
         window.createBoard = async () => {
             const name = prompt("Nombre:"); if(!name) return;
             const res = await addDoc(collection(db, 'boards'), {
@@ -404,15 +402,11 @@
 
         window.openBoard = (id, isShared = false) => {
             currentBoardId = id;
-            
-            // Marcar como leído
             if (isShared && !seenBoards.includes(id)) {
                 seenBoards.push(id);
                 localStorage.setItem('seenBoards', JSON.stringify(seenBoards));
-                // Forzar actualización visual simple
                 _id('bell-count').style.display = 'none'; 
             }
-
             onSnapshot(doc(db, 'boards', id), snap => {
                 if(!snap.exists() || snap.data().deleted) return _id('kanban').innerHTML = '<p>No disponible</p>';
                 boardData = snap.data();
@@ -447,21 +441,25 @@
         }
 
         const createCard = (task, col) => {
-            const el = document.createElement('div'); el.className = 'card'; el.draggable = true;
+            const el = document.createElement('div'); el.className = `card ${task.tag || 'low'}`; el.draggable = true;
             el.setAttribute('data-task-id', task.id); el.setAttribute('data-col', col);
             el.ondragstart = e => e.dataTransfer.setData('text', JSON.stringify({id: task.id, src: col}));
             el.onclick = () => window.openTaskModal(task, col);
             
             let html = `<strong>${task.title}</strong>`;
+            
+            // TAGS VISUALES
+            if(task.tag === 'urgent') html += ` <span class="tag urgent">🔥</span>`;
+            if(task.tag === 'bug') html += ` <span class="tag bug">🐛</span>`;
+
             html += `<div class="card-meta">`;
             
-            // LÓGICA DE ALARMAS DE VENCIMIENTO
+            // ALARMAS
             if(task.due) {
                 const today = new Date().toISOString().split('T')[0];
                 let cls = '';
-                if (task.due < today && col !== 'done') cls = 'overdue'; // Vencido
-                else if (task.due === today && col !== 'done') cls = 'today'; // Hoy
-                
+                if (task.due < today && col !== 'done') cls = 'overdue';
+                else if (task.due === today && col !== 'done') cls = 'today';
                 html += `<span class="meta-badge ${cls}">📅 ${task.due.slice(5)}</span>`;
             }
             
@@ -469,11 +467,17 @@
                 const done = task.checklist.filter(c => c.done).length;
                 html += `<span class="meta-badge">☑ ${done}/${task.checklist.length}</span>`;
             }
-            if(task.timeLog) {
-                const h = Math.floor(task.timeLog / 3600);
-                html += `<span class="meta-badge">⏱️ ${h}h</span>`;
+            if(task.assignedTo) {
+                html += `<div class="avatar" title="${task.assignedTo}">${task.assignedTo.substring(0,2).toUpperCase()}</div>`;
             }
             html += `</div>`;
+            
+            // PROGRESO VISUAL
+            if(task.checklist && task.checklist.length > 0) {
+                const pct = Math.round((task.checklist.filter(c => c.done).length / task.checklist.length) * 100);
+                html += `<div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>`;
+            }
+
             el.innerHTML = html;
             return el;
         };
@@ -481,7 +485,7 @@
         // --- TASK LOGIC ---
         window.addTask = (col) => {
             const t = prompt("Nueva Tarea:"); if(!t) return;
-            const newTask = { id: Date.now().toString(), title: t, desc: '', tag: '', due: '', checklist: [], comments: [], files: [], timeLog: 0 };
+            const newTask = { id: Date.now().toString(), title: t, desc: '', tag: 'low', due: '', checklist: [], comments: [], files: [], timeLog: 0 };
             boardData.columns[col].push(newTask); save();
         };
 
@@ -499,9 +503,18 @@
         window.openTaskModal = (task, col) => {
             editTask = task; editCol = col;
             _id('task-modal').style.display = 'flex';
-            _id('m-title').value = task.title; _id('m-desc').value = task.desc || '';
-            _id('m-due').value = task.due || ''; _id('m-tag').value = task.tag || '';
+            _id('m-title').value = task.title;
+            _id('m-desc').value = task.desc || '';
+            _id('m-due').value = task.due || '';
+            _id('m-tag').value = task.tag || 'low';
             _id('m-cover-url').value = task.cover || '';
+            
+            // ASIGNACIÓN
+            const sel = _id('m-assignee'); sel.innerHTML = '<option value="">Sin Asignar</option>';
+            (boardData.members || [currentUser.email]).forEach(m => {
+                sel.innerHTML += `<option value="${m}" ${task.assignedTo===m?'selected':''}>${m}</option>`;
+            });
+
             if(task.cover) { _id('m-cover-preview').style.display='block'; _id('m-cover-preview').style.backgroundImage=`url('${task.cover}')`; }
             else _id('m-cover-preview').style.display='none';
             updateTimerDisplay(); renderChecklist(); renderComments(); renderFiles();
@@ -510,8 +523,11 @@
 
         window.updateTask = () => {
             if(!editTask) return;
-            editTask.title = _id('m-title').value; editTask.desc = _id('m-desc').value;
-            editTask.due = _id('m-due').value; editTask.tag = _id('m-tag').value;
+            editTask.title = _id('m-title').value;
+            editTask.desc = _id('m-desc').value;
+            editTask.due = _id('m-due').value;
+            editTask.tag = _id('m-tag').value;
+            editTask.assignedTo = _id('m-assignee').value;
             editTask.cover = _id('m-cover-url').value; save();
         };
 
@@ -520,7 +536,7 @@
             ['details','comments','files'].forEach(t => _id('tab-'+t).style.display = (t===tab?'block':'none'));
         };
 
-        // SUB-FUNCIONES
+        // SUB-FEATURES
         window.addCheck = () => {
             const val = _id('m-new-check').value; if(!val) return;
             if(!editTask.checklist) editTask.checklist = [];
@@ -572,6 +588,20 @@
             window.closeModals(); renderKanban(); save();
         };
 
+        // --- EXPORT & STATS ---
+        window.exportCSV = () => {
+            let csv = "ID,Titulo,Columna,Asignado\n";
+            for(let col in boardData.columns) { boardData.columns[col].forEach(t => csv += `${t.id},"${t.title}",${col},${t.assignedTo}\n`); }
+            const blob = new Blob([csv], { type: 'text/csv' }); const a = document.createElement('a'); a.href = window.URL.createObjectURL(blob); a.download = 'board.csv'; a.click();
+        };
+        window.openStats = () => {
+            let total = 0, done = 0;
+            for(let c in boardData.columns) total += boardData.columns[c].length;
+            done = boardData.columns['done'].length;
+            _id('stats-content').innerHTML = `<p>Total: <b>${total}</b></p><p>Finalizado: <b>${done}</b></p><div class="progress-bar" style="height:20px;"><div class="progress-fill" style="width:${total?(done/total)*100:0}%"></div></div>`;
+            _id('stats-modal').style.display = 'flex';
+        };
+
         // --- UTILS & TOAST ---
         const _id = (id) => document.getElementById(id);
         const _val = (id) => document.getElementById(id).value;
@@ -619,11 +649,9 @@
         window.toggleAI = () => {
             const container = _id('webcam-container');
             const cursor = _id('virtual-cursor');
-            
             if (isAiActive) {
                 if (videoElement && videoElement.srcObject) { videoElement.srcObject.getTracks().forEach(track => track.stop()); }
-                container.style.display = 'none'; cursor.style.display = 'none'; isAiActive = false;
-                return;
+                container.style.display = 'none'; cursor.style.display = 'none'; isAiActive = false; return;
             }
             container.style.display = 'block'; cursor.style.display = 'block'; isAiActive = true;
             _id('camera-status').innerText = "Cargando modelo...";
