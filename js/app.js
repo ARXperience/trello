@@ -1,8 +1,16 @@
+/* =========================================
+   IMPORTACIONES DE FIREBASE (MODULAR SDK)
+   ========================================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
-import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+import { 
+    getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, 
+    onAuthStateChanged, signOut, sendPasswordResetEmail 
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
+import { 
+    getFirestore, doc, onSnapshot, setDoc 
+} from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
 
-// --- CONFIGURACIÓN DE TU FIREBASE ---
+// --- TU CONFIGURACIÓN DE FIREBASE (PROPORCIONADA) ---
 const firebaseConfig = {
     apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
     authDomain: "trello-d2532.firebaseapp.com",
@@ -13,11 +21,14 @@ const firebaseConfig = {
     measurementId: "G-4L4P7E6TZC"
 };
 
+// Inicialización de Servicios
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// MIEMBROS DE LA EMPRESA
+/* =========================================
+   ESTADO GLOBAL Y CONFIGURACIÓN DE EQUIPO
+   ========================================= */
 const COMPANY_MEMBERS = [
     { id: 'u1', name: 'Juan', initial: 'JP', color: '#e91e63' },
     { id: 'u2', name: 'Maria', initial: 'ML', color: '#9c27b0' },
@@ -25,74 +36,104 @@ const COMPANY_MEMBERS = [
     { id: 'u4', name: 'Ana', initial: 'AV', color: '#4caf50' }
 ];
 
-let boardData = { todo: [], 'in-progress': [], done: [], history: [], settings: { theme: 'light' } };
+let boardData = { 
+    todo: [], 'in-progress': [], done: [], 
+    history: [], 
+    settings: { theme: 'light' } 
+};
+
 let currentEditingId = null;
 
-// --- GESTIÓN DE SESIÓN ---
+/* =========================================
+   SISTEMA DE AUTENTICACIÓN
+   ========================================= */
 const btnLogin = document.getElementById('btn-login');
 const btnSignup = document.getElementById('btn-signup');
 const btnLogout = document.getElementById('btn-logout');
 const btnReset = document.getElementById('btn-reset');
+const errorDiv = document.getElementById('auth-error');
 
-btnLogin.onclick = () => {
+// Iniciar Sesión
+btnLogin.onclick = async () => {
     const email = document.getElementById('login-email').value;
     const pass = document.getElementById('login-pass').value;
-    signInWithEmailAndPassword(auth, email, pass).catch(e => document.getElementById('auth-error').innerText = "Error: Credenciales inválidas");
+    try {
+        await signInWithEmailAndPassword(auth, email, pass);
+    } catch (e) { errorDiv.innerText = "Error: Credenciales inválidas"; }
 };
 
-btnSignup.onclick = () => {
+// Registro
+btnSignup.onclick = async () => {
     const email = document.getElementById('login-email').value;
     const pass = document.getElementById('login-pass').value;
-    if(pass.length < 6) return alert("Contraseña muy corta");
-    createUserWithEmailAndPassword(auth, email, pass).catch(e => document.getElementById('auth-error').innerText = "Error: " + e.message);
+    if(pass.length < 6) { errorDiv.innerText = "Mínimo 6 caracteres"; return; }
+    try {
+        await createUserWithEmailAndPassword(auth, email, pass);
+    } catch (e) { errorDiv.innerText = "Error: " + e.message; }
 };
 
+// Cerrar Sesión
 btnLogout.onclick = () => signOut(auth);
 
-btnReset.onclick = () => {
+// Recuperar Contraseña
+btnReset.onclick = async () => {
     const email = document.getElementById('login-email').value;
-    if(!email) return alert("Ingresa tu correo primero");
-    sendPasswordResetEmail(auth, email).then(() => alert("Enlace de recuperación enviado"));
+    if(!email) { alert("Ingresa tu correo primero"); return; }
+    try {
+        await sendPasswordResetEmail(auth, email);
+        alert("Enlace de recuperación enviado al correo.");
+    } catch (e) { alert("Error: " + e.message); }
 };
 
+// Monitor de Sesión
 onAuthStateChanged(auth, user => {
     if (user) {
         document.getElementById('auth-container').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         document.getElementById('user-display').innerText = user.email;
-        syncData();
+        startRealtimeSync();
     } else {
         document.getElementById('auth-container').style.display = 'flex';
         document.getElementById('app-container').style.display = 'none';
     }
 });
 
-// --- SINCRONIZACIÓN CLOUD ---
-function syncData() {
-    onSnapshot(doc(db, "boards", "master"), (snap) => {
+/* =========================================
+   SINCRONIZACIÓN CLOUD (TIEMPO REAL)
+   ========================================= */
+function startRealtimeSync() {
+    onSnapshot(doc(db, "boards", "master-data"), (snap) => {
         if (snap.exists()) {
             boardData = snap.data();
             renderBoard();
             renderHistory();
-            document.body.className = boardData.settings.theme + '-theme';
+            document.body.className = (boardData.settings?.theme || 'light') + '-theme';
         }
     });
 }
 
 async function save() {
-    await setDoc(doc(db, "boards", "master"), boardData);
+    try {
+        await setDoc(doc(db, "boards", "master-data"), boardData);
+    } catch (e) { console.error("Error al guardar:", e); }
 }
 
-// --- TABLERO Y TAREAS ---
+/* =========================================
+   LÓGICA DEL TABLERO (RENDERING)
+   ========================================= */
 function renderBoard() {
-    ['todo', 'in-progress', 'done'].forEach(col => {
+    const cols = ['todo', 'in-progress', 'done'];
+    cols.forEach(col => {
         const container = document.getElementById(col);
         container.innerHTML = '';
         (boardData[col] || []).forEach(card => {
             const cardEl = document.createElement('div');
             cardEl.className = 'card';
+            cardEl.id = card.id;
             cardEl.draggable = true;
             cardEl.onclick = () => openModal(card.id);
+            
+            // Eventos Drag nativos
             cardEl.ondragstart = (e) => e.dataTransfer.setData("text", card.id);
 
             const mIcons = (card.members || []).map(mId => {
@@ -103,8 +144,8 @@ function renderBoard() {
             cardEl.innerHTML = `
                 <div class="card-tags">${(card.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}</div>
                 <strong>${card.title}</strong>
-                <div class="card-footer" style="display:flex; justify-content:space-between; margin-top:10px;">
-                    <small>${card.date ? '📅 '+card.date : ''}</small>
+                <div class="card-footer">
+                    <small>${card.date ? '📅 ' + card.date : ''}</small>
                     <div class="avatar-stack">${mIcons}</div>
                 </div>
             `;
@@ -114,57 +155,100 @@ function renderBoard() {
     updateStats();
 }
 
-window.addNewCard = (btn) => {
-    const input = btn.parentElement.querySelector('.card-input');
-    const colId = btn.closest('.list').dataset.id;
-    if (!input.value.trim()) return;
-    const newCard = { id: 'c'+Date.now(), title: input.value, desc: '', tags: [], members: [], date: '', checklist: [] };
-    boardData[colId].push(newCard);
-    addLog(`Nueva tarea: ${newCard.title}`);
-    input.value = ''; save();
-};
+// Añadir Nueva Tarjeta
+document.querySelectorAll('.btn-add-task').forEach(btn => {
+    btn.onclick = () => {
+        const input = btn.parentElement.querySelector('.card-input');
+        const colId = btn.closest('.list').dataset.id;
+        if (!input.value.trim()) return;
 
-// --- DRAG & DROP ---
-document.querySelectorAll('.list').forEach(list => {
-    list.ondragover = e => e.preventDefault();
-    list.ondrop = e => {
-        const id = e.dataTransfer.getData("text");
-        const targetCol = list.dataset.id;
-        let cardObj, oldCol;
-        ['todo', 'in-progress', 'done'].forEach(c => {
-            const idx = boardData[c].findIndex(x => x.id === id);
-            if(idx !== -1) { oldCol = c; cardObj = boardData[c].splice(idx, 1)[0]; }
-        });
-        if(cardObj) { boardData[targetCol].push(cardObj); addLog(`Movido "${cardObj.title}" a ${targetCol}`); save(); }
+        const newCard = {
+            id: 'c' + Date.now(),
+            title: input.value,
+            desc: '',
+            tags: [],
+            members: [],
+            date: '',
+            checklist: []
+        };
+
+        boardData[colId].push(newCard);
+        addLog(`Nueva tarea: ${newCard.title}`);
+        input.value = '';
+        save();
     };
 });
 
-// --- MODAL Y DETALLES ---
+/* =========================================
+   DRAG & DROP (MANEJO DE COLUMNAS)
+   ========================================= */
+document.querySelectorAll('.list').forEach(list => {
+    list.ondragover = e => e.preventDefault();
+    list.ondrop = e => {
+        const cardId = e.dataTransfer.getData("text");
+        const targetCol = list.dataset.id;
+        let cardObj, oldCol;
+
+        ['todo', 'in-progress', 'done'].forEach(col => {
+            const idx = boardData[col].findIndex(c => c.id === cardId);
+            if(idx !== -1) { 
+                oldCol = col;
+                cardObj = boardData[col].splice(idx, 1)[0]; 
+            }
+        });
+
+        if (cardObj && oldCol !== targetCol) {
+            boardData[targetCol].push(cardObj);
+            addLog(`Movido "${cardObj.title}" a ${targetCol}`);
+            save();
+        }
+    };
+});
+
+/* =========================================
+   MODAL DE EDICIÓN Y DETALLES
+   ========================================= */
+const modal = document.getElementById('card-modal');
+const closeModalBtn = document.querySelector('.close-modal');
+
 function openModal(id) {
     currentEditingId = id;
     const card = findCard(id);
     document.getElementById('modal-title').value = card.title;
     document.getElementById('modal-desc').value = card.desc;
     document.getElementById('modal-date').value = card.date;
-    renderMembers(card); renderTags(card); renderChecklist(card);
-    document.getElementById('card-modal').style.display = 'block';
+    
+    renderModalMembers(card);
+    renderModalTags(card);
+    renderChecklist(card);
+    modal.style.display = 'block';
 }
 
-function renderMembers(card) {
-    const cont = document.getElementById('modal-member-list');
+closeModalBtn.onclick = () => modal.style.display = 'none';
+
+// Guardado automático en Modal
+document.getElementById('modal-title').onblur = (e) => { findCard(currentEditingId).title = e.target.value; save(); };
+document.getElementById('modal-desc').onblur = (e) => { findCard(currentEditingId).desc = e.target.value; save(); };
+document.getElementById('modal-date').onchange = (e) => { findCard(currentEditingId).date = e.target.value; save(); };
+
+// Gestión de Miembros en Modal
+function renderModalMembers(card) {
+    const cont = document.getElementById('modal-members');
     cont.innerHTML = COMPANY_MEMBERS.map(m => `
         <div class="avatar avatar-selectable ${card.members.includes(m.id) ? 'selected' : ''}" 
-             style="background:${m.color}" onclick="toggleM('${m.id}')">${m.initial}</div>
+             style="background:${m.color}" onclick="toggleMemberAssignment('${m.id}')">${m.initial}</div>
     `).join('');
 }
 
-window.toggleM = (mId) => {
+window.toggleMemberAssignment = (mId) => {
     const card = findCard(currentEditingId);
     const idx = card.members.indexOf(mId);
-    idx === -1 ? card.members.push(mId) : card.members.splice(idx,1);
-    renderMembers(card); renderBoard(); save();
+    idx === -1 ? card.members.push(mId) : card.members.splice(idx, 1);
+    renderModalMembers(card);
+    save();
 };
 
+// Checklist
 function renderChecklist(card) {
     const cont = document.getElementById('modal-checklist');
     cont.innerHTML = (card.checklist || []).map((item, i) => `
@@ -173,83 +257,116 @@ function renderChecklist(card) {
             <span>${item.text}</span>
         </div>
     `).join('');
-    const doneCount = card.checklist.filter(x => x.done).length;
-    const pc = card.checklist.length ? Math.round((doneCount/card.checklist.length)*100) : 0;
-    document.getElementById('progress-fill').style.width = pc+'%';
-    document.getElementById('check-percent').innerText = pc+'%';
+    
+    const done = card.checklist.filter(x => x.done).length;
+    const pc = card.checklist.length ? Math.round((done/card.checklist.length)*100) : 0;
+    document.getElementById('progress-fill').style.width = pc + '%';
+    document.getElementById('check-percent').innerText = pc + '%';
 }
 
 window.toggleCheck = (i) => {
     const card = findCard(currentEditingId);
     card.checklist[i].done = !card.checklist[i].done;
-    renderChecklist(card); renderBoard(); save();
+    renderChecklist(card);
+    save();
 };
 
 document.getElementById('add-check-btn').onclick = () => {
     const input = document.getElementById('new-check-input');
     if(!input.value) return;
     findCard(currentEditingId).checklist.push({ text: input.value, done: false });
-    input.value = ''; renderChecklist(findCard(currentEditingId)); renderBoard(); save();
+    input.value = '';
+    renderChecklist(findCard(currentEditingId));
+    save();
 };
 
-// --- UTILIDADES ---
+// Tags
+document.getElementById('tag-input').onkeydown = (e) => {
+    if(e.key === 'Enter') {
+        const val = e.target.value.trim();
+        const card = findCard(currentEditingId);
+        if(val && !card.tags.includes(val)) {
+            card.tags.push(val);
+            e.target.value = '';
+            renderModalTags(card);
+            save();
+        }
+    }
+};
+
+function renderModalTags(card) {
+    document.getElementById('modal-tags').innerHTML = (card.tags || []).map(t => `<span class="tag">${t}</span>`).join('');
+}
+
+/* =========================================
+   UTILIDADES (LOGS, BUSQUEDA, EXPORTAR)
+   ========================================= */
 function findCard(id) {
     return [...boardData.todo, ...boardData['in-progress'], ...boardData.done].find(c => c.id === id);
 }
 
 function addLog(action) {
     boardData.history.unshift({ time: new Date().toLocaleTimeString(), action });
-    if(boardData.history.length > 20) boardData.history.pop();
+    if(boardData.history.length > 25) boardData.history.pop();
 }
 
 function renderHistory() {
-    document.getElementById('history-log').innerHTML = boardData.history.map(h => `<div><b>${h.time}</b>: ${h.action}</div>`).join('');
+    document.getElementById('history-log').innerHTML = boardData.history.map(h => `
+        <div class="log-entry"><b>${h.time}</b>: ${h.action}</div>
+    `).join('');
 }
 
 function updateStats() {
     const total = boardData.todo.length + boardData['in-progress'].length + boardData.done.length;
-    document.getElementById('board-stats').innerHTML = `<span>Tareas: ${total}</span> | <span>Completadas: ${boardData.done.length}</span>`;
+    document.getElementById('board-stats').innerHTML = `
+        <span>Tareas: ${total}</span> | <span>Completadas: ${boardData.done.length}</span>
+    `;
 }
 
-// Eventos de interfaz
-document.querySelector('.close-modal').onclick = () => document.getElementById('card-modal').style.display = 'none';
-document.getElementById('btn-theme').onclick = () => { boardData.settings.theme = boardData.settings.theme === 'light' ? 'dark' : 'light'; save(); };
+// Búsqueda
+document.getElementById('board-search').onkeyup = (e) => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.card').forEach(el => {
+        const c = findCard(el.id);
+        const match = c.title.toLowerCase().includes(q) || 
+                      COMPANY_MEMBERS.some(m => c.members.includes(m.id) && m.name.toLowerCase().includes(q));
+        el.style.display = match ? 'block' : 'none';
+    });
+};
+
+// Temas y Panel de Logs
+document.getElementById('btn-theme').onclick = () => {
+    boardData.settings.theme = boardData.settings.theme === 'light' ? 'dark' : 'light';
+    save();
+};
+
 document.getElementById('btn-toggle-log').onclick = () => document.getElementById('history-panel').classList.toggle('active');
 document.getElementById('close-history').onclick = () => document.getElementById('history-panel').classList.remove('active');
 
-document.getElementById('modal-title').onblur = e => { findCard(currentEditingId).title = e.target.value; save(); };
-document.getElementById('modal-desc').onblur = e => { findCard(currentEditingId).desc = e.target.value; save(); };
-document.getElementById('modal-date').onchange = e => { findCard(currentEditingId).date = e.target.value; save(); };
-
-window.addTag = () => {
-    const input = document.getElementById('tag-input');
-    const card = findCard(currentEditingId);
-    if(input.value && !card.tags.includes(input.value)) { card.tags.push(input.value); renderTags(card); renderBoard(); save(); }
-    input.value = '';
-};
-
-function renderTags(card) {
-    document.getElementById('modal-tags').innerHTML = card.tags.map(t => `<span class="tag">${t}</span>`).join('');
-}
-
-window.exportToCSV = () => {
-    let csv = "Columna,Tarea,Fecha,Tags\n";
-    ['todo','in-progress','done'].forEach(col => boardData[col].forEach(c => csv += `${col},${c.title},${c.date},${c.tags.join('|')}\n`));
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'})); a.download = 'board.csv'; a.click();
-};
-
-window.archiveCardFromModal = () => {
-    if(confirm("¿Eliminar tarea?")) {
-        ['todo','in-progress','done'].forEach(col => boardData[col] = boardData[col].filter(c => c.id !== currentEditingId));
-        document.getElementById('card-modal').style.display = 'none'; save();
-    }
-};
-
-window.searchCards = () => {
-    const q = document.getElementById('board-search').value.toLowerCase();
-    document.querySelectorAll('.card').forEach(el => {
-        const c = findCard(el.id);
-        const match = c.title.toLowerCase().includes(q) || COMPANY_MEMBERS.some(m => c.members.includes(m.id) && m.name.toLowerCase().includes(q));
-        el.style.display = match ? 'block' : 'none';
+// Exportar CSV
+document.getElementById('btn-export').onclick = () => {
+    let csv = "Columna,Tarea,Fecha,Miembros\n";
+    ['todo','in-progress','done'].forEach(col => {
+        boardData[col].forEach(c => {
+            const ms = c.members.map(mId => COMPANY_MEMBERS.find(u => u.id === mId).name).join('|');
+            csv += `${col},${c.title},${c.date},${ms}\n`;
+        });
     });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Reporte_Empresa.csv';
+    a.click();
+};
+
+// Archivar
+document.getElementById('btn-archive').onclick = () => {
+    if(confirm("¿Eliminar tarea definitivamente?")) {
+        ['todo','in-progress','done'].forEach(col => {
+            boardData[col] = boardData[col].filter(c => c.id !== currentEditingId);
+        });
+        modal.style.display = 'none';
+        addLog("Tarea eliminada");
+        save();
+    }
 };
