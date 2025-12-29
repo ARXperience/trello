@@ -1,40 +1,367 @@
+/* =========================================
+   VARIABLES Y RESET
+   ========================================= */
 :root {
-    --bg-main: #0079bf; --bg-list: #ebecf0; --text-main: #172b4d;
-    --card-bg: #ffffff; --accent: #5aac44; --error: #eb5a46; --sidebar: #f4f5f7;
+    --primary: #0079bf;
+    --primary-hover: #026aa7;
+    --bg-body: #ffffff;
+    --bg-sidebar: #f4f5f7;
+    --bg-list: #ebecf0;
+    --text-main: #172b4d;
+    --border: #dfe1e6;
+    --card-shadow: 0 1px 0 rgba(9,30,66,.25);
+    
+    /* Prioridades */
+    --low: #61bd4f;
+    --medium: #f2d600;
+    --high: #eb5a46;
 }
-.dark-theme {
-    --bg-main: #1d2125; --bg-list: #101204; --text-main: #b6c2cf; --card-bg: #22272b; --sidebar: #1d2125;
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    color: var(--text-main);
+    background: var(--bg-body);
+    height: 100vh;
+    display: flex;
+    overflow: hidden; /* Evita scroll en el body, usamos scroll interno */
 }
 
-body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-main); margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text-main); }
+/* =========================================
+   PANTALLAS DE CARGA Y LOGIN (Overlays)
+   ========================================= */
+.overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5000;
+}
 
-/* Sidebar de Carpetas */
-.sidebar { width: 280px; background: var(--sidebar); border-right: 1px solid rgba(0,0,0,0.1); display: flex; flex-direction: column; }
-.sidebar-header { padding: 20px; font-weight: bold; font-size: 0.8rem; color: #6b778c; text-transform: uppercase; }
-.folder-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
-.folder-item { padding: 10px 15px; margin-bottom: 5px; border-radius: 5px; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
-.folder-item:hover { background: rgba(0,0,0,0.05); }
-.folder-item.active { background: var(--bg-main); color: white; }
+.card {
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
 
-/* Dashboard */
-.main-content { flex-grow: 1; display: flex; flex-direction: column; }
-header { background: rgba(0,0,0,0.2); padding: 12px 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
-.board-area { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; }
+.auth-card input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: 2px solid var(--border);
+    border-radius: 4px;
+    font-size: 1rem;
+}
 
-/* Listas y Cards */
-.list { background: var(--bg-list); width: 280px; min-width: 280px; border-radius: 8px; padding: 12px; max-height: 90%; display: flex; flex-direction: column; }
-.cards-container { flex-grow: 1; overflow-y: auto; padding: 2px; }
-.card { background: var(--card-bg); padding: 12px; margin-bottom: 8px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: grab; border-left: 5px solid #ccc; }
-.card.high { border-left-color: var(--error); }
-.card.medium { border-left-color: #f2d600; }
-.card.low { border-left-color: var(--success); }
+.auth-card input:focus {
+    border-color: var(--primary);
+    outline: none;
+}
 
-/* Modal & Scroll */
-.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; padding: 20px; }
-.modal-content { background: #f4f5f7; margin: auto; width: 100%; max-width: 650px; max-height: 90vh; border-radius: 10px; overflow: hidden; position: relative; color: #333; }
-.modal-scroll { padding: 30px; max-height: calc(90vh - 40px); overflow-y: auto; }
+.btn-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
 
-/* Auth */
-.auth-overlay { position: fixed; inset: 0; background: var(--bg-main); display: flex; align-items: center; justify-content: center; z-index: 5000; }
-.auth-card { background: white; padding: 40px; border-radius: 10px; width: 340px; text-align: center; }
-.btn-primary { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; }
+.error-msg {
+    color: var(--high);
+    margin-top: 15px;
+    font-size: 0.9rem;
+}
+
+/* Spinner de Carga */
+.spinner {
+    border: 4px solid rgba(255,255,255,0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px auto;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.loader-content { color: white; text-align: center; }
+
+/* =========================================
+   LAYOUT PRINCIPAL (APP)
+   ========================================= */
+.app-layout {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 20px;
+}
+
+.sidebar-header {
+    padding: 15px 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #5e6c84;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    margin-top: 10px;
+}
+
+.folder-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.folder-item {
+    padding: 10px 15px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    transition: 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.folder-item:hover { background: rgba(9,30,66,.08); }
+.folder-item.active { background: #e4f0f6; color: var(--primary); font-weight: 600; }
+
+/* Main Content */
+.content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
+}
+
+header {
+    height: 60px;
+    padding: 0 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+}
+
+.header-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* =========================================
+   TABLERO KANBAN
+   ========================================= */
+.kanban-area {
+    flex-grow: 1;
+    background: var(--primary); /* Fondo azul tipo Trello */
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+    overflow-x: auto; /* Scroll horizontal */
+    align-items: flex-start;
+}
+
+.list {
+    background: var(--bg-list);
+    width: 280px;
+    min-width: 280px;
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+}
+
+.list h3 {
+    margin: 0 0 10px 0;
+    padding-left: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.cards-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    min-height: 10px;
+    padding: 2px; /* Espacio para el shadow */
+}
+
+/* Tarjeta individual */
+.kanban-card {
+    background: white;
+    border-radius: 4px;
+    box-shadow: var(--card-shadow);
+    padding: 10px;
+    margin-bottom: 8px;
+    cursor: grab;
+    border-left: 4px solid transparent;
+    font-size: 0.95rem;
+}
+
+.kanban-card:hover { background: #f8f9fa; }
+
+/* Colores de Prioridad */
+.kanban-card.low { border-left-color: var(--low); }
+.kanban-card.medium { border-left-color: var(--medium); }
+.kanban-card.high { border-left-color: var(--high); }
+
+.input-add-card {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+/* =========================================
+   MODALES
+   ========================================= */
+.modal {
+    display: none; /* Oculto por defecto */
+    position: fixed;
+    z-index: 2000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal.active { display: flex; }
+
+.modal-content {
+    background: #f4f5f7;
+    width: 600px;
+    max-width: 90%;
+    max-height: 90vh;
+    border-radius: 8px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.close-modal {
+    position: absolute;
+    right: 20px;
+    top: 15px;
+    font-size: 28px;
+    cursor: pointer;
+    color: #6b778c;
+}
+
+/* Inputs del Modal */
+#modal-title {
+    width: 100%;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border: 2px solid transparent;
+    background: transparent;
+    margin-bottom: 20px;
+    padding: 5px;
+}
+#modal-title:focus { background: white; border-color: var(--primary); outline: none; }
+
+#modal-desc {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+/* =========================================
+   BOTONES Y UTILIDADES
+   ========================================= */
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    flex: 1;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-secondary {
+    background: white;
+    color: var(--text-main);
+    border: 1px solid #ccc;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.btn-new {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 10px;
+    margin: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-small {
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: none;
+    background: var(--bg-list);
+    cursor: pointer;
+}
+
+.btn-logout {
+    padding: 6px 12px;
+    background: #eb5a46;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background: #eb5a46;
+    color: white;
+    border: none;
+    padding: 10px;
+    width: 100%;
+    border-radius: 4px;
+    margin-top: 20px;
+    cursor: pointer;
+}
+
+.empty-state {
+    color: rgba(255,255,255,0.8);
+    font-size: 1.2rem;
+    text-align: center;
+    width: 100%;
+    margin-top: 50px;
+}
+
+.row { margin-bottom: 15px; display: flex; gap: 10px; }
