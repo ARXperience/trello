@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v16.1 | Fix Compartidos</title>
+    <title>Pro-Task v17 | Notificaciones</title>
     <style>
         :root { --primary: #0079bf; --bg: #ffffff; --sidebar: #f4f5f7; --text: #172b4d; --success: #61bd4f; --danger: #eb5a46; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; color: var(--text); }
@@ -30,27 +30,37 @@
         .card.medium { border-left-color: #f2d600; }
         .card.high { border-left-color: var(--danger); }
         
-        /* Modales */
+        /* UI Elements */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; }
         .box { background: white; padding: 25px; border-radius: 8px; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
         .modal-lg { width: 500px; max-height: 90vh; overflow-y: auto; }
-        
         input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #dfe1e6; border-radius: 4px; box-sizing: border-box; }
         button { padding: 10px; width: 100%; background: var(--primary); color: white; border: none; cursor: pointer; margin-top: 10px; border-radius: 4px; font-weight: 600; }
         button.secondary { background: transparent; color: white; border: 1px solid rgba(255,255,255,0.4); width: auto; padding: 6px 12px; font-size: 0.9rem; margin: 0; }
         button.danger { background: var(--danger); }
         
-        /* Toast */
-        #toast { position: absolute; top: 60px; right: 20px; background: #333; color: white; padding: 10px 20px; border-radius: 4px; opacity: 0; transition: opacity 0.5s; pointer-events: none; z-index: 3000; }
+        /* --- SISTEMA DE NOTIFICACIONES --- */
+        #notification-area { position: fixed; top: 60px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { 
+            background: #172b4d; color: white; padding: 15px; border-radius: 4px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); width: 300px; 
+            pointer-events: auto; display: flex; align-items: center; gap: 10px;
+            animation: slideIn 0.3s ease-out; cursor: pointer;
+        }
+        .toast:hover { background: #091e42; }
+        .toast-icon { font-size: 1.2rem; }
+        .toast-content { flex: 1; font-size: 0.9rem; }
+        .toast-title { font-weight: bold; display: block; margin-bottom: 2px; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <div id="toast">Notificación</div>
+    <div id="notification-area"></div>
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v16.1</h2>
+            <h2 style="color:var(--primary); margin-top:0;">Pro-Task v17</h2>
             <p>Ingresa con tu correo</p>
             <input type="email" id="email" placeholder="Correo electrónico">
             <input type="password" id="password" placeholder="Contraseña">
@@ -132,7 +142,6 @@
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, query, where, orderBy, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // CONFIGURACIÓN (TUS LLAVES)
         const firebaseConfig = {
             apiKey: "AIzaSyAQnrIODc_2Qv_Snow02X-Sq8_PHwMoRVk",
             authDomain: "trello-d2532.firebaseapp.com",
@@ -150,8 +159,12 @@
         let currentBoardId = null;
         let boardData = null;
         let unsubscribeBoard = null;
+        
+        // Memoria para detectar nuevos compartidos
+        let knownSharedBoards = new Set();
+        let isFirstLoadShared = true;
 
-        // AUTH CON NORMALIZACIÓN (MINÚSCULAS)
+        // AUTH
         window.login = () => signInWithEmailAndPassword(auth, _val('email').toLowerCase(), _val('password')).catch(e => _err(e.message));
         window.register = () => createUserWithEmailAndPassword(auth, _val('email').toLowerCase(), _val('password')).catch(e => _err(e.message));
         window.logout = () => { localStorage.removeItem('lastBoard'); signOut(auth); location.reload(); };
@@ -169,19 +182,33 @@
             }
         });
 
-        // DASHBOARD
         function initDashboard() {
-            // 1. MIS PROYECTOS (Soy Owner)
-            // Aquí SÍ ordenamos porque el filtro es simple
-            const qMy = query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+            // 1. MIS PROYECTOS (Corrección: Sin orderBy para evitar error de índice)
+            const qMy = query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid));
             onSnapshot(qMy, snap => renderList('my-boards', snap));
 
-            // 2. COMPARTIDOS CONMIGO
-            // Aquí QUITAMOS el 'orderBy' para evitar errores de índice. Saldrán desordenados pero saldrán.
+            // 2. COMPARTIDOS CONMIGO (Lógica de notificación)
             const qShared = query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email));
-            onSnapshot(qShared, snap => renderList('shared-boards', snap, true));
+            onSnapshot(qShared, snap => {
+                renderList('shared-boards', snap, true);
+                
+                // Detección de nuevos compartidos
+                snap.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        const board = change.doc.data();
+                        const boardId = change.doc.id;
+                        
+                        // Si no es la carga inicial y no lo conocíamos
+                        if (!isFirstLoadShared && !knownSharedBoards.has(boardId)) {
+                            notify("Nuevo Proyecto Compartido", `Te han invitado a "${board.name}"`, boardId);
+                        }
+                        knownSharedBoards.add(boardId);
+                    }
+                });
+                isFirstLoadShared = false;
+            });
 
-            // Restaurar
+            // Restaurar sesión
             const lastId = localStorage.getItem('lastBoard');
             if (lastId) openBoard(lastId);
         }
@@ -189,23 +216,57 @@
         function renderList(elementId, snap, isShared = false) {
             const container = document.getElementById(elementId);
             container.innerHTML = '';
+            
             if (snap.empty) {
                 container.innerHTML = '<div style="padding:10px; color:#999; font-size:0.8rem;">Ninguno</div>';
                 return;
             }
-            snap.forEach(d => {
-                const data = d.data();
-                if (isShared && data.ownerId === currentUser.uid) return; // No mostrar duplicados
+
+            // Convertir a array para ordenar manualmente en JS (ya que quitamos el orderBy de Firestore)
+            let docs = [];
+            snap.forEach(d => docs.push({id: d.id, ...d.data()}));
+            // Ordenar por fecha (más reciente primero)
+            docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+            docs.forEach(data => {
+                // Filtro visual para no duplicar mis propios tableros en la lista de compartidos
+                if (isShared && data.ownerId === currentUser.uid) return;
 
                 const div = document.createElement('div');
-                div.className = `board-item ${currentBoardId === d.id ? 'active' : ''}`;
+                div.className = `board-item ${currentBoardId === data.id ? 'active' : ''}`;
                 div.innerHTML = `
                     <span>${isShared ? '👥' : '📁'} ${data.name}</span>
                     ${isShared ? '<span class="badge">Compartido</span>' : ''}
                 `;
-                div.onclick = () => openBoard(d.id);
+                div.onclick = () => openBoard(data.id);
                 container.appendChild(div);
             });
+        }
+
+        // --- SISTEMA DE NOTIFICACIONES ---
+        function notify(title, message, boardId) {
+            const area = document.getElementById('notification-area');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerHTML = `
+                <div class="toast-icon">🔔</div>
+                <div class="toast-content">
+                    <span class="toast-title">${title}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            // Acceso directo al hacer clic
+            toast.onclick = () => {
+                openBoard(boardId);
+                toast.remove();
+            };
+            
+            area.appendChild(toast);
+            
+            // Auto-cerrar a los 5 segundos
+            setTimeout(() => {
+                if(toast.parentNode) toast.remove();
+            }, 6000);
         }
 
         window.createBoard = async () => {
@@ -221,7 +282,7 @@
                     columns: { todo: [], doing: [], done: [] }
                 });
                 openBoard(ref.id);
-                showToast("✅ Proyecto creado");
+                notify("Éxito", "Proyecto creado correctamente");
             } catch (e) { alert("Error: " + e.message); }
         };
 
@@ -234,37 +295,29 @@
 
             unsubscribeBoard = onSnapshot(doc(db, 'boards', id), (snap) => {
                 if (!snap.exists()) {
-                    document.getElementById('kanban').innerHTML = "<p>Tablero no encontrado.</p>";
+                    document.getElementById('kanban').innerHTML = "<p style='margin:20px; color:red'>Tablero no encontrado o acceso revocado.</p>";
                     return;
                 }
                 boardData = snap.data();
                 document.getElementById('header-title').innerText = boardData.name;
-                
-                // Mostrar botón compartir si soy el dueño
                 document.getElementById('btn-share').style.display = (boardData.ownerId === currentUser.uid) ? 'block' : 'none';
-                
                 renderKanban();
             });
         };
 
-        // COMPARTIR (Minúsculas forzadas)
         window.openShareModal = () => document.getElementById('share-modal').style.display = 'flex';
         
         window.shareBoard = async () => {
             const email = document.getElementById('share-email').value.trim().toLowerCase();
             if (!email) return;
-            
             try {
-                await updateDoc(doc(db, 'boards', currentBoardId), {
-                    members: arrayUnion(email)
-                });
-                showToast(`📧 Invitación enviada a ${email}`);
+                await updateDoc(doc(db, 'boards', currentBoardId), { members: arrayUnion(email) });
+                notify("Invitación Enviada", `Usuario ${email} añadido.`);
                 document.getElementById('share-modal').style.display = 'none';
                 document.getElementById('share-email').value = '';
-            } catch (e) { alert("Error al compartir: " + e.message); }
+            } catch (e) { alert("Error: " + e.message); }
         };
 
-        // KANBAN
         function renderKanban() {
             const container = document.getElementById('kanban');
             container.innerHTML = '';
@@ -278,11 +331,9 @@
                     <div class="cards" id="${key}"></div>
                     <button class="secondary" style="color:#666; border:1px dashed #ccc;" onclick="addTask('${key}')">+ Añadir</button>
                 `;
-                
                 const cardsDiv = list.querySelector('.cards');
                 cardsDiv.ondragover = e => e.preventDefault();
                 cardsDiv.ondrop = e => handleDrop(e, key);
-
                 (boardData.columns[key] || []).forEach(task => {
                     const card = document.createElement('div');
                     card.className = `card ${task.priority}`;
@@ -307,64 +358,20 @@
             setTimeout(() => document.getElementById('save-status').style.display = 'none', 1000);
         }
 
-        window.addTask = (col) => {
-            const t = prompt("Nueva Tarea:");
-            if(!t) return;
-            boardData.columns[col].push({ id: Date.now().toString(), title: t, priority: 'low', desc: '', checklist: [] });
-            renderKanban(); save();
-        };
+        window.addTask = (col) => { const t = prompt("Tarea:"); if(!t) return; boardData.columns[col].push({ id: Date.now().toString(), title: t, priority: 'low', desc: '', checklist: [] }); renderKanban(); save(); };
+        window.handleDrop = (e, dest) => { e.preventDefault(); const {id, src} = JSON.parse(e.dataTransfer.getData('text')); if(src === dest) return; const idx = boardData.columns[src].findIndex(x => x.id === id); const [task] = boardData.columns[src].splice(idx, 1); boardData.columns[dest].push(task); renderKanban(); save(); };
 
-        window.handleDrop = (e, dest) => {
-            e.preventDefault();
-            const {id, src} = JSON.parse(e.dataTransfer.getData('text'));
-            if(src === dest) return;
-            const idx = boardData.columns[src].findIndex(x => x.id === id);
-            const [task] = boardData.columns[src].splice(idx, 1);
-            boardData.columns[dest].push(task);
-            renderKanban(); save();
-        };
-
-        // MODAL TAREAS
         let editT = null;
-        window.openTaskModal = (task, col) => {
-            editT = task; 
-            document.getElementById('m-title').value = task.title;
-            document.getElementById('m-priority').value = task.priority;
-            document.getElementById('m-desc').value = task.desc || '';
-            renderChecks();
-            document.getElementById('task-modal').style.display = 'flex';
-        };
-
+        window.openTaskModal = (task, col) => { editT = task; document.getElementById('m-title').value = task.title; document.getElementById('m-priority').value = task.priority; document.getElementById('m-desc').value = task.desc || ''; renderChecks(); document.getElementById('task-modal').style.display = 'flex'; };
         window.closeModal = () => document.getElementById('task-modal').style.display = 'none';
-
-        window.renderChecks = () => {
-            const div = document.getElementById('m-checklist');
-            div.innerHTML = (editT.checklist||[]).map((c, i) => `
-                <div style="display:flex; gap:10px; align-items:center; margin-bottom:5px;">
-                    <input type="checkbox" ${c.done?'checked':''} onchange="toggleCheck(${i})" style="width:20px;">
-                    <span style="${c.done?'text-decoration:line-through; color:#aaa':''}">${c.text}</span>
-                    <span style="color:red; cursor:pointer; margin-left:auto;" onclick="delCheck(${i})">&times;</span>
-                </div>
-            `).join('');
-        };
-
-        window.addCheck = () => {
-            const v = document.getElementById('m-new-check').value;
-            if(!v) return;
-            if(!editT.checklist) editT.checklist = [];
-            editT.checklist.push({text: v, done: false});
-            document.getElementById('m-new-check').value = '';
-            renderChecks(); save();
-        };
-
+        window.renderChecks = () => { document.getElementById('m-checklist').innerHTML = (editT.checklist||[]).map((c, i) => `<div style="display:flex; gap:10px; align-items:center; margin-bottom:5px;"><input type="checkbox" ${c.done?'checked':''} onchange="toggleCheck(${i})" style="width:20px;"><span style="${c.done?'text-decoration:line-through; color:#aaa':''}">${c.text}</span><span style="color:red; cursor:pointer; margin-left:auto;" onclick="delCheck(${i})">&times;</span></div>`).join(''); };
+        window.addCheck = () => { const v = document.getElementById('m-new-check').value; if(!v) return; if(!editT.checklist) editT.checklist = []; editT.checklist.push({text: v, done: false}); document.getElementById('m-new-check').value = ''; renderChecks(); save(); };
         window.toggleCheck = (i) => { editT.checklist[i].done = !editT.checklist[i].done; renderChecks(); save(); };
         window.delCheck = (i) => { editT.checklist.splice(i, 1); renderChecks(); save(); };
         window.updateTask = () => { editT.title = document.getElementById('m-title').value; editT.priority = document.getElementById('m-priority').value; editT.desc = document.getElementById('m-desc').value; renderKanban(); save(); };
         window.deleteTask = () => { if(!confirm("¿Eliminar?")) return; Object.keys(boardData.columns).forEach(k => { boardData.columns[k] = boardData.columns[k].filter(x => x.id !== editT.id); }); closeModal(); renderKanban(); save(); };
-
         function _val(id) { return document.getElementById(id).value; }
         function _err(msg) { document.getElementById('auth-msg').innerText = msg; }
-        function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = 1; setTimeout(() => t.style.opacity = 0, 3000); }
         document.getElementById('m-title').onblur = updateTask;
     </script>
 </body>
