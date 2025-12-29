@@ -2,30 +2,24 @@ import { auth } from './firebase-config.js';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js";
 
 export const initAuth = (onLoginSuccess) => {
-    const btnLogin = document.getElementById('btn-login');
-    const btnSignup = document.getElementById('btn-signup');
-    const btnLogout = document.getElementById('btn-logout');
-    const btnReset = document.getElementById('btn-reset');
-    const errorDiv = document.getElementById('auth-error');
-
-    btnLogin.onclick = () => {
+    document.getElementById('btn-login').onclick = () => {
         const e = document.getElementById('login-email').value;
         const p = document.getElementById('login-pass').value;
-        signInWithEmailAndPassword(auth, e, p).catch(err => errorDiv.innerText = "Error: Credenciales inválidas");
+        signInWithEmailAndPassword(auth, e, p).catch(err => alert("Acceso denegado: Correo o contraseña incorrectos"));
     };
 
-    btnSignup.onclick = () => {
+    document.getElementById('btn-signup').onclick = () => {
         const e = document.getElementById('login-email').value;
         const p = document.getElementById('login-pass').value;
-        if(p.length < 6) { errorDiv.innerText = "La contraseña debe tener al menos 6 caracteres"; return; }
-        createUserWithEmailAndPassword(auth, e, p).catch(err => errorDiv.innerText = "Error: " + err.message);
+        if(p.length < 6) return alert("Contraseña muy corta");
+        createUserWithEmailAndPassword(auth, e, p).catch(err => alert("Error: " + err.message));
     };
 
-    btnLogout.onclick = () => signOut(auth);
+    document.getElementById('btn-logout').onclick = () => signOut(auth);
 
-    btnReset.onclick = () => {
+    document.getElementById('btn-reset').onclick = () => {
         const email = document.getElementById('login-email').value;
-        if(!email) { alert("Ingresa tu correo para recuperar"); return; }
+        if(!email) return alert("Escribe tu correo");
         sendPasswordResetEmail(auth, email).then(() => alert("Correo de recuperación enviado"));
     };
 
