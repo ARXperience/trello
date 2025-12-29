@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pro-Task v41 | Vision Engine Fixed</title>
+    <title>Pro-Task v42 | Vision + Alarms</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -30,6 +30,14 @@
         .main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; overflow: hidden; }
         header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 20px; height: 55px; display: flex; align-items: center; justify-content: space-between; }
         
+        /* ALARMAS Y ESTADOS (NUEVO) */
+        .meta-badge.overdue { background: #ffe3e3; color: var(--danger); border-color: var(--danger); font-weight: bold; }
+        .meta-badge.today { background: #fff8e1; color: var(--warning); border-color: var(--warning); font-weight: bold; }
+        
+        /* NOTIFICACIONES (BELL) */
+        .bell-container { position: relative; cursor: pointer; margin-right: 15px; }
+        .bell-count { position: absolute; top: -5px; right: -5px; background: var(--danger); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 10px; display: none; }
+
         /* KANBAN */
         .kanban { display: flex; padding: 20px; gap: 15px; overflow-x: auto; height: 100%; align-items: flex-start; }
         .list { background: var(--sidebar); width: 280px; min-width: 280px; border-radius: var(--radius); padding: 10px; max-height: 90%; display: flex; flex-direction: column; border: 1px solid var(--border); }
@@ -56,7 +64,7 @@
         .btn-add-task:hover { background: rgba(0,0,0,0.05); color: var(--primary); border-color: var(--primary); }
         input, select, textarea { background: var(--bg); color: var(--text); border: 1px solid var(--border); padding: 8px; border-radius: 4px; width: 100%; box-sizing: border-box; }
 
-        /* --- VISIÓN IA ELEMENTS (FIXED) --- */
+        /* VISIÓN IA ELEMENTS */
         #webcam-container {
             position: fixed; bottom: 80px; right: 20px; width: 200px; height: 150px;
             background: black; border-radius: 10px; overflow: hidden; border: 3px solid var(--primary);
@@ -68,36 +76,23 @@
             color: white; font-size: 0.7rem; background: rgba(0,0,0,0.5); pointer-events: none;
         }
         
-        /* CURSOR ALTA VISIBILIDAD */
         #virtual-cursor {
             position: fixed; top: 0; left: 0; width: 30px; height: 30px;
-            background: rgba(0, 194, 224, 0.6); /* Azul cian */
-            border: 3px solid white;
-            border-radius: 50%; pointer-events: none; /* CRUCIAL */
-            z-index: 9999; display: none; transform: translate(-50%, -50%);
-            box-shadow: 0 0 20px var(--info);
-            transition: width 0.1s, height 0.1s, background 0.1s;
+            background: rgba(0, 194, 224, 0.6); border: 3px solid white;
+            border-radius: 50%; pointer-events: none; z-index: 9999; display: none; transform: translate(-50%, -50%);
+            box-shadow: 0 0 20px var(--info); transition: width 0.1s, height 0.1s, background 0.1s;
         }
-        #virtual-cursor.pinching { 
-            background: var(--success); /* Verde al agarrar */
-            width: 20px; height: 20px; 
-            border-color: lime;
-            box-shadow: 0 0 20px lime;
-        }
+        #virtual-cursor.pinching { background: var(--success); width: 20px; height: 20px; border-color: lime; }
 
         #ai-ghost-card {
             position: fixed; width: 260px; padding: 15px; background: var(--surface);
             box-shadow: 0 20px 40px rgba(0,0,0,0.5); border-radius: 8px;
             border: 3px solid var(--success); z-index: 9998;
-            pointer-events: none; /* CRUCIAL */
-            opacity: 0.9; display: none; transform: rotate(5deg) scale(1.1);
+            pointer-events: none; opacity: 0.9; display: none; transform: rotate(5deg) scale(1.1);
         }
 
         .ai-toggle {
-            position: fixed; bottom: 20px; right: 20px; 
-            background: var(--text); color: var(--bg); padding: 12px 24px; border-radius: 30px; 
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 5001; 
-            display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;
+            position: fixed; bottom: 20px; right: 20px; background: var(--text); color: var(--bg); padding: 12px 24px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 5001; display: flex; align-items: center; gap: 10px; font-weight: bold; cursor: pointer;
         }
 
         /* MODAL Y TABS */
@@ -112,22 +107,19 @@
         /* MICROFONO */
         .mic-wrapper { position: relative; display: flex; align-items: center; width: 100%; margin-bottom: 10px; }
         .mic-wrapper input, .mic-wrapper textarea { padding-right: 45px; }
-        .mic-btn { 
-            position: absolute; right: 5px; top: 50%; transform: translateY(-50%); 
-            background: var(--danger); color: white; border-radius: 50%; width: 30px; height: 30px; 
-            display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;
-        }
+        .mic-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: var(--danger); color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10; }
         .mic-btn:hover { transform: translateY(-50%) scale(1.1); }
         .mic-active { animation: pulse 1s infinite; background: red; }
         @keyframes pulse { 0% { transform: translateY(-50%) scale(1); } 50% { transform: translateY(-50%) scale(1.2); } 100% { transform: translateY(-50%) scale(1); } }
 
         /* UTILIDADES */
         .checklist-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #eee; }
-        #toast { position: fixed; top: 70px; right: 20px; background: #333; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 6000; }
+        #toast { position: fixed; top: 70px; right: 20px; background: #172b4d; color: white; padding: 15px; border-radius: 5px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 6000; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-left: 5px solid var(--success); cursor: pointer; }
         #toast.show { opacity: 1; pointer-events: auto; }
-        .board-item { padding: 10px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; color: var(--text); }
+        .board-item { padding: 10px; cursor: pointer; border-radius: 4px; margin-bottom: 2px; color: var(--text); display: flex; justify-content: space-between; align-items: center; }
         .board-item:hover { background: rgba(0,0,0,0.05); }
         .board-item.active { background: #e4f0f6; color: var(--primary); font-weight: bold; }
+        .badge-new { background: var(--danger); color: white; font-size: 0.6rem; padding: 2px 5px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -143,14 +135,18 @@
         <div id="camera-status">Iniciando...</div>
     </div>
     
-    <div id="toast"><strong id="toast-title"></strong><div id="toast-msg"></div></div>
+    <div id="toast" onclick="openToastBoard()">
+        <strong id="toast-title">Notificación</strong>
+        <div id="toast-msg"></div>
+        <div style="font-size:0.7rem; opacity:0.8; margin-top:5px;">Clic para abrir</div>
+    </div>
 
     <button class="ai-toggle" onclick="window.toggleAI()">👁️ Activar Cámara</button>
 
     <div id="auth-screen" class="overlay" style="background: var(--primary);">
         <div class="box">
-            <h2 style="text-align:center; color:white;">Pro-Task v41</h2>
-            <p style="text-align:center; color:white; opacity:0.8;">Vision Engine Fixed</p>
+            <h2 style="text-align:center; color:white;">Pro-Task v42</h2>
+            <p style="text-align:center; color:white; opacity:0.8;">Vision + Alarms</p>
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Password">
             <button class="btn-primary" style="width:100%; margin-top:10px; background:white; color:var(--primary);" onclick="window.login()">Entrar</button>
@@ -176,6 +172,9 @@
             <header>
                 <div class="search-box"><span>🔍</span><input type="text" placeholder="Buscar..." onkeyup="window.filterCards(this.value)"></div>
                 <div style="display:flex; gap:10px; align-items:center;">
+                    <div class="bell-container" onclick="window.openUnread()">
+                        🔔 <span id="bell-count" class="bell-count">0</span>
+                    </div>
                     <button class="btn-ghost" onclick="window.toggleTheme()">🌓</button>
                     <span id="user-display" style="font-size:0.8rem;"></span>
                     <button class="btn-ghost" onclick="window.logout()">Salir</button>
@@ -319,6 +318,8 @@
         let currentBoardId = null;
         let boardData = null;
         let editTask = null; let editCol = null;
+        let pendingToastBoardId = null;
+        let seenBoards = JSON.parse(localStorage.getItem('seenBoards') || '[]');
         window.activeTimers = {};
 
         // --- AUTH ---
@@ -336,21 +337,64 @@
             }
         });
 
-        // --- CORE ---
+        // --- CORE & NOTIFICATIONS ---
         function initDashboard() {
+            // Mis Proyectos
             onSnapshot(query(collection(db, 'boards'), where('ownerId', '==', currentUser.uid)), snap => {
                 _id('my-boards').innerHTML = '';
                 snap.forEach(d => { if(!d.data().deleted) _id('my-boards').innerHTML += renderBoardItem(d.id, d.data()); });
             });
-            onSnapshot(query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email)), snap => {
-                _id('shared-boards').innerHTML = '';
-                snap.forEach(d => { if(!d.data().deleted && d.data().ownerId !== currentUser.uid) _id('shared-boards').innerHTML += renderBoardItem(d.id, d.data(), true); });
+
+            // Compartidos (CON ALERTAS RESTAURADAS)
+            const qShared = query(collection(db, 'boards'), where('members', 'array-contains', currentUser.email));
+            let isFirstLoad = true;
+
+            onSnapshot(qShared, snap => {
+                const container = _id('shared-boards'); 
+                container.innerHTML = '';
+                let unreadCount = 0;
+
+                // Detectar Nuevas Invitaciones (Toast)
+                snap.docChanges().forEach(change => {
+                    if (change.type === "added" && !isFirstLoad) {
+                        const bData = change.doc.data();
+                        if(bData.ownerId !== currentUser.uid && !bData.deleted) {
+                             showToast("🔔 Nueva Invitación", `Te han invitado a: ${bData.name}`, change.doc.id);
+                        }
+                    }
+                });
+
+                snap.forEach(d => {
+                    const data = d.data();
+                    if (!data.deleted && data.ownerId !== currentUser.uid) {
+                        const isUnread = !seenBoards.includes(d.id);
+                        if (isUnread) unreadCount++;
+                        container.innerHTML += renderBoardItem(d.id, data, true, isUnread);
+                    }
+                });
+
+                // Actualizar Campana
+                const bell = _id('bell-count');
+                if (unreadCount > 0) {
+                    bell.style.display = 'block';
+                    bell.innerText = unreadCount;
+                } else {
+                    bell.style.display = 'none';
+                }
+                isFirstLoad = false;
             });
         }
-        const renderBoardItem = (id, data, shared) => `<div class="board-item" onclick="window.openBoard('${id}')"><span>${shared?'👥':'📁'} ${data.name}</span></div>`;
 
+        const renderBoardItem = (id, data, shared, unread) => {
+            return `<div class="board-item ${unread?'unread':''}" onclick="window.openBoard('${id}', ${shared})">
+                <span>${shared?'👥':'📁'} ${data.name}</span>
+                ${unread ? '<span class="badge-new">NUEVO</span>' : ''}
+            </div>`;
+        };
+
+        // --- BOARD LOGIC ---
         window.createBoard = async () => {
-            const name = prompt("Nombre del Tablero:"); if(!name) return;
+            const name = prompt("Nombre:"); if(!name) return;
             const res = await addDoc(collection(db, 'boards'), {
                 name, ownerId: currentUser.uid, members: [currentUser.email],
                 deleted: false, createdAt: serverTimestamp(), columns: { todo: [], doing: [], done: [] }
@@ -358,8 +402,17 @@
             window.openBoard(res.id);
         };
 
-        window.openBoard = (id) => {
+        window.openBoard = (id, isShared = false) => {
             currentBoardId = id;
+            
+            // Marcar como leído
+            if (isShared && !seenBoards.includes(id)) {
+                seenBoards.push(id);
+                localStorage.setItem('seenBoards', JSON.stringify(seenBoards));
+                // Forzar actualización visual simple
+                _id('bell-count').style.display = 'none'; 
+            }
+
             onSnapshot(doc(db, 'boards', id), snap => {
                 if(!snap.exists() || snap.data().deleted) return _id('kanban').innerHTML = '<p>No disponible</p>';
                 boardData = snap.data();
@@ -369,7 +422,7 @@
             });
         };
 
-        // --- KANBAN ---
+        // --- KANBAN & ALARMS ---
         function renderKanban() {
             const container = _id('kanban'); container.innerHTML = '';
             const cols = { todo: "Por Hacer", doing: "En Progreso", done: "Hecho" };
@@ -377,7 +430,6 @@
             for (let k in cols) {
                 const list = document.createElement('div'); list.className = 'list';
                 list.id = `col-${k}`; list.setAttribute('data-col', k);
-
                 list.innerHTML = `<h4>${cols[k]} <span>${(boardData.columns[k]||[]).length}</span></h4>`;
                 
                 const cardCont = document.createElement('div'); cardCont.className = 'cards';
@@ -386,12 +438,10 @@
                 (boardData.columns[k] || []).forEach(task => cardCont.appendChild(createCard(task, k)));
                 list.appendChild(cardCont);
 
-                // BOTÓN AÑADIR SEGURO
                 const btn = document.createElement('button');
                 btn.className = 'btn-add-task'; btn.innerText = '+ Añadir Tarea';
                 btn.onclick = () => window.addTask(k);
                 list.appendChild(btn);
-
                 container.appendChild(list);
             }
         }
@@ -404,7 +454,17 @@
             
             let html = `<strong>${task.title}</strong>`;
             html += `<div class="card-meta">`;
-            if(task.due) html += `<span class="meta-badge">📅 ${task.due.slice(5)}</span>`;
+            
+            // LÓGICA DE ALARMAS DE VENCIMIENTO
+            if(task.due) {
+                const today = new Date().toISOString().split('T')[0];
+                let cls = '';
+                if (task.due < today && col !== 'done') cls = 'overdue'; // Vencido
+                else if (task.due === today && col !== 'done') cls = 'today'; // Hoy
+                
+                html += `<span class="meta-badge ${cls}">📅 ${task.due.slice(5)}</span>`;
+            }
+            
             if(task.checklist && task.checklist.length > 0) {
                 const done = task.checklist.filter(c => c.done).length;
                 html += `<span class="meta-badge">☑ ${done}/${task.checklist.length}</span>`;
@@ -418,7 +478,7 @@
             return el;
         };
 
-        // --- LOGIC ---
+        // --- TASK LOGIC ---
         window.addTask = (col) => {
             const t = prompt("Nueva Tarea:"); if(!t) return;
             const newTask = { id: Date.now().toString(), title: t, desc: '', tag: '', due: '', checklist: [], comments: [], files: [], timeLog: 0 };
@@ -439,26 +499,19 @@
         window.openTaskModal = (task, col) => {
             editTask = task; editCol = col;
             _id('task-modal').style.display = 'flex';
-            
-            _id('m-title').value = task.title;
-            _id('m-desc').value = task.desc || '';
-            _id('m-due').value = task.due || '';
-            _id('m-tag').value = task.tag || '';
+            _id('m-title').value = task.title; _id('m-desc').value = task.desc || '';
+            _id('m-due').value = task.due || ''; _id('m-tag').value = task.tag || '';
             _id('m-cover-url').value = task.cover || '';
-            
             if(task.cover) { _id('m-cover-preview').style.display='block'; _id('m-cover-preview').style.backgroundImage=`url('${task.cover}')`; }
             else _id('m-cover-preview').style.display='none';
-
             updateTimerDisplay(); renderChecklist(); renderComments(); renderFiles();
             window.switchTab('details');
         };
 
         window.updateTask = () => {
             if(!editTask) return;
-            editTask.title = _id('m-title').value;
-            editTask.desc = _id('m-desc').value;
-            editTask.due = _id('m-due').value;
-            editTask.tag = _id('m-tag').value;
+            editTask.title = _id('m-title').value; editTask.desc = _id('m-desc').value;
+            editTask.due = _id('m-due').value; editTask.tag = _id('m-tag').value;
             editTask.cover = _id('m-cover-url').value; save();
         };
 
@@ -467,7 +520,7 @@
             ['details','comments','files'].forEach(t => _id('tab-'+t).style.display = (t===tab?'block':'none'));
         };
 
-        // SUB-FUNCIONES DEL MODAL
+        // SUB-FUNCIONES
         window.addCheck = () => {
             const val = _id('m-new-check').value; if(!val) return;
             if(!editTask.checklist) editTask.checklist = [];
@@ -519,7 +572,7 @@
             window.closeModals(); renderKanban(); save();
         };
 
-        // --- UTILS ---
+        // --- UTILS & TOAST ---
         const _id = (id) => document.getElementById(id);
         const _val = (id) => document.getElementById(id).value;
         window.closeModals = () => document.querySelectorAll('.overlay').forEach(e => { if(e.id!=='auth-screen') e.style.display='none'; });
@@ -528,7 +581,16 @@
         window.shareBoard = async () => { await updateDoc(doc(db,'boards',currentBoardId), {members: arrayUnion(_val('share-email'))}); window.closeModals(); };
         window.softDeleteBoard = async () => { if(confirm("¿Borrar?")) await updateDoc(doc(db,'boards',currentBoardId), {deleted:true}); };
         window.filterCards = (q) => document.querySelectorAll('.card').forEach(c => c.style.display = c.innerText.toLowerCase().includes(q.toLowerCase()) ? 'block' : 'none');
+        window.openUnread = () => { const u = document.querySelector('.board-item.unread'); if(u) u.click(); else alert("No hay novedades"); };
         
+        function showToast(title, msg, boardId) {
+            const t = _id('toast');
+            _id('toast-title').innerText = title; _id('toast-msg').innerText = msg;
+            pendingToastBoardId = boardId;
+            t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 6000);
+        }
+        window.openToastBoard = () => { if(pendingToastBoardId) { window.openBoard(pendingToastBoardId, true); _id('toast').classList.remove('show'); } };
+
         window.openTrash = () => {
              onSnapshot(query(collection(db,'boards'), where('ownerId','==',currentUser.uid)), snap => {
                  let h = '';
@@ -551,147 +613,89 @@
             recognition.start();
         };
 
-        // --- 👁️ VISIÓN IA MANUAL (FIXED ENGINE) ---
-        let videoElement = null;
-        let canvasElement = null;
-        let canvasCtx = null;
-        let hands = null;
-        let camera = null;
-        let isAiActive = false;
+        // --- 👁️ VISIÓN IA MANUAL (FIXED) ---
+        let videoElement = null; let canvasElement = null; let canvasCtx = null; let hands = null; let camera = null; let isAiActive = false;
 
         window.toggleAI = () => {
             const container = _id('webcam-container');
             const cursor = _id('virtual-cursor');
             
             if (isAiActive) {
-                // STOP
-                if (videoElement && videoElement.srcObject) {
-                    videoElement.srcObject.getTracks().forEach(track => track.stop());
-                }
-                container.style.display = 'none';
-                cursor.style.display = 'none';
-                isAiActive = false;
+                if (videoElement && videoElement.srcObject) { videoElement.srcObject.getTracks().forEach(track => track.stop()); }
+                container.style.display = 'none'; cursor.style.display = 'none'; isAiActive = false;
                 return;
             }
-
-            // START
-            container.style.display = 'block';
-            cursor.style.display = 'block';
-            isAiActive = true;
+            container.style.display = 'block'; cursor.style.display = 'block'; isAiActive = true;
             _id('camera-status').innerText = "Cargando modelo...";
             startVision();
         };
 
         async function startVision() {
             videoElement = _id('webcam-feed');
-            
             hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
-            hands.setOptions({
-                maxNumHands: 1,
-                modelComplexity: 1,
-                minDetectionConfidence: 0.6,
-                minTrackingConfidence: 0.6
-            });
+            hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.6, minTrackingConfidence: 0.6 });
             hands.onResults(onResults);
-
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
                 videoElement.srcObject = stream;
-                videoElement.onloadedmetadata = () => {
-                    _id('camera-status').innerText = "Cámara lista";
-                    requestAnimationFrame(predictWebcam);
-                };
-            } catch (err) {
-                alert("Error de cámara: " + err);
-                isAiActive = false;
-            }
+                videoElement.onloadedmetadata = () => { _id('camera-status').innerText = "Cámara lista"; requestAnimationFrame(predictWebcam); };
+            } catch (err) { alert("Error cámara: " + err); isAiActive = false; }
         }
 
         async function predictWebcam() {
             if (!isAiActive) return;
-            if (videoElement.readyState === 4) {
-                await hands.send({image: videoElement});
-            }
+            if (videoElement.readyState === 4) { await hands.send({image: videoElement}); }
             requestAnimationFrame(predictWebcam);
         }
 
-        // LOGICA DE GESTOS
-        let isPinching = false;
-        let dragId = null;
-        let dragSrc = null;
+        let isPinching = false; let dragId = null; let dragSrc = null;
 
         function onResults(results) {
             const cursor = _id('virtual-cursor');
-            
             if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
-                _id('camera-status').innerText = "Esperando mano...";
-                cursor.style.display = 'none';
-                return;
+                _id('camera-status').innerText = "Esperando mano..."; cursor.style.display = 'none'; return;
             }
-            
-            _id('camera-status').innerText = "Mano detectada";
-            cursor.style.display = 'block';
+            _id('camera-status').innerText = "Mano detectada"; cursor.style.display = 'block';
 
             const lm = results.multiHandLandmarks[0];
-            const idx = lm[8]; // Punta Índice
-            const thb = lm[4]; // Punta Pulgar
+            const idx = lm[8]; const thb = lm[4];
+            const x = (1 - idx.x) * window.innerWidth; const y = idx.y * window.innerHeight;
 
-            // Coordenadas
-            const x = (1 - idx.x) * window.innerWidth;
-            const y = idx.y * window.innerHeight;
-
-            cursor.style.left = x + 'px';
-            cursor.style.top = y + 'px';
-
-            // Distancia Pinza
+            cursor.style.left = x + 'px'; cursor.style.top = y + 'px';
             const dist = Math.hypot(idx.x - thb.x, idx.y - thb.y);
-            
-            // UMBRALES
-            const PINCH_START = 0.05; 
-            const PINCH_RELEASE = 0.08;
+            const PINCH_START = 0.05; const PINCH_RELEASE = 0.08;
 
-            // 1. AGARRAR (PINCH START)
+            // GRAB
             if (!isPinching && dist < PINCH_START) {
-                isPinching = true;
-                cursor.classList.add('pinching');
-                
-                // Raycast
+                isPinching = true; cursor.classList.add('pinching');
                 const elements = document.elementsFromPoint(x, y);
-                // Buscar tarjeta
                 const card = elements.find(el => el.classList.contains('card'));
-                
                 if (card) {
                     dragId = card.getAttribute('data-task-id');
                     dragSrc = card.getAttribute('data-col');
-                    
                     const ghost = _id('ai-ghost-card');
                     ghost.querySelector('strong').innerText = card.querySelector('strong').innerText;
                     ghost.style.display = 'block';
                 } else {
-                    // Click normal si no es tarjeta
                     const clickable = elements.find(el => el.tagName === 'BUTTON' || el.classList.contains('board-item') || el.onclick);
                     if(clickable) clickable.click();
                 }
             }
 
-            // 2. ARRASTRAR (HOLD)
+            // HOLD
             if (isPinching) {
                 if (dragId) {
                     const ghost = _id('ai-ghost-card');
-                    ghost.style.left = (x + 20) + 'px';
-                    ghost.style.top = (y + 20) + 'px';
+                    ghost.style.left = (x + 20) + 'px'; ghost.style.top = (y + 20) + 'px';
                 }
             }
 
-            // 3. SOLTAR (RELEASE)
+            // RELEASE
             if (isPinching && dist > PINCH_RELEASE) {
-                isPinching = false;
-                cursor.classList.remove('pinching');
-
+                isPinching = false; cursor.classList.remove('pinching');
                 if (dragId) {
                     const elements = document.elementsFromPoint(x, y);
                     const list = elements.find(el => el.classList.contains('list'));
-                    
                     if (list) {
                         const target = list.id.replace('col-', '');
                         if (target && target !== dragSrc) {
@@ -703,9 +707,7 @@
                             }
                         }
                     }
-                    _id('ai-ghost-card').style.display = 'none';
-                    dragId = null;
-                    dragSrc = null;
+                    _id('ai-ghost-card').style.display = 'none'; dragId = null; dragSrc = null;
                 }
             }
         }
